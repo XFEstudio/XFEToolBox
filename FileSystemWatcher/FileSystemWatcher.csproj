@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Image\close.png" />
+    <None Remove="Resources\Image\min.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="XFEExtension.NetCore" Version="3.0.0" />
+    <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="1.0.4" />
+    <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
+    <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Image\close.png" />
+    <Resource Include="Resources\Image\min.png" />
+  </ItemGroup>
+
+</Project>
