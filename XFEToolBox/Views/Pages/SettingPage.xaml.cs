@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace XFEToolBox.ViewPage;
+namespace XFEToolBox.Views.Pages;
 
 /// <summary>
 /// SettingPage.xaml 的交互逻辑

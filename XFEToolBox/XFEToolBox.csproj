@@ -11,6 +11,7 @@
   <ItemGroup>
     <None Remove="Resources\Image\close.png" />
     <None Remove="Resources\Image\min.png" />
+    <None Remove="Resources\Image\tabline.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +25,7 @@
   <ItemGroup>
     <Resource Include="Resources\Image\close.png" />
     <Resource Include="Resources\Image\min.png" />
+    <Resource Include="Resources\Image\tabline.png" />
   </ItemGroup>
 
 </Project>

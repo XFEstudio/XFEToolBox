@@ -2,6 +2,6 @@
 
 namespace XFEToolBox.ViewModel;
 
-public class SettingPageViewModel : ObservableObject
+public partial class SettingPageViewModel : ObservableObject
 {
 }
