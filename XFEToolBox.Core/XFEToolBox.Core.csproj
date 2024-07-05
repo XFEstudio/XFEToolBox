@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="XFEExtension.NetCore" Version="3.0.0" />
+    <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="1.0.4" />
+    <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
+    <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -5,6 +5,13 @@ VisualStudioVersion = 17.11.35017.193
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox", "XFEToolBox\XFEToolBox.csproj", "{7A065B44-8D37-4415-A97F-9F7C8F8E9567}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Test", "XFEToolBox.Test\XFEToolBox.Test.csproj", "{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1} = {AA68EC1E-93C8-4D18-8372-64F3D91A66F1}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Core", "XFEToolBox.Core\XFEToolBox.Core.csproj", "{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +22,14 @@ Global
 		{7A065B44-8D37-4415-A97F-9F7C8F8E9567}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A065B44-8D37-4415-A97F-9F7C8F8E9567}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A065B44-8D37-4415-A97F-9F7C8F8E9567}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

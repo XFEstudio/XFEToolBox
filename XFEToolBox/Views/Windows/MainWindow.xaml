@@ -27,11 +27,11 @@
                         <ColumnDefinition Width="45"/>
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
-                    <Border CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}">
+                    <Border x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove">
                         <Image x:Name="dragTabImage" Source="/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
                     </Border>
-                    <Image x:Name="minimizeImage" x:FieldModifier="internal" Grid.Column="1" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4"/>
-                    <Image x:Name="closeWindowImage" Grid.Column="2" Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4"/>
+                    <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="1" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
+                    <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="2" Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp"/>
                 </Grid>
             </Border>
             <Border Grid.Column="0" Grid.Row="0" Background="Transparent">

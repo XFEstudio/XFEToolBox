@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="EntityFramework" Version="5.0.0" />
+    <PackageReference Include="EntityFramework.zh-Hans" Version="5.0.0" />
     <PackageReference Include="XFEExtension.NetCore" Version="3.0.0" />
     <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="1.0.4" />
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
@@ -26,6 +28,15 @@
     <Resource Include="Resources\Image\close.png" />
     <Resource Include="Resources\Image\min.png" />
     <Resource Include="Resources\Image\tabline.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Model\" />
+    <Folder Include="Views\Controls\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XFEToolBox.Core\XFEToolBox.Core.csproj" />
   </ItemGroup>
 
 </Project>
