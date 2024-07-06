@@ -39,7 +39,53 @@
                     <Span Foreground="#9898e7" FontSize="18" FontWeight="Bold">XFE·工具箱</Span>
                 </TextBlock>
             </Border>
-            <Frame Grid.Column="1" Grid.Row="1" NavigationUIVisibility="Hidden" Content="{Binding CurrentPage}"/>
+            <StackPanel Grid.Column="0" Grid.Row="1">
+                <Border HorizontalAlignment="Stretch" Height="40" Background="LightBlue">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="40"/>
+                        </Grid.ColumnDefinitions>
+                        <Canvas Grid.Column="1">
+                            <Polygon Fill="#9898e7">
+                                <Polygon.Points>
+                                    <Point X="40" Y="0" />
+                                    <Point X="20" Y="20" />
+                                    <Point X="40" Y="40" />
+                                </Polygon.Points>
+                            </Polygon>
+                            <Polygon Fill="White">
+                                <Polygon.Points>
+                                    <Point X="0" Y="0" />
+                                    <Point X="40" Y="0" />
+                                    <Point X="20" Y="20" />
+                                </Polygon.Points>
+                                <Polygon.Effect>
+                                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="1" BlurRadius="5" />
+                                </Polygon.Effect>
+                            </Polygon>
+                            <Polygon Fill="White">
+                                <Polygon.Points>
+                                    <Point X="0" Y="0" />
+                                    <Point X="20" Y="20" />
+                                    <Point X="40" Y="40" />
+                                    <Point X="0" Y="40" />
+                                </Polygon.Points>
+                                <Polygon.Effect>
+                                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="1" BlurRadius="5" />
+                                </Polygon.Effect>
+                            </Polygon>
+                        </Canvas>
+                        <Border Background="White">
+                            <Border.Effect>
+                                <DropShadowEffect Direction="0" BlurRadius="5" ShadowDepth="0"/>
+                            </Border.Effect>
+                        </Border>
+                        
+                    </Grid>
+                </Border>
+            </StackPanel>
+            <Frame Margin="10,0,0,0" Grid.Column="1" Grid.Row="1" NavigationUIVisibility="Hidden" Content="{Binding CurrentPage}"/>
         </Grid>
     </Border>
 </Window>

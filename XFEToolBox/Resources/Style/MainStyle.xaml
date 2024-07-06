@@ -8,28 +8,28 @@
             <EventTrigger RoutedEvent="MouseEnter">
                 <BeginStoryboard>
                     <Storyboard>
-                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#b4b4e9" Duration="0:0:0:0.1"/>
+                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#b4b4e9" Duration="0:0:0.1"/>
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
             <EventTrigger RoutedEvent="MouseLeave">
                 <BeginStoryboard>
                     <Storyboard>
-                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#9898e7" Duration="0:0:0:0.1"/>
+                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#9898e7" Duration="0:0:0.1"/>
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
             <EventTrigger RoutedEvent="MouseLeftButtonDown">
                 <BeginStoryboard>
                     <Storyboard>
-                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#ccccea" Duration="0:0:0:0.1"/>
+                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#ccccea" Duration="0:0:0.1"/>
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
             <EventTrigger RoutedEvent="MouseLeftButtonUp">
                 <BeginStoryboard>
                     <Storyboard>
-                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#b4b4e9" Duration="0:0:0:0.1"/>
+                        <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#b4b4e9" Duration="0:0:0.1"/>
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
@@ -98,5 +98,16 @@
                 </BeginStoryboard>
             </EventTrigger>
         </Style.Triggers>
+    </Style>
+    <Style x:Key="NavigationButton" TargetType="RadioButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border CornerRadius="15">
+                        
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>

@@ -1,0 +1,41 @@
+﻿<UserControl x:Class="XFEToolBox.Views.Controls.NavigationSideBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:XFEToolBox.Views.Controls"
+             mc:Ignorable="d" 
+             d:DesignHeight="440" d:DesignWidth="720" Background="White">
+    <StackPanel>
+        <Canvas>
+            <Polygon Fill="#9898e7">
+                <Polygon.Points>
+                    <Point X="200" Y="0" />
+                    <Point X="100" Y="100" />
+                    <Point X="200" Y="200" />
+                </Polygon.Points>
+            </Polygon>
+            <Polygon Fill="White">
+                <Polygon.Points>
+                    <Point X="0" Y="0" />
+                    <Point X="200" Y="0" />
+                    <Point X="100" Y="100" />
+                </Polygon.Points>
+                <Polygon.Effect>
+                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="5" BlurRadius="10" />
+                </Polygon.Effect>
+            </Polygon>
+            <Polygon Fill="White">
+                <Polygon.Points>
+                    <Point X="0" Y="0" />
+                    <Point X="100" Y="100" />
+                    <Point X="200" Y="200" />
+                    <Point X="0" Y="200" />
+                </Polygon.Points>
+                <Polygon.Effect>
+                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="5" BlurRadius="10" RenderingBias="Quality"/>
+                </Polygon.Effect>
+            </Polygon>
+        </Canvas>
+    </StackPanel>
+</UserControl>
