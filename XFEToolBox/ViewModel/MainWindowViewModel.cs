@@ -4,6 +4,7 @@ using XFEToolBox.Views.Windows;
 using System.Windows.Controls;
 using System.Windows;
 using XFEToolBox.Profiles;
+using CommunityToolkit.Mvvm.Input;
 
 namespace XFEToolBox.ViewModel;
 
@@ -12,7 +13,7 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindow? ViewPage { get; set; }
 
     [ObservableProperty]
-    private Page? currentPage = new MainPage();
+    private Page? currentPage = MainPage.Current;
 
     public MainWindowViewModel(MainWindow viewPage)
     {
@@ -39,14 +40,34 @@ public partial class MainWindowViewModel : ObservableObject
             return false;
         }
     }
+    /// <summary>
+    /// 关闭窗体
+    /// </summary>
     public void CloseWindow()
     {
         ExitApp(true);
         //TODO:1 待完善的退出应用逻辑，强制退出等
     }
 
-    public void MoveWindow(int x, int y)
+    [RelayCommand]
+    private void NavigateToPage(string pageTag)
     {
-        
+        switch (pageTag)
+        {
+            case "home":
+                CurrentPage = MainPage.Current;
+                break;
+            case "tool":
+                CurrentPage = MainPage.Current;
+                break;
+            case "download":
+                CurrentPage = MainPage.Current;
+                break;
+            case "setting":
+                CurrentPage = SettingPage.Current;
+                break;
+            default:
+                break;
+        }
     }
 }

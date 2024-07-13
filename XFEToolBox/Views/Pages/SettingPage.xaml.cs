@@ -7,8 +7,10 @@ namespace XFEToolBox.Views.Pages;
 /// </summary>
 public partial class SettingPage : Page
 {
+    public static SettingPage? Current { get; set; } = new SettingPage();
     public SettingPage()
     {
         InitializeComponent();
+        Current = this;
     }
 }

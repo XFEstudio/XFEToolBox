@@ -6,13 +6,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Icon\XFEToolBoxIcon.ico" />
+    <None Remove="Resources\Icon\XFEToolBoxLogo.png" />
+    <None Remove="Resources\Icon\XFEToolBoxSplashScreen.png" />
     <None Remove="Resources\Image\close.png" />
+    <None Remove="Resources\Image\download.png" />
     <None Remove="Resources\Image\grid.png" />
     <None Remove="Resources\Image\min.png" />
+    <None Remove="Resources\Image\setting.png" />
     <None Remove="Resources\Image\tabline.png" />
+    <None Remove="Resources\Image\toolbox.png" />
+    <None Remove="Resources\Image\wrench.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,9 +32,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\Icon\XFEToolBoxIcon.ico" />
+    <Resource Include="Resources\Icon\XFEToolBoxLogo.png" />
     <Resource Include="Resources\Image\close.png" />
+    <Resource Include="Resources\Image\download.png" />
     <Resource Include="Resources\Image\grid.png" />
     <Resource Include="Resources\Image\min.png" />
+    <Resource Include="Resources\Image\setting.png" />
     <Resource Include="Resources\Image\tabline.png" />
   </ItemGroup>
 
@@ -36,6 +48,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\XFEToolBox.Core\XFEToolBox.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icon\XFEToolBoxSplashScreen.png" />
+    <Resource Include="Resources\Image\toolbox.png" />
+    <Resource Include="Resources\Image\wrench.png" />
   </ItemGroup>
 
 </Project>

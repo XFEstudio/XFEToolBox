@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel"
+        xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls"
         xmlns:local="clr-namespace:XFEToolBox.Views.Windows"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
-        Title="MainWindow" Height="450" Width="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen">
+        Title="MainWindow" Height="450" Width="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
 
     <Border CornerRadius="20" Background="#9898e7">
         <Grid>
@@ -40,52 +41,48 @@
                 </TextBlock>
             </Border>
             <StackPanel Grid.Column="0" Grid.Row="1">
-                <Border HorizontalAlignment="Stretch" Height="40" Background="LightBlue">
+                <ctr:NavigationButton x:Name="mainButton" Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="home">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Canvas Grid.Column="1">
-                            <Polygon Fill="#9898e7">
-                                <Polygon.Points>
-                                    <Point X="40" Y="0" />
-                                    <Point X="20" Y="20" />
-                                    <Point X="40" Y="40" />
-                                </Polygon.Points>
-                            </Polygon>
-                            <Polygon Fill="White">
-                                <Polygon.Points>
-                                    <Point X="0" Y="0" />
-                                    <Point X="40" Y="0" />
-                                    <Point X="20" Y="20" />
-                                </Polygon.Points>
-                                <Polygon.Effect>
-                                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="1" BlurRadius="5" />
-                                </Polygon.Effect>
-                            </Polygon>
-                            <Polygon Fill="White">
-                                <Polygon.Points>
-                                    <Point X="0" Y="0" />
-                                    <Point X="20" Y="20" />
-                                    <Point X="40" Y="40" />
-                                    <Point X="0" Y="40" />
-                                </Polygon.Points>
-                                <Polygon.Effect>
-                                    <DropShadowEffect Color="Black" Direction="0" ShadowDepth="1" BlurRadius="5" />
-                                </Polygon.Effect>
-                            </Polygon>
-                        </Canvas>
-                        <Border Background="White">
-                            <Border.Effect>
-                                <DropShadowEffect Direction="0" BlurRadius="5" ShadowDepth="0"/>
-                            </Border.Effect>
-                        </Border>
-                        
+                        <Image Source="/Resources/Image/grid.png" Margin="5"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="首页"/>
                     </Grid>
-                </Border>
+                </ctr:NavigationButton>
+                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Image Source="/Resources/Image/toolbox.png" Margin="7"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具箱"/>
+                    </Grid>
+                </ctr:NavigationButton>
+                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="download">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Image Source="/Resources/Image/download.png" Margin="7"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="下载专区"/>
+                    </Grid>
+                </ctr:NavigationButton>
+                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="setting">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Image Source="/Resources/Image/setting.png" Margin="7"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="选项设置"/>
+                    </Grid>
+                </ctr:NavigationButton>
             </StackPanel>
-            <Frame Margin="10,0,0,0" Grid.Column="1" Grid.Row="1" NavigationUIVisibility="Hidden" Content="{Binding CurrentPage}"/>
+            <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
         </Grid>
     </Border>
 </Window>

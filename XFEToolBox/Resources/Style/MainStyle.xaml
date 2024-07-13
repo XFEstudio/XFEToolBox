@@ -99,15 +99,120 @@
             </EventTrigger>
         </Style.Triggers>
     </Style>
+    <Style x:Key="NavigationButtonText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#8998e7"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
     <Style x:Key="NavigationButton" TargetType="RadioButton">
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="Margin" Value="10,5"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border CornerRadius="15">
-                        
+                    <Border x:Name="mainBorder" CornerRadius="15" HorizontalAlignment="Stretch" Height="40" Background="White" BorderBrush="#9898e7" BorderThickness="1.5" RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform x:Name="mainBorderScale" ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <Border.Effect>
+                            <DropShadowEffect x:Name="mainBorderShadow" Color="#9898e7" BlurRadius="8" ShadowDepth="3" Direction="-45" Opacity="0"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="borderSplit" Grid.Column="1" Background="#9898e7" CornerRadius="2" Width="3" Opacity="0.5" HorizontalAlignment="Left" VerticalAlignment="Stretch" Margin="0,5"/>
+                            <ContentPresenter Grid.ColumnSpan="3"/>
+                        </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <EventTrigger RoutedEvent="MouseEnter">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderScale" Storyboard.TargetProperty="ScaleX" From="1" To="1.1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderScale" Storyboard.TargetProperty="ScaleY" From="1" To="1.1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <ThicknessAnimation Storyboard.TargetName="mainBorder" Storyboard.TargetProperty="Margin" From="0,0" To="0,10" Duration="0:0:0.3">
+                                        <ThicknessAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </ThicknessAnimation.EasingFunction>
+                                    </ThicknessAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="MouseLeave">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderScale" Storyboard.TargetProperty="ScaleX" From="1.1" To="1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderScale" Storyboard.TargetProperty="ScaleY" From="1.1" To="1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <ThicknessAnimation Storyboard.TargetName="mainBorder" Storyboard.TargetProperty="Margin" From="0,10" To="0,0" Duration="0:0:0.3">
+                                        <ThicknessAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </ThicknessAnimation.EasingFunction>
+                                    </ThicknessAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="Checked">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderShadow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="borderSplit" Storyboard.TargetProperty="Opacity" From="0.5" To="1" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                        <EventTrigger RoutedEvent="Unchecked">
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="mainBorderShadow" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="borderSplit" Storyboard.TargetProperty="Opacity" From="1" To="0.5" Duration="0:0:0.3">
+                                        <DoubleAnimation.EasingFunction>
+                                            <CubicEase EasingMode="EaseOut"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </EventTrigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+    <Style x:Key="NavigationFrame" TargetType="Frame">
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="NavigationUIVisibility" Value="Hidden"/>
+        <Setter Property="Grid.Column" Value="1"/>
+        <Setter Property="Grid.Row" Value="1"/>
     </Style>
 </ResourceDictionary>

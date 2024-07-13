@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Media.Animation;
 using XFEToolBox.ViewModel;
 
 namespace XFEToolBox.Views.Windows
@@ -26,6 +27,27 @@ namespace XFEToolBox.Views.Windows
         {
             if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
                 DragMove();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            mainButton.IsChecked = true;
+        }
+
+        private void ContentFrame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
+        {
+            var storyboard = new Storyboard();
+            var fadeIn = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(fadeIn, contentFrame);
+            Storyboard.SetTargetProperty(fadeIn, new PropertyPath("Opacity"));
+            storyboard.Children.Add(fadeIn);
+            storyboard.Begin();
         }
     }
 }

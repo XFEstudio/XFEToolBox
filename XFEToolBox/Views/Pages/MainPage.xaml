@@ -8,8 +8,9 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="MainPage">
     <Grid>
-        <TextBlock Foreground="White">
-            <Span>亻尔  女子</Span>
-        </TextBlock>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
     </Grid>
 </Page>
