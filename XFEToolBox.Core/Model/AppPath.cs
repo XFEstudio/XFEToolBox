@@ -19,4 +19,6 @@ public partial class AppPath
     private static readonly string localVersionProfile = $@"{AppLocalVersionData}\Profiles";
     [AutoPath]
     private static readonly string synProfile = $@"{AppSynData}\Profiles";
+    [AutoPath]
+    private static readonly string cacheProfile = $@"{AppCache}\Profiles";
 }

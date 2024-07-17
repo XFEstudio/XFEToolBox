@@ -1,10 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows;
+using System.Windows.Controls;
+using XFEToolBox.Profiles.CrossVersionProfiles;
 using XFEToolBox.Views.Pages;
 using XFEToolBox.Views.Windows;
-using System.Windows.Controls;
-using System.Windows;
-using XFEToolBox.Profiles;
-using CommunityToolkit.Mvvm.Input;
 
 namespace XFEToolBox.ViewModel;
 
@@ -22,7 +22,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>
     /// 最小化窗体
     /// </summary>
-    public void Minimize() => ViewPage!.WindowState = System.Windows.WindowState.Minimized;
+    public void Minimize() => ViewPage!.WindowState = WindowState.Minimized;
     /// <summary>
     /// 关闭窗口退出应用
     /// </summary>

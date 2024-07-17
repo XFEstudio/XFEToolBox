@@ -1,4 +1,6 @@
 ﻿using System.Windows.Controls;
+using XFEExtension.NetCore.FileExtension;
+using XFEToolBox.Utilities;
 
 namespace XFEToolBox.Views.Pages;
 
@@ -12,5 +14,10 @@ public partial class MainPage : Page
     {
         InitializeComponent();
         Current = this;
+    }
+
+    private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    {
+        notifyText.Text = FileHelper.GetDirectorySize(new(@"C:\Users\XFEstudio\Downloads")).FileSize();
     }
 }
