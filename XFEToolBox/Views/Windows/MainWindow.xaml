@@ -8,13 +8,13 @@
         xmlns:local="clr-namespace:XFEToolBox.Views.Windows"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
-        Title="MainWindow" Height="450" Width="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
+        Title="XFE工具箱" Height="450" Width="720" MinHeight="450" MinWidth="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
 
-    <Border CornerRadius="20" Background="#9898e7">
+    <Border CornerRadius="19" Background="#9898e7">
         <Grid>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="25"/>
@@ -28,7 +28,7 @@
                         <ColumnDefinition Width="45"/>
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove">
+                    <Border x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove" MouseDown="DragTabBorder_MouseDown">
                         <Image x:Name="dragTabImage" Source="/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
                     </Border>
                     <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="1" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
@@ -61,6 +61,16 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具箱"/>
                     </Grid>
                 </ctr:NavigationButton>
+                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="console">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Image Source="/Resources/Image/console.png" Margin="7"/>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="C#控制台"/>
+                    </Grid>
+                </ctr:NavigationButton>
                 <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="download">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -83,6 +93,9 @@
                 </ctr:NavigationButton>
             </StackPanel>
             <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
+            <Image Grid.Column="1" Grid.Row="1" Source="/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <Border x:Name="cornerBorder" Grid.Column="1" Grid.Row="1" Style="{StaticResource CornerBorderStyle}" MouseDown="CornerBorder_MouseDown">
+            </Border>
         </Grid>
     </Border>
 </Window>

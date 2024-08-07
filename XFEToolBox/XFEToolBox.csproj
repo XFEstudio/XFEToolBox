@@ -13,11 +13,17 @@
     <None Remove="Resources\Icon\XFEToolBoxIcon.ico" />
     <None Remove="Resources\Icon\XFEToolBoxLogo.png" />
     <None Remove="Resources\Icon\XFEToolBoxSplashScreen.png" />
+    <None Remove="Resources\Image\clean.png" />
     <None Remove="Resources\Image\close.png" />
+    <None Remove="Resources\Image\console.png" />
+    <None Remove="Resources\Image\corner.png" />
     <None Remove="Resources\Image\download.png" />
     <None Remove="Resources\Image\grid.png" />
     <None Remove="Resources\Image\min.png" />
+    <None Remove="Resources\Image\restart.png" />
     <None Remove="Resources\Image\setting.png" />
+    <None Remove="Resources\Image\start.png" />
+    <None Remove="Resources\Image\stop.png" />
     <None Remove="Resources\Image\tabline.png" />
     <None Remove="Resources\Image\toolbox.png" />
     <None Remove="Resources\Image\wrench.png" />
@@ -28,17 +34,24 @@
     <PackageReference Include="XFEExtension.NetCore" Version="3.0.0" />
     <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="1.1.1" />
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
+    <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.2.0" />
     <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Resources\Icon\XFEToolBoxIcon.ico" />
     <Resource Include="Resources\Icon\XFEToolBoxLogo.png" />
+    <Resource Include="Resources\Image\clean.png" />
     <Resource Include="Resources\Image\close.png" />
+    <Resource Include="Resources\Image\console.png" />
+    <Resource Include="Resources\Image\corner.png" />
     <Resource Include="Resources\Image\download.png" />
     <Resource Include="Resources\Image\grid.png" />
     <Resource Include="Resources\Image\min.png" />
+    <Resource Include="Resources\Image\restart.png" />
     <Resource Include="Resources\Image\setting.png" />
+    <Resource Include="Resources\Image\start.png" />
+    <Resource Include="Resources\Image\stop.png" />
     <Resource Include="Resources\Image\tabline.png" />
   </ItemGroup>
 

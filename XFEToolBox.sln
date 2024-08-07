@@ -10,7 +10,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Test", "XFEToolB
 		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1} = {AA68EC1E-93C8-4D18-8372-64F3D91A66F1}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Core", "XFEToolBox.Core\XFEToolBox.Core.csproj", "{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Core", "XFEToolBox.Core\XFEToolBox.Core.csproj", "{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
