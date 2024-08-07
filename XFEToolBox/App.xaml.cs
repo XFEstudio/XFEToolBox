@@ -35,8 +35,8 @@ public partial class App : Application
     void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         // 处理非 UI 线程未处理的异常
-        Exception ex = e.ExceptionObject as Exception;
-        MessageBox.Show("非UI线程未处理异常：" + ex?.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        //Exception ex = e.ExceptionObject as Exception;
+        //MessageBox.Show("非UI线程未处理异常：" + ex?.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)

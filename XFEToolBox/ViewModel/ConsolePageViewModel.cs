@@ -41,6 +41,7 @@ public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObje
     {
         try
         {
+            TerminalServer?.Server.Server.Close();
             TerminalServer?.Server.Server.Abort();
         }
         catch { }
