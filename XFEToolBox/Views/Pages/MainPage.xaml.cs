@@ -18,6 +18,7 @@ public partial class MainPage : Page
 
     private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        notifyText.Text = FileHelper.GetDirectorySize(new(@"C:\Users\XFEstudio\Downloads")).FileSize();
+        //notifyText.Text = FileHelper.GetDirectorySize(new(@"C:\Users\XFEstudio\Downloads")).FileSize();
+        notifyText.Text = "持续开发中...";
     }
 }

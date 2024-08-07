@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
+    <Version>0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +32,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    <PackageReference Include="XFEExtension.NetCore" Version="3.0.0" />
+    <PackageReference Include="XFEExtension.NetCore" Version="3.0.1" />
     <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="1.1.1" />
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
     <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.2.0" />
