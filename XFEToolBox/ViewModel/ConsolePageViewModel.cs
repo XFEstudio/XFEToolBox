@@ -11,7 +11,7 @@ using XFEToolBox.Views.Pages;
 
 namespace XFEToolBox.ViewModel;
 
-public partial class ConsolePageViewModel : ObservableObject
+public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObject
 {
     [ObservableProperty]
     private bool canStartServer = true;
@@ -23,13 +23,8 @@ public partial class ConsolePageViewModel : ObservableObject
     private bool canCleanUp = false;
 
     private bool lastLineIsEnd = true;
-    public ConsolePage ViewPage { get; set; }
+    public ConsolePage ViewPage { get; set; } = viewPage;
     public XFEConsoleTerminalServer? TerminalServer { get; set; }
-
-    public ConsolePageViewModel(ConsolePage viewPage)
-    {
-        ViewPage = viewPage;
-    }
 
     public async Task StartConsoleServer()
     {
@@ -39,14 +34,24 @@ public partial class ConsolePageViewModel : ObservableObject
         TerminalServer.Disconnected += TerminalServer_Disconnected;
         TerminalServer.MessageReceived += TerminalServer_MessageReceived;
         TerminalServer.ErrorOccurred += TerminalServer_ErrorOccurred;
-        await TerminalServer.StartServer();
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await TerminalServer.StartServer();
+            }
+            catch (Exception ex)
+            {
+                TerminalServer_ErrorOccurred(null!, ex);
+            }
+        });
     }
 
     public void ShutDownServer()
     {
         try
         {
-            TerminalServer?.Server.Server.Close();
+            TerminalServer?.Server.Server.Abort();
         }
         catch { }
         TerminalServer = null;
@@ -98,17 +103,23 @@ public partial class ConsolePageViewModel : ObservableObject
             var lastControl = ViewPage.consoleStackPanel.Children.Count > 0 ? ViewPage.consoleStackPanel.Children[^1] : null;
             if (lastControl is TextBlock lastTextBlock)
             {
-                var inLineList = DecoratedTextConverter.ConvertToInlineList(message, defaultColor);
-                lastTextBlock.Inlines.AddRange(inLineList);
-                lastLineIsEnd = isLineEnd;
-                return;
+                ViewPage.Dispatcher.Invoke(() =>
+                {
+                    var inLineList = DecoratedTextConverter.ConvertToInlineList(message, defaultColor);
+                    lastTextBlock.Inlines.AddRange(inLineList);
+                    lastLineIsEnd = isLineEnd;
+                });
             }
+            return;
         }
-        var textBlock = DecoratedTextConverter.ConvertToTextBlock(message, defaultColor);
-        textBlock.TextWrapping = System.Windows.TextWrapping.Wrap;
-        textBlock.FontSize = 13;
-        textBlock.FontFamily = new FontFamily("Consolas");
-        ViewPage.consoleStackPanel.Children.Add(textBlock);
+        ViewPage.Dispatcher.Invoke(() =>
+        {
+            var textBlock = DecoratedTextConverter.ConvertToTextBlock(message, defaultColor);
+            textBlock.TextWrapping = System.Windows.TextWrapping.Wrap;
+            textBlock.FontSize = 13;
+            textBlock.FontFamily = new FontFamily("Consolas");
+            ViewPage.consoleStackPanel.Children.Add(textBlock);
+        });
         lastLineIsEnd = isLineEnd;
     }
     /// <summary>
