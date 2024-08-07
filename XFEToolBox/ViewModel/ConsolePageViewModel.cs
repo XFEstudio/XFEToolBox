@@ -34,17 +34,7 @@ public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObje
         TerminalServer.Disconnected += TerminalServer_Disconnected;
         TerminalServer.MessageReceived += TerminalServer_MessageReceived;
         TerminalServer.ErrorOccurred += TerminalServer_ErrorOccurred;
-        await Task.Run(async () =>
-        {
-            try
-            {
-                await TerminalServer.StartServer();
-            }
-            catch (Exception ex)
-            {
-                TerminalServer_ErrorOccurred(null!, ex);
-            }
-        });
+        await TerminalServer.StartServer();
     }
 
     public void ShutDownServer()
