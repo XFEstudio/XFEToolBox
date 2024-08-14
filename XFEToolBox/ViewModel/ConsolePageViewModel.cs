@@ -52,7 +52,7 @@ public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObje
     {
         var code = e.InnerException?.InnerException is HttpListenerException ? (e.InnerException.InnerException as HttpListenerException)!.ErrorCode : 0;
         if (code != 995)
-            ShowMessageWithTimeLine($"[color Red]发生错误：{e.Message}");
+            ShowMessageWithTimeLine($"[foldblock color: white #ff0000 title: 错误：{e.Message} text: {e}]");
     }
 
     private void TerminalServer_MessageReceived(XFEConsoleClientInfo sender, string e)

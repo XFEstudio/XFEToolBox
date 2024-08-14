@@ -28,7 +28,7 @@ public partial class App : Application
     void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         // 处理 UI 线程未处理的异常
-        MessageBox.Show("UI线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        //MessageBox.Show("UI线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true; // 设置为 true 表示异常已处理，防止应用程序退出
     }
 
@@ -42,7 +42,7 @@ public partial class App : Application
     void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         // 处理任务调度程序未观察到的任务异常
-        MessageBox.Show("非主线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        //MessageBox.Show("非主线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         e.SetObserved(); // 防止程序崩溃
     }
 }
