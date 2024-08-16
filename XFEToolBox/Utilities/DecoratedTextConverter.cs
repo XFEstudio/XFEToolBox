@@ -4,14 +4,24 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace XFEToolBox.Utilities;
 
 public partial class DecoratedTextConverter
 {
+    /// <summary>
+    /// 装饰文本
+    /// </summary>
+    /// <returns></returns>
     [GeneratedRegex(@"\[(?:(?:(?<type>color)\s+(?<color>\#[0-9a-fA-F]{6}|\w+)(?:\s+(?<background>\#[0-9a-fA-F]{6}|\w+))?)|(?:(?<type>hyperlink)\s+(?:color:\s*(?<color>\#[0-9a-fA-F]{6}|\w+)(?<background>\s+\#[0-9a-fA-F]{6}|\w+)?(?:\s+))?link:\s*(?<link>.+)\s+text:\s*(?<text>.+))|(?:(?<type>foldblock)\s+(?:color:\s*(?<color>\#[0-9a-fA-F]{6}|\w+)\s+(?<background>\#[0-9a-fA-F]{6}|\w+))\s+title:\s*(?<title>.+)\s+text:\s*(?<text>(?s).+)))\]")]
     public static partial Regex DecorationRegex();
-
+    /// <summary>
+    /// 转为文本块
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <returns></returns>
     public static TextBlock ConvertToTextBlock(string decoratedText, Color defaultColor)
     {
         var results = ConvertToInlineList(decoratedText, defaultColor);
@@ -25,13 +35,49 @@ public partial class DecoratedTextConverter
         }
         return textBlock;
     }
+    /// <summary>
+    /// 转为文本块
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <param name="dispatcher"></param>
+    /// <returns></returns>
+    public static async Task<TextBlock> ConvertToTextBlockAsync(string decoratedText, Color defaultColor, Dispatcher dispatcher)
+    {
+        var results = await ConvertToInlineListAsync(decoratedText, defaultColor, dispatcher);
+        var textBlock = new TextBlock();
+        foreach (var result in results)
+        {
+            if (result is Inline inline)
+                textBlock.Inlines.Add(inline);
+            else
+                textBlock.Inlines.Add((UIElement)result);
+        }
+        return textBlock;
+    }
+    /// <summary>
+    /// 转为行内组件列表
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <returns></returns>
     public static List<object> ConvertToInlineList(string decoratedText, Color defaultColor)
     {
         var results = ConvertText(decoratedText, defaultColor);
+        return ConvertToInlineList(results, decoratedText);
+    }
+    /// <summary>
+    /// 转为行内组件列表
+    /// </summary>
+    /// <param name="decTextSpans"></param>
+    /// <param name="decoratedText"></param>
+    /// <returns></returns>
+    public static List<object> ConvertToInlineList(List<DecTextSpan> decTextSpans, string decoratedText = "")
+    {
         var inLineList = new List<object>();
-        if (results.Count > 0)
+        if (decTextSpans.Count > 0)
         {
-            foreach (var result in results)
+            foreach (var result in decTextSpans)
             {
                 if (result is HyperLinkDecSpan hyperLinkDecSpan)
                 {
@@ -151,7 +197,7 @@ public partial class DecoratedTextConverter
                 }
             }
         }
-        else
+        else if (decoratedText != string.Empty)
         {
             inLineList.Add(new Span(new Run(decoratedText))
             {
@@ -160,6 +206,24 @@ public partial class DecoratedTextConverter
         }
         return inLineList;
     }
+    /// <summary>
+    /// 转为行内组件列表
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <param name="dispatcher"></param>
+    /// <returns></returns>
+    public static async Task<List<object>> ConvertToInlineListAsync(string decoratedText, Color defaultColor, Dispatcher dispatcher)
+    {
+        var result = await ConvertTextAsync(decoratedText, defaultColor);
+        return dispatcher.Invoke(() => ConvertToInlineList(result, decoratedText));
+    }
+    /// <summary>
+    /// 转为装饰文本
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <returns></returns>
     public static List<DecTextSpan> ConvertText(string decoratedText, Color defaultColor)
     {
         var textSpanList = new List<DecTextSpan>();
@@ -212,4 +276,11 @@ public partial class DecoratedTextConverter
         }
         return textSpanList;
     }
+    /// <summary>
+    /// 转为装饰文本
+    /// </summary>
+    /// <param name="decoratedText"></param>
+    /// <param name="defaultColor"></param>
+    /// <returns></returns>
+    public static async Task<List<DecTextSpan>> ConvertTextAsync(string decoratedText, Color defaultColor) => await Task.Run(() => ConvertText(decoratedText, defaultColor));
 }

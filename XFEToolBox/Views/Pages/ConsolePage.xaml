@@ -62,7 +62,7 @@
                 </StackPanel>
             </Grid>
             <Border Grid.Column="0" Grid.Row="1" CornerRadius="0,0,15,0" Background="Black" Padding="0,5,3,5">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer x:Name="scrollViewer" x:FieldModifier="internal" VerticalScrollBarVisibility="Auto" IsTabStop="False" ScrollChanged="ScrollViewer_ScrollChanged">
                     <ScrollViewer.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
                     </ScrollViewer.Resources>

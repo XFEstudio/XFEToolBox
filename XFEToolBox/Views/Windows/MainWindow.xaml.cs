@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media.Animation;
 using XFEExtension.NetCore.InputSimulator;
 using XFEToolBox.Profiles.CrossVersionProfiles;

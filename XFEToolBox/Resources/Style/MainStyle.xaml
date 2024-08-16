@@ -146,6 +146,7 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="NavigationButton" TargetType="RadioButton">
+        <Setter Property="IsTabStop" Value="False"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="Margin" Value="10,5"/>
         <Setter Property="Template">
@@ -252,10 +253,12 @@
     </Style>
     <Style x:Key="NavigationFrame" TargetType="Frame">
         <Setter Property="NavigationUIVisibility" Value="Hidden"/>
+        <Setter Property="IsTabStop" Value="False"/>
         <Setter Property="Grid.Column" Value="1"/>
         <Setter Property="Grid.Row" Value="1"/>
     </Style>
     <Style x:Key="ConsoleScrollBar" TargetType="ScrollBar">
+        <Setter Property="IsTabStop" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -336,6 +339,7 @@
     <Style x:Key="FoldButton" TargetType="Button">
         <Style.Setters>
             <Setter Property="Opacity" Value="1"/>
+            <Setter Property="IsTabStop" Value="False"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">

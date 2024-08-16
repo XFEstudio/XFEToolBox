@@ -7,5 +7,6 @@ public partial class AppCacheProfile
 {
     [ProfileProperty]
     private string noticeText = "";
-    public AppCacheProfile() => ProfilePath = @$"{AppPath.CacheProfile}\{typeof(AppCacheProfile)}.xfe";
+    public AppCacheProfile() => ProfilePath = @$"{AppPath.CacheProfile}\{typeof(AppCacheProfile)}.xprofile";
+
 }

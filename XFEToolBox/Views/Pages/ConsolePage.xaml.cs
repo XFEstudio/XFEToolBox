@@ -17,4 +17,6 @@ public partial class ConsolePage : Page
         DataContext = ViewModel;
         Current = this;
     }
+
+    private void ScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) => ViewModel.ScrollChanged(sender, e);
 }
