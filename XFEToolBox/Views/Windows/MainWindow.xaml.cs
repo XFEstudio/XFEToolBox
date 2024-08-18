@@ -21,6 +21,7 @@ namespace XFEToolBox.Views.Windows
             Current = this;
             Width = SystemProfile.MainWindowWidth;
             Height = SystemProfile.MainWindowHeight;
+            WindowState = SystemProfile.StartWithMaximize ? WindowState.Maximized : WindowState.Normal;
         }
 
         private void MinimizeImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.Minimize();
@@ -45,7 +46,7 @@ namespace XFEToolBox.Views.Windows
         private void DragTabBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (ViewModel.CheckDoubleClick(500))
-                WindowState = WindowState.Maximized;
+                _ = WindowState == WindowState.Maximized ? WindowState = WindowState.Normal : WindowState = WindowState.Maximized;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

@@ -30,7 +30,7 @@ public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObje
 
     public async Task StartConsoleServer()
     {
-        TerminalServer = new XFEConsoleTerminalServer(ConsoleProfile.ConsolePort, ConsoleProfile.LocalOnly, ConsoleProfile.ConsolePassword);
+        TerminalServer = new XFEConsoleTerminalServer(ConsoleProfile.ConsolePort, ConsoleProfile.LocalHostOnly, ConsoleProfile.ConsolePassword);
         TerminalServer.ServerStarted += TerminalServer_ServerStarted;
         TerminalServer.Connected += TerminalServer_Connected;
         TerminalServer.Disconnected += TerminalServer_Disconnected;

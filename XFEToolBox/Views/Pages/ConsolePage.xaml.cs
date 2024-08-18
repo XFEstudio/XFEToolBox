@@ -8,7 +8,7 @@ namespace XFEToolBox.Views.Pages;
 /// </summary>
 public partial class ConsolePage : Page
 {
-    public static ConsolePage? Current { get; set; } = new ConsolePage();
+    public static ConsolePage? Current { get; set; } = new();
     public ConsolePageViewModel ViewModel { get; set; }
     public ConsolePage()
     {

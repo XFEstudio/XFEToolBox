@@ -37,7 +37,7 @@
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="1.0.1" />
     <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.2.0" />
     <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
-    <PackageReference Include="XFEExtension.NetCore.XFEConsole" Version="1.0.0" />
+    <PackageReference Include="XFEExtension.NetCore.XFEConsole" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,7 +58,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\" />
     <Folder Include="Profiles\CurrentVersionProfiles\" />
     <Folder Include="Profiles\SynProfiles\" />
   </ItemGroup>

@@ -9,7 +9,7 @@ namespace XFEToolBox.Views.Pages;
 /// </summary>
 public partial class MainPage : Page
 {
-    public static MainPage? Current { get; set; } = new MainPage();
+    public static MainPage? Current { get; set; } = new();
     public MainPage()
     {
         InitializeComponent();
@@ -19,6 +19,5 @@ public partial class MainPage : Page
     private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
         //notifyText.Text = FileHelper.GetDirectorySize(new(@"C:\Users\XFEstudio\Downloads")).FileSize();
-        notifyText.Text = "持续开发中...";
     }
 }

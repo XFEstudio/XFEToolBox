@@ -13,11 +13,27 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="2*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Border CornerRadius="15" Background="White" Margin="10" BorderBrush="#5b5be7" BorderThickness="2">
-            <TextBlock x:Name="notifyText"/>
+        <TextBlock Margin="10,0" Text="最近使用" Foreground="{DynamicResource BackgroundColor}" FontSize="15" FontWeight="Bold"/>
+        <Border Grid.Row="1" Grid.ColumnSpan="2" CornerRadius="15" Background="White" Margin="10">
+            <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                <WrapPanel>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                    <Border Background="{DynamicResource MainColor}" CornerRadius="10" Width="50" Height="50" Margin="10"/>
+                </WrapPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Page>

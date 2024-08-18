@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using XFEExtension.NetCore.XFEConsole;
 
 namespace XFEToolBox;
 
@@ -10,6 +11,7 @@ public partial class App : Application
     public App()
     {
         this.InitializeComponent();
+        //XFEConsole.UseXFEConsole().Wait();
     }
     protected override void OnStartup(StartupEventArgs e)
     {

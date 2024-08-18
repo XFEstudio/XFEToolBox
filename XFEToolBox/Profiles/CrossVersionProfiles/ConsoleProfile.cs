@@ -19,7 +19,7 @@ public partial class ConsoleProfile
     /// 是否只在本机回路中开放
     /// </summary>
     [ProfileProperty]
-    private bool localOnly = true;
+    private bool localHostOnly = true;
     /// <summary>
     /// 最大行数
     /// </summary>

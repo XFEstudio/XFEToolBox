@@ -1,5 +1,6 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
+using XFEToolBox.Views.Windows;
 
 namespace XFEToolBox.Profiles.CrossVersionProfiles;
 
@@ -20,6 +21,16 @@ public partial class SystemProfile
     /// </summary>
     [ProfileProperty]
     private double mainWindowHeight = 450;
+    /// <summary>
+    /// 是否开机自启动
+    /// </summary>
+    [ProfileProperty]
+    private bool autoSelfLaunch = false;
+    /// <summary>
+    /// 是否是以最大化启动
+    /// </summary>
+    [ProfileProperty]
+    private bool startWithMaximize = false;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

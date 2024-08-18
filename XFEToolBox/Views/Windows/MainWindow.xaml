@@ -10,7 +10,7 @@
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
         Title="XFE工具箱" Height="460" Width="730" MinHeight="450" MinWidth="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
 
-    <Border CornerRadius="19" Background="#9898e7" Margin="5">
+    <Border CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="180"/>
@@ -20,7 +20,7 @@
                 <RowDefinition Height="25"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Border CornerRadius="20,0,0,20" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="White"/>
+            <Border CornerRadius="20,0,0,20" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource BackgroundColor}"/>
             <Border Grid.Column="1" Grid.Row="0" Background="Transparent">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -41,7 +41,7 @@
                 </TextBlock>
             </Border>
             <StackPanel Grid.Column="0" Grid.Row="1">
-                <ctr:NavigationButton x:Name="mainButton" Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="home">
+                <ctr:NavigationButton x:Name="mainButton" Command="{Binding NavigateToPageCommand}" CommandParameter="home">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -51,7 +51,7 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="首页"/>
                     </Grid>
                 </ctr:NavigationButton>
-                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
+                <ctr:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -61,7 +61,7 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具箱"/>
                     </Grid>
                 </ctr:NavigationButton>
-                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="console">
+                <ctr:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="console">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -71,7 +71,7 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="C#控制台"/>
                     </Grid>
                 </ctr:NavigationButton>
-                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="download">
+                <ctr:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="download">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -81,7 +81,7 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="下载专区"/>
                     </Grid>
                 </ctr:NavigationButton>
-                <ctr:NavigationButton Style="{StaticResource NavigationButton}" Command="{Binding NavigateToPageCommand}" CommandParameter="setting">
+                <ctr:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="setting">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="40"/>
@@ -93,7 +93,7 @@
                 </ctr:NavigationButton>
             </StackPanel>
             <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
-            <Image Grid.Column="1" Grid.Row="1" Source="/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+            <Image Grid.Column="1" Grid.Row="1" Source="/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"/>
             <Border x:Name="cornerBorder" Grid.Column="1" Grid.Row="1" Style="{StaticResource CornerBorderStyle}" MouseDown="CornerBorder_MouseDown">
             </Border>
         </Grid>

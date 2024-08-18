@@ -140,10 +140,10 @@ public partial class MainWindowViewModel : ObservableObject
                 CurrentPage = MainPage.Current;
                 break;
             case "tool":
-                CurrentPage = MainPage.Current;
+                CurrentPage = ToolBoxPage.Current;
                 break;
             case "download":
-                CurrentPage = MainPage.Current;
+                CurrentPage = DownloadPage.Current;
                 break;
             case "console":
                 CurrentPage = ConsolePage.Current;
