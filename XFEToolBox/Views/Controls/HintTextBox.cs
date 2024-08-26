@@ -11,7 +11,6 @@ public partial class HintTextBox : TextBox
 {
     public HintTextBox()
     {
-        InitializeComponent();
     }
     public string HintText
     {
@@ -68,4 +67,18 @@ public partial class HintTextBox : TextBox
         set { SetValue(HintTextOpacityProperty, value); }
     }
     public static readonly DependencyProperty HintTextOpacityProperty = DependencyProperty.Register("HintTextOpacity", typeof(double), typeof(HintTextBox), new PropertyMetadata(0.5d));
+
+    public VerticalAlignment HintTextVerticalAlignment
+    {
+        get { return (VerticalAlignment)GetValue(HintTextVerticalAlignmentProperty); }
+        set { SetValue(HintTextVerticalAlignmentProperty, value); }
+    }
+    public static readonly DependencyProperty HintTextVerticalAlignmentProperty = DependencyProperty.Register("HintTextVerticalAlignment", typeof(VerticalAlignment), typeof(HintTextBox), new PropertyMetadata(VerticalAlignment.Center));
+
+    public HorizontalAlignment HintTextHorizontalAlignment
+    {
+        get { return (HorizontalAlignment)GetValue(HintTextHorizontalAlignmentProperty); }
+        set { SetValue(HintTextHorizontalAlignmentProperty, value); }
+    }
+    public static readonly DependencyProperty HintTextHorizontalAlignmentProperty = DependencyProperty.Register("HintTextHorizontalAlignment", typeof(HorizontalAlignment), typeof(HintTextBox), new PropertyMetadata(HorizontalAlignment.Left));
 }

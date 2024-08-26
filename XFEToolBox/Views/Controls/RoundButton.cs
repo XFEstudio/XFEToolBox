@@ -6,6 +6,7 @@ namespace XFEToolBox.Views.Controls;
 
 public class RoundButton : Button
 {
+
     public CornerRadius RoundCornerRadius
     {
         get { return (CornerRadius)GetValue(RoundCornerRadiusProperty); }

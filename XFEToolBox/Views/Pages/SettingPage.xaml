@@ -75,7 +75,7 @@
                             <TextBlock VerticalAlignment="Center" Text="控制台" Style="{StaticResource TabUnderLineText}" Tag="控制台"/>
                             <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
                             <StackPanel Grid.Row="1">
-                                <ctr:HintTextBox/>
+                                <ctr:TextEditor Style="{StaticResource TextEditor}" Margin="0,10" Padding="5" HintText="3280"/>
                                 <ctr:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.LocalHostOnly">
                                     <TextBlock Text="只对本地回环开放（localhost）"/>
                                 </ctr:SwitchButton>

@@ -5,8 +5,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctr:RoundButton}">
-                    <Grid>
-                        <ContentControl/>
+                    <Grid x:Name="grid">
                         <Border x:Name="backBorder" CornerRadius="{TemplateBinding RoundCornerRadius}" Background="{TemplateBinding RoundButtonBackground}" Opacity="0"/>
                         <Border CornerRadius="{TemplateBinding RoundCornerRadius}" BorderBrush="{TemplateBinding RoundButtonBorderBrush}" BorderThickness="{TemplateBinding RoundButtonBorderThickness}">
                             <ContentPresenter Content="{TemplateBinding Content}"/>
@@ -35,7 +34,7 @@
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
-                        <EventTrigger RoutedEvent="MouseLeftButtonDown">
+                        <EventTrigger RoutedEvent="PreviewMouseLeftButtonDown">
                             <BeginStoryboard>
                                 <Storyboard>
                                     <DoubleAnimation Storyboard.TargetName="backBorder" Storyboard.TargetProperty="Opacity" To="0.3" Duration="0:0:0.3">
@@ -46,7 +45,7 @@
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
-                        <EventTrigger RoutedEvent="MouseLeftButtonUp">
+                        <EventTrigger RoutedEvent="PreviewMouseLeftButtonUp">
                             <BeginStoryboard>
                                 <Storyboard>
                                     <DoubleAnimation Storyboard.TargetName="backBorder" Storyboard.TargetProperty="Opacity" To="0.1" Duration="0:0:0.3">
@@ -339,6 +338,26 @@
                             </BeginStoryboard>
                         </EventTrigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="{x:Type ctr:HintTextBox}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ctr:HintTextBox}">
+                    
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="TextEditor" TargetType="{x:Type ctr:TextEditor}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ctr:TextEditor}">
+                    <Border Padding="{TemplateBinding Padding}" CornerRadius="{TemplateBinding EditorCornerRadius}" BorderBrush="{TemplateBinding EditorBorderBrush}" BorderThickness="{TemplateBinding EditorBorderThickness}">
+                        <ctr:HintTextBox BorderThickness="0" Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" HintBackground="{TemplateBinding HintBackground}" HintForeground="{TemplateBinding HintForeground}" HintText="{TemplateBinding HintText}" HintFontSize="{TemplateBinding HintFontSize}" HintFontFamily="{TemplateBinding HintFontFamily}" HintFontWeight="{TemplateBinding HintFontWeight}" HintTextHorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" HintTextVerticalAlignment="{TemplateBinding HintTextVerticalAlignment}" HintTextMargin="{TemplateBinding HintTextMargin}" HintTextOpacity="{TemplateBinding HintTextOpacity}"/>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
