@@ -4,20 +4,14 @@ using System.Windows.Media;
 
 namespace XFEToolBox.Views.Controls;
 
-/// <summary>
-/// HintTextBox.xaml 的交互逻辑
-/// </summary>
-public partial class HintTextBox : TextBox
+public class HintTextBox : TextBox
 {
-    public HintTextBox()
-    {
-    }
     public string HintText
     {
         get { return (string)GetValue(HintTextProperty); }
         set { SetValue(HintTextProperty, value); }
     }
-    public static readonly DependencyProperty HintTextProperty = DependencyProperty.Register("HintText", typeof(string), typeof(HintTextBox), new PropertyMetadata("请输入文本..."));
+    public static readonly DependencyProperty HintTextProperty = DependencyProperty.Register("HintText", typeof(string), typeof(HintTextBox), new PropertyMetadata("请输入文本"));
 
     public Brush HintForeground
     {

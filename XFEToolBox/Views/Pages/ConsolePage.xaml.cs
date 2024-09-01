@@ -12,10 +12,10 @@ public partial class ConsolePage : Page
     public ConsolePageViewModel ViewModel { get; set; }
     public ConsolePage()
     {
-        InitializeComponent();
         ViewModel = new ConsolePageViewModel(this);
         DataContext = ViewModel;
         Current = this;
+        InitializeComponent();
     }
 
     private void ScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) => ViewModel.ScrollChanged(sender, e);

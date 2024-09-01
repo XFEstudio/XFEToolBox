@@ -19,14 +19,14 @@ public class RoundButton : Button
         get { return (Brush)GetValue(RoundButtonBackgroundProperty); }
         set { SetValue(RoundButtonBackgroundProperty, value); }
     }
-    public static readonly DependencyProperty RoundButtonBackgroundProperty = DependencyProperty.Register("RoundButtonBackground", typeof(Brush), typeof(RoundButton), new PropertyMetadata(new SolidColorBrush(Colors.White)));
+    public static readonly DependencyProperty RoundButtonBackgroundProperty = DependencyProperty.Register("RoundButtonBackground", typeof(Brush), typeof(RoundButton), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(152, 152, 231))));
 
     public Brush RoundButtonBorderBrush
     {
         get { return (Brush)GetValue(RoundButtonBorderBrushProperty); }
         set { SetValue(RoundButtonBorderBrushProperty, value); }
     }
-    public static readonly DependencyProperty RoundButtonBorderBrushProperty = DependencyProperty.Register("RoundButtonBorderBrush", typeof(Brush), typeof(RoundButton), new PropertyMetadata(new SolidColorBrush(Colors.White)));
+    public static readonly DependencyProperty RoundButtonBorderBrushProperty = DependencyProperty.Register("RoundButtonBorderBrush", typeof(Brush), typeof(RoundButton), new PropertyMetadata(new SolidColorBrush(Color.FromRgb(152, 152, 231))));
 
     public Thickness RoundButtonBorderThickness
     {

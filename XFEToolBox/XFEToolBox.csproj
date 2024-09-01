@@ -20,6 +20,7 @@
     <None Remove="Resources\Image\corner.png" />
     <None Remove="Resources\Image\download.png" />
     <None Remove="Resources\Image\grid.png" />
+    <None Remove="Resources\Image\invisible.png" />
     <None Remove="Resources\Image\min.png" />
     <None Remove="Resources\Image\restart.png" />
     <None Remove="Resources\Image\setting.png" />
@@ -27,6 +28,7 @@
     <None Remove="Resources\Image\stop.png" />
     <None Remove="Resources\Image\tabline.png" />
     <None Remove="Resources\Image\toolbox.png" />
+    <None Remove="Resources\Image\visible.png" />
     <None Remove="Resources\Image\wrench.png" />
   </ItemGroup>
 
@@ -49,6 +51,7 @@
     <Resource Include="Resources\Image\corner.png" />
     <Resource Include="Resources\Image\download.png" />
     <Resource Include="Resources\Image\grid.png" />
+    <Resource Include="Resources\Image\invisible.png" />
     <Resource Include="Resources\Image\min.png" />
     <Resource Include="Resources\Image\restart.png" />
     <Resource Include="Resources\Image\setting.png" />
@@ -69,6 +72,7 @@
   <ItemGroup>
     <Resource Include="Resources\Icon\XFEToolBoxSplashScreen.png" />
     <Resource Include="Resources\Image\toolbox.png" />
+    <Resource Include="Resources\Image\visible.png" />
     <Resource Include="Resources\Image\wrench.png" />
   </ItemGroup>
 

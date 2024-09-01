@@ -10,7 +10,7 @@ public partial class DownloadPage : Page
     public static DownloadPage? Current { get; set; } = new();
     public DownloadPage()
     {
-        InitializeComponent();
         Current = this;
+        InitializeComponent();
     }
 }

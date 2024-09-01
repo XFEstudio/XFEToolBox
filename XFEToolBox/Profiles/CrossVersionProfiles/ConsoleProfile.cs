@@ -24,6 +24,6 @@ public partial class ConsoleProfile
     /// 最大行数
     /// </summary>
     [ProfileProperty]
-    private int maxLine = 9999;
+    private int maxLine = 8000;
     public ConsoleProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(ConsoleProfile)}.xprofile";
 }

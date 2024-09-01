@@ -28,22 +28,26 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <ctr:TabUnderLineButton x:Name="generalTabUnderLineButton" Margin="0,0,10,0">
+                        <StackPanel x:Name="tabUnderLinePanel" Orientation="Horizontal">
+                            <ctr:TabUnderLineButton x:Name="generalTabUnderLineButton" Margin="0,0,10,0" Tag="general" Command="{Binding TabClickedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}">
                                 <TextBlock Text="常规" Style="{StaticResource TabUnderLineText}"/>
                             </ctr:TabUnderLineButton>
-                            <ctr:TabUnderLineButton>
+                            <ctr:TabUnderLineButton Tag="console" Command="{Binding TabClickedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}">
                                 <TextBlock Text="控制台" Style="{StaticResource TabUnderLineText}"/>
                             </ctr:TabUnderLineButton>
-                            <ctr:TabUnderLineButton>
+                            <ctr:TabUnderLineButton Tag="download" Command="{Binding TabClickedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}">
+                                <TextBlock Text="下载" Style="{StaticResource TabUnderLineText}"/>
+                            </ctr:TabUnderLineButton>
+                            <ctr:TabUnderLineButton Tag="performance" Command="{Binding TabClickedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}">
                                 <TextBlock Text="性能" Style="{StaticResource TabUnderLineText}"/>
                             </ctr:TabUnderLineButton>
                         </StackPanel>
                     </ScrollViewer>
-                    <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
+                    <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1">
+                    </Border>
                 </Grid>
             </Border>
-            <ScrollViewer Grid.Row="1" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer x:Name="scrollViewer" Grid.Row="1" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" ScrollChanged="ScrollViewer_ScrollChanged">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -56,8 +60,8 @@
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="常规" Style="{StaticResource TabUnderLineText}" Tag="常规"/>
-                            <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
+                            <TextBlock x:Name="generalSettingBlock" VerticalAlignment="Center" Text="常规" Style="{StaticResource TabUnderLineText}"/>
+                            <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1" Tag="常规"/>
                             <StackPanel Grid.Row="1">
                                 <ctr:SwitchButton x:Name="autoSelfLaunchSwitch" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.SystemProfile.AutoSelfLaunch">
                                     <TextBlock Text="开机自启动"/>
@@ -72,13 +76,34 @@
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="控制台" Style="{StaticResource TabUnderLineText}" Tag="控制台"/>
+                            <TextBlock x:Name="consoleSettingBlock" VerticalAlignment="Center" Text="控制台" Style="{StaticResource TabUnderLineText}"/>
                             <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
                             <StackPanel Grid.Row="1">
-                                <ctr:TextEditor Style="{StaticResource TextEditor}" Margin="0,10" Padding="5" HintText="3280"/>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Margin="0,10" Text="控制台端口：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <ctr:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="3280" HintTextHorizontalAlignment="Center" Width="80" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort" VerticalAlignment="Center"/>
+                                    <TextBlock Margin="0,10" Grid.Row="1" Text="连接密码：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <ctr:PasswordHintTextBox Grid.Row="1" Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="0" HintText="默认为空" Width="120" HorizontalAlignment="Left" PasswordChange="PasswordHintTextBox_PasswordChange" Tag="XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePassword" VerticalAlignment="Center"/>
+                                </Grid>
                                 <ctr:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.LocalHostOnly">
                                     <TextBlock Text="只对本地回环开放（localhost）"/>
                                 </ctr:SwitchButton>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Margin="0,10" Text="控制台最大显示行数 (-1为不设上限)：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <ctr:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="8000" HintTextHorizontalAlignment="Center" Width="80" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine" VerticalAlignment="Center"/>
+                                </Grid>
                             </StackPanel>
                         </Grid>
                         <Grid Margin="0,20">
@@ -86,8 +111,43 @@
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock VerticalAlignment="Center" Text="性能" Style="{StaticResource TabUnderLineText}" Tag="性能"/>
-                            <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
+                            <TextBlock x:Name="downloadSettingBlock" VerticalAlignment="Center" Text="下载" Style="{StaticResource TabUnderLineText}"/>
+                            <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1" Tag="下载"/>
+                            <StackPanel Grid.Row="1">
+                                <ctr:SwitchButton x:Name="testSwitcher" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.UseNormalDownloader">
+                                    <TextBlock Text="使用普通下载模式（不加速）"/>
+                                </ctr:SwitchButton>
+                                <Grid Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" MaxWidth="300"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding DownloadDirectory}" VerticalAlignment="Center" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"/>
+                                    <ctr:RoundButton Grid.Column="1" Command="{Binding OpenDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
+                                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="打开目录" Margin="4" Foreground="{DynamicResource MainColor}"/>
+                                    </ctr:RoundButton>
+                                    <ctr:RoundButton Grid.Column="2" Command="{Binding ChoiceDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
+                                        <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="更改目录" Margin="4" Foreground="{DynamicResource MainColor}"/>
+                                    </ctr:RoundButton>
+                                </Grid>
+                                <Grid Margin="0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="加速下载线程数量：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <ctr:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="推荐为9个" HintTextHorizontalAlignment="Center" Width="80" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="25"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock x:Name="performanceSettingBlock" VerticalAlignment="Center" Text="性能" Style="{StaticResource TabUnderLineText}"/>
+                            <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1" Tag="性能"/>
                             <StackPanel Grid.Row="1">
                                 <TextBlock Text="储存使用" FontWeight="Bold" Margin="0,10,0,5"/>
                                 <Border BorderBrush="{DynamicResource MainColor}" BorderThickness="1" Padding="10" CornerRadius="10" HorizontalAlignment="Left">
@@ -95,7 +155,7 @@
                                         <TextBlock Text="缓存配置文件：" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding CacheProfileSize}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                            <ctr:RoundButton RoundButtonBackground="{DynamicResource MainColor}" RoundButtonBorderBrush="{DynamicResource MainColor}"  Margin="10,0,0,0" Command="{Binding ClearCacheCommand}">
+                                            <ctr:RoundButton Margin="10,0,0,0" Command="{Binding ClearCacheCommand}">
                                                 <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="清理缓存" Margin="5,0" Foreground="{DynamicResource MainColor}"/>
                                             </ctr:RoundButton>
                                         </StackPanel>

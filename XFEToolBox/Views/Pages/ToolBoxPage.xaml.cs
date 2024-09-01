@@ -10,7 +10,7 @@ public partial class ToolBoxPage : Page
     public static ToolBoxPage? Current { get; set; } = new();
     public ToolBoxPage()
     {
-        InitializeComponent();
         Current = this;
+        InitializeComponent();
     }
 }

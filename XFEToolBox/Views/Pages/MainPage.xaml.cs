@@ -12,8 +12,8 @@ public partial class MainPage : Page
     public static MainPage? Current { get; set; } = new();
     public MainPage()
     {
-        InitializeComponent();
         Current = this;
+        InitializeComponent();
     }
 
     private void Page_Loaded(object sender, System.Windows.RoutedEventArgs e)

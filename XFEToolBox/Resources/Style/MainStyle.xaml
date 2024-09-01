@@ -195,8 +195,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid x:Name="grid">
-                            <Border x:Name="border" CornerRadius="5" Background="White" Opacity="0.1">
-                            </Border>
+                            <Border x:Name="border" CornerRadius="5" Background="White" Opacity="0.1"/>
                             <ContentPresenter Margin="5,3"/>
                         </Grid>
                         <ControlTemplate.Triggers>

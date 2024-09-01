@@ -2,10 +2,11 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls">
     <Style TargetType="{x:Type ctr:RoundButton}">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctr:RoundButton}">
-                    <Grid x:Name="grid">
+                    <Grid>
                         <Border x:Name="backBorder" CornerRadius="{TemplateBinding RoundCornerRadius}" Background="{TemplateBinding RoundButtonBackground}" Opacity="0"/>
                         <Border CornerRadius="{TemplateBinding RoundCornerRadius}" BorderBrush="{TemplateBinding RoundButtonBorderBrush}" BorderThickness="{TemplateBinding RoundButtonBorderThickness}">
                             <ContentPresenter Content="{TemplateBinding Content}"/>
@@ -346,17 +347,33 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctr:HintTextBox}">
-                    
+                    <TextBox x:Name="mainTextBox" BorderThickness="{TemplateBinding BorderThickness}" Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Foreground="{TemplateBinding Foreground}" CaretBrush="{TemplateBinding CaretBrush}" SelectionBrush="{TemplateBinding SelectionBrush}" SelectionTextBrush="{TemplateBinding SelectionTextBrush}" IsReadOnly="{TemplateBinding IsReadOnly}" IsReadOnlyCaretVisible="{TemplateBinding IsReadOnlyCaretVisible}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}" AcceptsReturn="{TemplateBinding AcceptsReturn}" AcceptsTab="{TemplateBinding AcceptsTab}" IsEnabled="{TemplateBinding IsEnabled}" IsInactiveSelectionHighlightEnabled="{TemplateBinding IsInactiveSelectionHighlightEnabled}" UndoLimit="{TemplateBinding UndoLimit}" IsUndoEnabled="{TemplateBinding IsUndoEnabled}" TextWrapping="{TemplateBinding TextWrapping}" TextAlignment="{TemplateBinding TextAlignment}" TextDecorations="{TemplateBinding TextDecorations}">
+                        <TextBox.Background>
+                            <VisualBrush TileMode="None" Stretch="None" AlignmentX="Left">
+                                <VisualBrush.Visual>
+                                    <TextBlock x:Name="hintTextBlock" Background="{TemplateBinding HintBackground}" Foreground="{TemplateBinding HintForeground}" Text="{TemplateBinding HintText}" FontSize="{TemplateBinding HintFontSize}" FontFamily="{TemplateBinding HintFontFamily}" FontWeight="{TemplateBinding HintFontWeight}" HorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" VerticalAlignment="{TemplateBinding HintTextVerticalAlignment}" Margin="{TemplateBinding HintTextMargin}" Opacity="{TemplateBinding HintTextOpacity}" Visibility="Hidden"/>
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </TextBox.Background>
+                    </TextBox>
+                    <ControlTemplate.Triggers>
+                        <Trigger SourceName="mainTextBox" Property="Text" Value="">
+                            <Setter TargetName="hintTextBlock" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger SourceName="mainTextBox" Property="Text" Value="{x:Null}">
+                            <Setter TargetName="hintTextBlock" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="TextEditor" TargetType="{x:Type ctr:TextEditor}">
+    <Style TargetType="{x:Type ctr:TextEditor}">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctr:TextEditor}">
-                    <Border Padding="{TemplateBinding Padding}" CornerRadius="{TemplateBinding EditorCornerRadius}" BorderBrush="{TemplateBinding EditorBorderBrush}" BorderThickness="{TemplateBinding EditorBorderThickness}">
-                        <ctr:HintTextBox BorderThickness="0" Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" HintBackground="{TemplateBinding HintBackground}" HintForeground="{TemplateBinding HintForeground}" HintText="{TemplateBinding HintText}" HintFontSize="{TemplateBinding HintFontSize}" HintFontFamily="{TemplateBinding HintFontFamily}" HintFontWeight="{TemplateBinding HintFontWeight}" HintTextHorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" HintTextVerticalAlignment="{TemplateBinding HintTextVerticalAlignment}" HintTextMargin="{TemplateBinding HintTextMargin}" HintTextOpacity="{TemplateBinding HintTextOpacity}"/>
+                    <Border Padding="{TemplateBinding Padding}" CornerRadius="{TemplateBinding EditorCornerRadius}" BorderBrush="{TemplateBinding EditorBorderBrush}" BorderThickness="{TemplateBinding EditorBorderThickness}" Background="{TemplateBinding Background}">
+                        <ctr:HintTextBox BorderThickness="0" Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" HintBackground="{TemplateBinding HintBackground}" Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HintForeground="{TemplateBinding HintForeground}" HintText="{TemplateBinding HintText}" HintFontSize="{TemplateBinding HintFontSize}" HintFontFamily="{TemplateBinding HintFontFamily}" HintFontWeight="{TemplateBinding HintFontWeight}" HintTextHorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" HintTextVerticalAlignment="{TemplateBinding HintTextVerticalAlignment}" HintTextMargin="{TemplateBinding HintTextMargin}" HintTextOpacity="{TemplateBinding HintTextOpacity}" CaretBrush="{TemplateBinding CaretBrush}" SelectionBrush="{TemplateBinding SelectionBrush}" SelectionTextBrush="{TemplateBinding SelectionTextBrush}" IsReadOnly="{TemplateBinding IsReadOnly}" IsReadOnlyCaretVisible="{TemplateBinding IsReadOnlyCaretVisible}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}" AcceptsReturn="{TemplateBinding AcceptsReturn}" AcceptsTab="{TemplateBinding AcceptsTab}" IsEnabled="{TemplateBinding IsEnabled}" IsInactiveSelectionHighlightEnabled="{TemplateBinding IsInactiveSelectionHighlightEnabled}" UndoLimit="{TemplateBinding UndoLimit}" IsUndoEnabled="{TemplateBinding IsUndoEnabled}" TextWrapping="{TemplateBinding TextWrapping}" TextAlignment="{TemplateBinding TextAlignment}" TextDecorations="{TemplateBinding TextDecorations}"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
