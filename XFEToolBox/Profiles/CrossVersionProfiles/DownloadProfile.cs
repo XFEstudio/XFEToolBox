@@ -11,6 +11,16 @@ public partial class DownloadProfile
     [ProfileProperty]
     private bool useNormalDownloader = false;
     /// <summary>
+    /// 下载完成后是否自动运行下载文件
+    /// </summary>
+    [ProfileProperty]
+    private bool autoRunWhenComplete = true;
+    /// <summary>
+    /// 下载完成后是否打开目录
+    /// </summary>
+    [ProfileProperty]
+    private bool openFolderWhenComplete = true;
+    /// <summary>
     /// 下载的目标文件夹
     /// </summary>
     [ProfileProperty]

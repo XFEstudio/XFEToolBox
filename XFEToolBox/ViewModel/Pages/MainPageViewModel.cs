@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace XFEToolBox.ViewModel;
+namespace XFEToolBox.ViewModel.Pages;
 
 public partial class MainPageViewModel : ObservableObject
 {

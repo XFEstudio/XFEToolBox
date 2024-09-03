@@ -1,5 +1,5 @@
 ﻿using System.Windows.Controls;
-using XFEToolBox.ViewModel;
+using XFEToolBox.ViewModel.Pages;
 
 namespace XFEToolBox.Views.Pages;
 
@@ -12,9 +12,8 @@ public partial class ConsolePage : Page
     public ConsolePageViewModel ViewModel { get; set; }
     public ConsolePage()
     {
-        ViewModel = new ConsolePageViewModel(this);
-        DataContext = ViewModel;
         Current = this;
+        DataContext = ViewModel = new(this);
         InitializeComponent();
     }
 

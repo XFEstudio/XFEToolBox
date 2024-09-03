@@ -1,9 +1,7 @@
-﻿using System.Diagnostics;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using XFEExtension.NetCore.StringExtension;
 using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.ViewModel;
+using XFEToolBox.ViewModel.Pages;
 using XFEToolBox.Views.Controls;
 
 namespace XFEToolBox.Views.Pages;
@@ -17,8 +15,7 @@ public partial class SettingPage : Page
     public SettingPageViewModel ViewModel { get; set; }
     public SettingPage()
     {
-        ViewModel = new(this);
-        DataContext = ViewModel;
+        DataContext = ViewModel = new(this);
         Current = this;
         InitializeComponent();
     }

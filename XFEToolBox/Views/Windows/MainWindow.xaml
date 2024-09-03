@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel"
+        xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel.Windows"
         xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls"
         xmlns:local="clr-namespace:XFEToolBox.Views.Windows"
         mc:Ignorable="d"
@@ -24,15 +24,19 @@
             <Border Grid.Column="1" Grid.Row="0" Background="Transparent">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="45"/>
                         <ColumnDefinition Width="45"/>
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove" MouseDown="DragTabBorder_MouseDown">
+                    <Border x:Name="backTabBorder" CornerRadius="10" Style="{StaticResource TabBorderStyle}" Visibility="Collapsed" MouseLeftButtonUp="BackTabBorder_MouseLeftButtonUp">
+                        <Image HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4" Source="/Resources/Image/back.png"/>
+                    </Border>
+                    <Border Grid.Column="1" x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove" MouseDown="DragTabBorder_MouseDown">
                         <Image x:Name="dragTabImage" Source="/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
                     </Border>
-                    <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="1" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
-                    <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="2" Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp"/>
+                    <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="2" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
+                    <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="3" Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp"/>
                 </Grid>
             </Border>
             <Border Grid.Column="0" Grid.Row="0" Background="Transparent">

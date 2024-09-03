@@ -2,7 +2,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel"
+      xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel.Pages"
       xmlns:model="clr-namespace:XFEToolBox.Model"
       xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
@@ -114,7 +114,7 @@
                             <TextBlock x:Name="downloadSettingBlock" VerticalAlignment="Center" Text="下载" Style="{StaticResource TabUnderLineText}"/>
                             <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1" Tag="下载"/>
                             <StackPanel Grid.Row="1">
-                                <ctr:SwitchButton x:Name="testSwitcher" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.UseNormalDownloader">
+                                <ctr:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.UseNormalDownloader">
                                     <TextBlock Text="使用普通下载模式（不加速）"/>
                                 </ctr:SwitchButton>
                                 <Grid Margin="0,10">
@@ -137,8 +137,14 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="加速下载线程数量：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <ctr:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="推荐为9个" HintTextHorizontalAlignment="Center" Width="80" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
+                                    <ctr:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="9" HintTextHorizontalAlignment="Center" MinWidth="30" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
                                 </Grid>
+                                <ctr:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.AutoRunWhenComplete">
+                                    <TextBlock Text="下载完成后自动运行下载的文件（仅限exe）"/>
+                                </ctr:SwitchButton>
+                                <ctr:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.OpenFolderWhenComplete">
+                                    <TextBlock Text="下载完成后打开目录"/>
+                                </ctr:SwitchButton>
                             </StackPanel>
                         </Grid>
                         <Grid Margin="0,20">

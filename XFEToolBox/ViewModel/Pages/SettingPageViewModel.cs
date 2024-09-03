@@ -13,7 +13,7 @@ using XFEToolBox.Utilities;
 using XFEToolBox.Views.Controls;
 using XFEToolBox.Views.Pages;
 
-namespace XFEToolBox.ViewModel;
+namespace XFEToolBox.ViewModel.Pages;
 
 public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObject
 {
@@ -216,7 +216,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     void TabClicked(TabUnderLineButton value)
     {
         if (value.Tag is string tabTag && ViewPage.FindName($"{tabTag}SettingBlock") is TextBlock textBlock)
-            ViewPage.scrollViewer.ScrollToVerticalOffset(ViewPage.scrollViewer.VerticalOffset + textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y);
+            ViewPage.scrollViewer.ScrollToVerticalOffset(ViewPage.scrollViewer.VerticalOffset + textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y - 20);
     }
     #endregion
 }

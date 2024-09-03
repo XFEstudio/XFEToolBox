@@ -1,27 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using System.Windows;
+using XFEToolBox.ViewModel.Windows;
 
-namespace XFEToolBox.Views.Windows
+namespace XFEToolBox.Views.Windows;
+
+/// <summary>
+/// PopupWindow.xaml 的交互逻辑
+/// </summary>
+public partial class PopupWindow : Window
 {
-    /// <summary>
-    /// PopupWindow.xaml 的交互逻辑
-    /// </summary>
-    public partial class PopupWindow : Window
+    public static PopupWindow? Current { get; set; }
+    public PopupWindowViewModel ViewModel { get; set; }
+    public MessageBoxResult? Result { get; set; }
+    public PopupWindow()
     {
-        public PopupWindow()
-        {
-            InitializeComponent();
-        }
+        Current = this;
+        DataContext = ViewModel = new(this);
+        InitializeComponent();
+    }
+
+    private void CloseWindowImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        Result = MessageBoxResult.None;
+        DialogResult = false;
+        Close();
+    }
+
+    private void DragTabBorder_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+            DragMove();
     }
 }

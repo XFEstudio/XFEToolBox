@@ -7,13 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Resources\Icon\XFEToolBoxIcon.ico" />
     <None Remove="Resources\Icon\XFEToolBoxLogo.png" />
     <None Remove="Resources\Icon\XFEToolBoxSplashScreen.png" />
+    <None Remove="Resources\Image\back.png" />
     <None Remove="Resources\Image\clean.png" />
     <None Remove="Resources\Image\close.png" />
     <None Remove="Resources\Image\console.png" />
@@ -45,6 +46,7 @@
   <ItemGroup>
     <Resource Include="Resources\Icon\XFEToolBoxIcon.ico" />
     <Resource Include="Resources\Icon\XFEToolBoxLogo.png" />
+    <Resource Include="Resources\Image\back.png" />
     <Resource Include="Resources\Image\clean.png" />
     <Resource Include="Resources\Image\close.png" />
     <Resource Include="Resources\Image\console.png" />

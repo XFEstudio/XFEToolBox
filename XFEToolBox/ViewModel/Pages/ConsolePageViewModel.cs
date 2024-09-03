@@ -10,7 +10,7 @@ using XFEToolBox.Profiles.CrossVersionProfiles;
 using XFEToolBox.Utilities;
 using XFEToolBox.Views.Pages;
 
-namespace XFEToolBox.ViewModel;
+namespace XFEToolBox.ViewModel.Pages;
 
 public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObject
 {

@@ -8,7 +8,7 @@ using XFEToolBox.Profiles.CrossVersionProfiles;
 using XFEToolBox.Views.Pages;
 using XFEToolBox.Views.Windows;
 
-namespace XFEToolBox.ViewModel;
+namespace XFEToolBox.ViewModel.Windows;
 
 public partial class MainWindowViewModel : ObservableObject
 {

@@ -2,7 +2,8 @@
 using System.Windows.Media.Animation;
 using XFEExtension.NetCore.InputSimulator;
 using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.ViewModel;
+using XFEToolBox.Utilities;
+using XFEToolBox.ViewModel.Windows;
 
 namespace XFEToolBox.Views.Windows
 {
@@ -72,5 +73,7 @@ namespace XFEToolBox.Views.Windows
         }
 
         private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
+
+        private void BackTabBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => NavigationCenter.GoBack();
     }
 }
