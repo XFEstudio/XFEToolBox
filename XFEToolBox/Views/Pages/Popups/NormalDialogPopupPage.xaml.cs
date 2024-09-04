@@ -10,10 +10,9 @@ namespace XFEToolBox.Views.Pages.Popups;
 public partial class NormalDialogPopupPage : Page
 {
     public NormalDialogPopupPageViewModel ViewModel { get; set; }
-    public PopupWindow PopupWindow { get; set; }
-    public NormalDialogPopupPage(PopupWindow popupWindow)
+    public PopupWindow? PopupWindow { get; set; }
+    public NormalDialogPopupPage()
     {
-        PopupWindow = popupWindow;
         DataContext = ViewModel = new(this);
         InitializeComponent();
     }

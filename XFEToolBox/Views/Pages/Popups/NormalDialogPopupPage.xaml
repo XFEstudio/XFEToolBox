@@ -13,18 +13,26 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="{Binding ConfirmGridLength}"/>
+            <ColumnDefinition Width="{Binding YesGridLength}"/>
+            <ColumnDefinition Width="{Binding NoGridLength}"/>
+            <ColumnDefinition Width="{Binding CancelGridLength}"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Frame Grid.ColumnSpan="2" Content="{Binding Content}" NavigationUIVisibility="Hidden"/>
+        <Frame Grid.ColumnSpan="4" Content="{Binding Content}" NavigationUIVisibility="Hidden"/>
         <ctr:RoundButton Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding ConfirmCommand}">
             <TextBlock Text="{Binding ConfirmText}" Foreground="#9898e7" Margin="16,8"/>
         </ctr:RoundButton>
-        <ctr:RoundButton Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding CancelCommand}">
+        <ctr:RoundButton Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding YesCommand}">
+            <TextBlock Text="{Binding YesText}" Foreground="#9898e7" Margin="16,8"/>
+        </ctr:RoundButton>
+        <ctr:RoundButton Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding NoCommand}">
+            <TextBlock Text="{Binding NoText}" Foreground="#9898e7" Margin="16,8"/>
+        </ctr:RoundButton>
+        <ctr:RoundButton Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding CancelCommand}">
             <TextBlock Text="{Binding CancelText}" Foreground="#9898e7" Margin="16,8"/>
         </ctr:RoundButton>
     </Grid>

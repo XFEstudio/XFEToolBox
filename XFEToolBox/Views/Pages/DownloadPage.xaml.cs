@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Windows.Controls;
-using XFEToolBox.Utilities;
+﻿using System.Windows.Controls;
 using XFEToolBox.ViewModel.Pages;
 
 namespace XFEToolBox.Views.Pages;
@@ -18,10 +16,5 @@ public partial class DownloadPage : Page
         DataContext = ViewModel = new(this);
         InitializeComponent();
         //Steam链接：https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe
-    }
-
-    private void Button_Click(object sender, System.Windows.RoutedEventArgs e)
-    {
-        Debug.WriteLine(PopupHelper.ShowNormalDialog("测试文本"));
     }
 }

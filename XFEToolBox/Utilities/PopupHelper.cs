@@ -9,42 +9,74 @@ namespace XFEToolBox.Utilities;
 
 public static class PopupHelper
 {
-    public static NormalDialogPopupPage CreateNormalDialogPage(object content, PopupWindow popupWindow)
+    private static NormalDialogPopupPage CreateNormalDialogPage(object content)
     {
-        var dialogPage = new NormalDialogPopupPage(popupWindow);
+        var dialogPage = new NormalDialogPopupPage();
         dialogPage.ViewModel.Content = content;
         return dialogPage;
     }
 
-    public static MessageBoxResult? ShowNormalDialog(string text, Color textColor)
+    private static ScrollViewer CreateTextContent(string text, Color textColor) => new ScrollViewer()
     {
-        var popupWindow = new PopupWindow();
-        var dialogPage = CreateNormalDialogPage(new ScrollViewer()
+        Content = new TextBlock
         {
-            Content = new TextBlock
+            Text = text,
+            Foreground = new SolidColorBrush(textColor),
+            Margin = new Thickness(20, 20, 20, 0)
+        },
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        Resources = new ResourceDictionary
+        {
             {
-                Text = text,
-                Foreground = new SolidColorBrush(textColor),
-                Margin = new Thickness(20, 20, 20, 0)
-            },
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Resources = new ResourceDictionary
-            {
+                "scroll",
+                new Style
                 {
-                    "scroll",
-                    new Style
-                    {
-                        TargetType = typeof(ScrollBar),
-                        BasedOn = (Style)Application.Current.FindResource("ConsoleScrollBar")
-                    }
+                    TargetType = typeof(ScrollBar),
+                    BasedOn = (Style)Application.Current.FindResource("ConsoleScrollBar")
                 }
             }
-        }, popupWindow);
-        popupWindow.ViewModel.Content = dialogPage;
+        }
+    };
+
+    public static MessageBoxResult? ShowConfirmDialog(object content, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")
+    {
+        var dialog = CreateNormalDialogPage(content);
+        dialog.ViewModel.ConfirmText = confirmText;
+        dialog.ViewModel.CancelText = cancelText;
+        dialog.ViewModel.ConfirmGridLength = new GridLength(1, GridUnitType.Star);
+        if (showCancelButton)
+            dialog.ViewModel.CancelGridLength = new GridLength(1, GridUnitType.Star);
+        return ShowDialog(dialog);
+    }
+
+    public static MessageBoxResult? ShowConfirmDialog(string text, Color textColor, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") => ShowConfirmDialog(CreateTextContent(text, textColor), showCancelButton, confirmText, cancelText);
+
+    public static MessageBoxResult? ShowConfirmDialog(string text, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") => ShowConfirmDialog(text, Colors.Black, showCancelButton, confirmText, cancelText);
+
+    public static MessageBoxResult? ShowYesOrNoDialog(object content, bool showCancelButton = false, string yesText = "是", string noText = "否")
+    {
+        var dialog = CreateNormalDialogPage(content);
+        dialog.ViewModel.YesText = yesText;
+        dialog.ViewModel.NoText = noText;
+        dialog.ViewModel.YesGridLength = new GridLength(1, GridUnitType.Star);
+        dialog.ViewModel.NoGridLength = new GridLength(1, GridUnitType.Star);
+        if (showCancelButton)
+            dialog.ViewModel.CancelGridLength = new GridLength(1, GridUnitType.Star);
+        return ShowDialog(dialog);
+    }
+
+    public static MessageBoxResult? ShowYesOrNoDialog(string text, Color textColor, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(CreateTextContent(text, textColor), showCancelButton, yesText, noText);
+
+    public static MessageBoxResult? ShowYesOrNoDialog(string text, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(text, Colors.Black, showCancelButton, yesText, noText);
+
+    public static MessageBoxResult? ShowDialog(object content)
+    {
+        var popupWindow = new PopupWindow();
+        popupWindow.ViewModel.Content = content;
+        if (content is NormalDialogPopupPage normalDialogPopupPage)
+            normalDialogPopupPage.PopupWindow = popupWindow;
         popupWindow.ShowDialog();
         return popupWindow.Result;
     }
-
-    public static MessageBoxResult? ShowNormalDialog(string text) => ShowNormalDialog(text, Colors.Black);
 }
