@@ -188,7 +188,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     [RelayCommand]
     async Task ClearCache()
     {
-        Directory.Delete(AppPath.CacheProfile, true);
+        await TaskManager.Run(() => Directory.Delete(AppPath.CacheProfile, true),"正在清理缓存");
         await Task.Run(CalculateFileSize);
     }
 

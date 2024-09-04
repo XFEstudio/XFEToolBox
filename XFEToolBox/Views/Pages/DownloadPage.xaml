@@ -9,9 +9,5 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="DownloadPage" d:DataContext="{d:DesignInstance Type=viewmodel:DownloadPageViewModel}">
 
-    <Grid>
-        <Button Click="Button_Click" VerticalAlignment="Top" HorizontalAlignment="Left">
-            <TextBlock Text="测试按钮"/>
-        </Button>
-    </Grid>
+    
 </Page>

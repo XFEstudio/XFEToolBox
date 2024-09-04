@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using XFEExtension.NetCore.InputSimulator;
 using XFEToolBox.Profiles.CrossVersionProfiles;
+using XFEToolBox.Utilities;
 using XFEToolBox.Views.Pages;
 using XFEToolBox.Views.Windows;
 
@@ -24,35 +25,29 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(MainWindow viewPage)
     {
         ViewPage = viewPage;
+        ViewPage.Closing += ViewPage_Closing;
     }
+
+    private void ViewPage_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (TaskManager.TaskDictionary.Count > 0)
+        {
+            e.Cancel = true;
+            if (PopupHelper.ShowConfirmDialog($"当前还有以下未完成的任务：\n\n{string.Join(",\n", TaskManager.TaskDictionary.Select(d => $"ID：{d.Value.Task.Id}\t 名称：{d.Value.Name}\t 状态：{d.Value.Task.Status}"))}\n\n是否仍要关闭？", true) == MessageBoxResult.OK)
+                AppCenter.ExitApp(true);
+        }
+    }
+
     /// <summary>
     /// 最小化窗体
     /// </summary>
     public void Minimize() => ViewPage!.WindowState = WindowState.Minimized;
     /// <summary>
-    /// 关闭窗口退出应用
-    /// </summary>
-    /// <param name="forceExit">强制退出</param>
-    /// <returns>是否成功退出</returns>
-    public static bool ExitApp(bool forceExit)
-    {
-        if (forceExit || SystemProfile.CanClosed)
-        {
-            Application.Current.Shutdown();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    /// <summary>
     /// 关闭窗体
     /// </summary>
     public void CloseWindow()
     {
-        ExitApp(true);
-        //TODO:1 待完善的退出应用逻辑，强制退出等
+        AppCenter.ExitApp(false);
     }
     /// <summary>
     /// 获取窗体DPI缩放

@@ -16,20 +16,21 @@ public static class PopupHelper
         return dialogPage;
     }
 
-    private static ScrollViewer CreateTextContent(string text, Color textColor) => new ScrollViewer()
+    private static ScrollViewer CreateTextContent(string text, Color textColor) => new()
     {
         Content = new TextBlock
         {
             Text = text,
             Foreground = new SolidColorBrush(textColor),
-            Margin = new Thickness(20, 20, 20, 0)
+            Margin = new Thickness(20, 20, 20, 0),
+            TextWrapping = TextWrapping.WrapWithOverflow
         },
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         Resources = new ResourceDictionary
         {
             {
-                "scroll",
+                typeof(ScrollBar),
                 new Style
                 {
                     TargetType = typeof(ScrollBar),

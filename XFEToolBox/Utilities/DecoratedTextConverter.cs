@@ -282,5 +282,5 @@ public partial class DecoratedTextConverter
     /// <param name="decoratedText"></param>
     /// <param name="defaultColor"></param>
     /// <returns></returns>
-    public static async Task<List<DecTextSpan>> ConvertTextAsync(string decoratedText, Color defaultColor) => await Task.Run(() => ConvertText(decoratedText, defaultColor));
+    public static async Task<List<DecTextSpan>> ConvertTextAsync(string decoratedText, Color defaultColor) => await TaskManager.Run(() => ConvertText(decoratedText, defaultColor));
 }

@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using XFEToolBox.ViewModel.Pages.Popups;
 using XFEToolBox.Views.Windows;
 
@@ -10,7 +11,14 @@ namespace XFEToolBox.Views.Pages.Popups;
 public partial class NormalDialogPopupPage : Page
 {
     public NormalDialogPopupPageViewModel ViewModel { get; set; }
-    public PopupWindow? PopupWindow { get; set; }
+    private PopupWindow? popupWindow;
+
+    public PopupWindow? PopupWindow
+    {
+        get { return popupWindow; }
+        set { popupWindow = value; }
+    }
+
     public NormalDialogPopupPage()
     {
         DataContext = ViewModel = new(this);

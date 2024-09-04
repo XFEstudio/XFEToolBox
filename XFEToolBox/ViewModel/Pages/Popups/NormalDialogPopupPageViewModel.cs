@@ -25,6 +25,7 @@ public partial class NormalDialogPopupPageViewModel(NormalDialogPopupPage viewPa
     GridLength cancelGridLength = new(0);
     [ObservableProperty]
     object? content;
+
     public NormalDialogPopupPage ViewPage { get; set; } = viewPage;
     [RelayCommand]
     void Confirm()
