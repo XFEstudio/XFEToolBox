@@ -11,7 +11,7 @@
     <Window.Effect>
         <DropShadowEffect BlurRadius="8" ShadowDepth="3" Direction="-45"/>
     </Window.Effect>
-    <Border CornerRadius="16" Background="{Binding PopupContentBackground}" BorderBrush="{Binding PopupBorder}" BorderThickness="{Binding PopupThickness}" Margin="10">
+    <Border CornerRadius="16" Background="{Binding PopupContentBackground}" BorderBrush="{Binding PopupBorder}" BorderThickness="{Binding PopupThickness}" Margin="10" ClipToBounds="True">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

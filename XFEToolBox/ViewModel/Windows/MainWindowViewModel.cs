@@ -45,7 +45,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>
     /// 关闭窗体
     /// </summary>
-    public void CloseWindow()
+    public static void CloseWindow()
     {
         AppCenter.ExitApp(false);
     }

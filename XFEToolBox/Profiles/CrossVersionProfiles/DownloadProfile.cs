@@ -21,6 +21,11 @@ public partial class DownloadProfile
     [ProfileProperty]
     private bool openFolderWhenComplete = true;
     /// <summary>
+    /// 用户是否同意了下载协议
+    /// </summary>
+    [ProfileProperty]
+    private bool downloadAgreementAccepted = false;
+    /// <summary>
     /// 下载的目标文件夹
     /// </summary>
     [ProfileProperty]

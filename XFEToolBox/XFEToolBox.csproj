@@ -15,6 +15,7 @@
     <None Remove="Resources\Icon\XFEToolBoxLogo.png" />
     <None Remove="Resources\Icon\XFEToolBoxSplashScreen.png" />
     <None Remove="Resources\Image\back.png" />
+    <None Remove="Resources\Image\check.png" />
     <None Remove="Resources\Image\clean.png" />
     <None Remove="Resources\Image\close.png" />
     <None Remove="Resources\Image\console.png" />
@@ -26,11 +27,14 @@
     <None Remove="Resources\Image\restart.png" />
     <None Remove="Resources\Image\setting.png" />
     <None Remove="Resources\Image\start.png" />
+    <None Remove="Resources\Image\steam_logo.png" />
     <None Remove="Resources\Image\stop.png" />
     <None Remove="Resources\Image\tabline.png" />
     <None Remove="Resources\Image\toolbox.png" />
     <None Remove="Resources\Image\visible.png" />
     <None Remove="Resources\Image\wrench.png" />
+    <None Remove="Resources\Image\wrenchtool.png" />
+    <None Remove="Resources\Image\wrench_tool.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -47,6 +51,7 @@
     <Resource Include="Resources\Icon\XFEToolBoxIcon.ico" />
     <Resource Include="Resources\Icon\XFEToolBoxLogo.png" />
     <Resource Include="Resources\Image\back.png" />
+    <Resource Include="Resources\Image\check.png" />
     <Resource Include="Resources\Image\clean.png" />
     <Resource Include="Resources\Image\close.png" />
     <Resource Include="Resources\Image\console.png" />
@@ -58,6 +63,7 @@
     <Resource Include="Resources\Image\restart.png" />
     <Resource Include="Resources\Image\setting.png" />
     <Resource Include="Resources\Image\start.png" />
+    <Resource Include="Resources\Image\steam_logo.png" />
     <Resource Include="Resources\Image\stop.png" />
     <Resource Include="Resources\Image\tabline.png" />
   </ItemGroup>
@@ -76,6 +82,7 @@
     <Resource Include="Resources\Image\toolbox.png" />
     <Resource Include="Resources\Image\visible.png" />
     <Resource Include="Resources\Image\wrench.png" />
+    <Resource Include="Resources\Image\wrench_tool.png" />
   </ItemGroup>
 
 </Project>

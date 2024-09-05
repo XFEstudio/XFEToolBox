@@ -47,7 +47,7 @@
                     </Border>
                 </Grid>
             </Border>
-            <ScrollViewer x:Name="scrollViewer" Grid.Row="1" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" ScrollChanged="ScrollViewer_ScrollChanged">
+            <ctr:SmoothScrollViewer x:Name="scrollViewer" Grid.Row="1" Grid.ColumnSpan="3" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" ScrollChanged="ScrollViewer_ScrollChanged">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -179,7 +179,7 @@
                         </Grid>
                     </StackPanel>
                 </Grid>
-            </ScrollViewer>
+            </ctr:SmoothScrollViewer>
         </Grid>
     </Border>
 </Page>

@@ -10,7 +10,7 @@
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
         Title="XFE工具箱" Height="460" Width="730" MinHeight="450" MinWidth="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
 
-    <Border CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5">
+    <Border CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5" ClipToBounds="True">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="180"/>
