@@ -29,6 +29,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     string totalProfileSize = "计算中...";
     [ObservableProperty]
     string downloadDirectory = "目标下载目录：";
+    bool ignoreNextScroll = false;
     public SettingPage ViewPage { get; set; } = viewPage;
 
     public static void LoadSettingProfile(DependencyObject parent)
@@ -137,20 +138,46 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
 
     public void CheckTargetScrollTab(DependencyObject parent)
     {
+        if (!ignoreNextScroll)
+        {
+            var results = FindType<TabUnderLineButton>(parent);
+            var bestResult = results.FirstOrDefault();
+            double mostNearDistance = double.MinValue;
+            foreach (var tabUnderLineButton in results)
+            {
+                if (tabUnderLineButton.Tag is string tabTag && ViewPage.FindName($"{tabTag}SettingBlock") is TextBlock textBlock)
+                {
+                    var target = textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y;
+                    if (target <= 20 && target > mostNearDistance)
+                    {
+                        mostNearDistance = target;
+                        bestResult = tabUnderLineButton;
+                    }
+                }
+            }
+            bestResult.IsChecked = true;
+        }
+        else
+        {
+            ignoreNextScroll = false;
+        }
+    }
+
+    public List<T> FindType<T>(DependencyObject parent) where T : DependencyObject
+    {
+        var list = new List<T>();
         if (parent is null)
-            return;
+            return list;
         int childrenCount = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < childrenCount; i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is TabUnderLineButton tabUnderLineButton && tabUnderLineButton.Tag is string tabTag && tabUnderLineButton.IsChecked is false && ViewPage.FindName($"{tabTag}SettingBlock") is TextBlock textBlock)
-            {
-                var target = textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y;
-                if (target <= 0 && target >= -50)
-                    tabUnderLineButton.IsChecked = true;
-            }
-            CheckTargetScrollTab(child);
+            if (child is T tChild)
+                list.Add(tChild);
+            else
+                list.AddRange(FindType<T>(child));
         }
+        return list;
     }
 
     public void CalculateFileSize()
@@ -188,7 +215,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     [RelayCommand]
     async Task ClearCache()
     {
-        await TaskManager.Run(() => Directory.Delete(AppPath.CacheProfile, true),"正在清理缓存");
+        await TaskManager.Run(() => Directory.Delete(AppPath.CacheProfile, true), "正在清理缓存");
         await Task.Run(CalculateFileSize);
     }
 
@@ -216,7 +243,10 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     void TabClicked(TabUnderLineButton value)
     {
         if (value.Tag is string tabTag && ViewPage.FindName($"{tabTag}SettingBlock") is TextBlock textBlock)
+        {
+            ignoreNextScroll = true;
             ViewPage.scrollViewer.ScrollToVerticalOffset(ViewPage.scrollViewer.VerticalOffset + textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y - 20);
+        }
     }
     #endregion
 }

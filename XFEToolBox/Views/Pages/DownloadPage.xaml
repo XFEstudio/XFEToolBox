@@ -16,7 +16,7 @@
                 <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
             </ScrollViewer.Resources>
             <WrapPanel>
-                <ctr:ToolButton ToolName="Steam" IconSource="/Resources/Image/steam_logo.png"/>
+                <ctr:MiniToolButton ToolName="Steam" IconSource="/Resources/Image/steam_logo.png"/>
             </WrapPanel>
         </ScrollViewer>
     </Grid>

@@ -22,7 +22,7 @@
         <Border Grid.Row="1" Grid.ColumnSpan="2" CornerRadius="15" Background="White" Margin="10">
             <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Padding="5">
                 <WrapPanel>
-                    <ctr:ToolButton IconSource="/Resources/Image/steam_logo.png"/>
+                    <ctr:MiniToolButton IconSource="/Resources/Image/steam_logo.png"/>
                 </WrapPanel>
             </ScrollViewer>
         </Border>

@@ -32,6 +32,7 @@ public partial class SettingPage : Page
             ViewModel.CalculateFileSize();
             ViewModel.DownloadDirectory = $"下载目录：{DownloadProfile.DownloadDirectory}";
         });
+        ViewModel.CheckTargetScrollTab(this);
     }
 
     private void TextEditor_TextChanged(object sender, TextChangedEventArgs e) => ViewModel.TextChange(sender, e);
