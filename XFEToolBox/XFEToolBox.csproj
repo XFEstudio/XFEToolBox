@@ -21,6 +21,10 @@
     <None Remove="Resources\Image\console.png" />
     <None Remove="Resources\Image\corner.png" />
     <None Remove="Resources\Image\download.png" />
+    <None Remove="Resources\Image\DownloadImage\cheat_engine.png" />
+    <None Remove="Resources\Image\DownloadImage\steampp.png" />
+    <None Remove="Resources\Image\DownloadImage\visualstudio.png" />
+    <None Remove="Resources\Image\DownloadImage\visual_studio.png" />
     <None Remove="Resources\Image\grid.png" />
     <None Remove="Resources\Image\invisible.png" />
     <None Remove="Resources\Image\min.png" />
@@ -57,13 +61,16 @@
     <Resource Include="Resources\Image\console.png" />
     <Resource Include="Resources\Image\corner.png" />
     <Resource Include="Resources\Image\download.png" />
+    <Resource Include="Resources\Image\DownloadImage\cheat_engine.png" />
+    <Resource Include="Resources\Image\DownloadImage\steampp.png" />
+    <Resource Include="Resources\Image\DownloadImage\visual_studio.png" />
     <Resource Include="Resources\Image\grid.png" />
     <Resource Include="Resources\Image\invisible.png" />
     <Resource Include="Resources\Image\min.png" />
     <Resource Include="Resources\Image\restart.png" />
     <Resource Include="Resources\Image\setting.png" />
     <Resource Include="Resources\Image\start.png" />
-    <Resource Include="Resources\Image\steam_logo.png" />
+    <Resource Include="Resources\Image\DownloadImage\steam_logo.png" />
     <Resource Include="Resources\Image\stop.png" />
     <Resource Include="Resources\Image\tabline.png" />
   </ItemGroup>
@@ -83,6 +90,21 @@
     <Resource Include="Resources\Image\visible.png" />
     <Resource Include="Resources\Image\wrench.png" />
     <Resource Include="Resources\Image\wrench_tool.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Resource\DownloadInfoResource.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DownloadInfoResource.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Resource\DownloadInfoResource.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DownloadInfoResource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

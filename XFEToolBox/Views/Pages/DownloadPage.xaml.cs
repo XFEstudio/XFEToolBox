@@ -15,6 +15,5 @@ public partial class DownloadPage : Page
         Current = this;
         DataContext = ViewModel = new(this);
         InitializeComponent();
-        //Steam链接：https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe
     }
 }

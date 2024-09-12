@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
-        <Button Width="50" Height="50" Command="{Binding Command,ElementName=toolButton}">
+        <Button Width="50" Height="50" Command="{Binding Command,ElementName=toolButton}" MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">
@@ -26,14 +26,14 @@
                                         <Border.Effect>
                                             <BlurEffect Radius="10"/>
                                         </Border.Effect>
-                                        <Image Width="45" Height="45" Source="{Binding IconSource,ElementName=toolButton}" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Image Width="45" Height="45" Source="{Binding IconSource,ElementName=toolButton,FallbackValue=/Resources/Image/wrench_tool.png}" VerticalAlignment="Center" HorizontalAlignment="Center">
                                             <Image.Clip>
                                                 <RectangleGeometry RadiusX="10" RadiusY="10" Rect="0,0,45,45"/>
                                             </Image.Clip>
                                         </Image>
                                     </Border>
                                     <Border CornerRadius="10" BorderThickness="2" BorderBrush="#5050b7" Padding="3">
-                                        <Image Source="{Binding IconSource,ElementName=toolButton}">
+                                        <Image Source="{Binding IconSource,ElementName=toolButton,FallbackValue=/Resources/Image/wrench_tool.png}">
                                             <Image.Clip>
                                                 <RectangleGeometry RadiusX="10" RadiusY="10" Rect="0,0,40,40"/>
                                             </Image.Clip>
@@ -104,6 +104,6 @@
                 </ProgressBar.Clip>
             </ProgressBar>
         </Border>
-        <TextBlock Grid.Row="2" Text="{Binding ToolName,ElementName=toolButton}" Foreground="{Binding TextColor,ElementName=toolButton}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <local:ScrollTextBlock x:Name="scrollTextBlock" AutoRolling="False" Grid.Row="2" InnerText="{Binding ToolName,ElementName=toolButton}" InnerForeground="{Binding TextColor,ElementName=toolButton}" MaxWidth="50" RollingBack="True" RollingTimeMillisecond="3000"/>
     </Grid>
 </UserControl>

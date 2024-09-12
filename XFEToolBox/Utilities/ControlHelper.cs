@@ -1,9 +1,12 @@
 ﻿using System.Windows.Media;
 using System.Windows;
+using System.IO;
+using System.Xml;
+using System.Windows.Markup;
 
 namespace XFEToolBox.Utilities;
 
-public class ControlHelper
+public static class ControlHelper
 {
     public static T? FindControlByTag<T>(DependencyObject parent, object tag) where T : FrameworkElement
     {
@@ -22,4 +25,5 @@ public class ControlHelper
         }
         return null;
     }
+    public static T Clone<T>(this T control) where T : UIElement => (T)XamlReader.Load(XmlReader.Create(new StringReader(XamlWriter.Save(control))));
 }

@@ -108,4 +108,8 @@ public partial class MiniToolButton : UserControl
     {
         InitializeComponent();
     }
+
+    private void Button_MouseEnter(object sender, MouseEventArgs e) => scrollTextBlock.IsRolling = scrollTextBlock.NeedRolling;
+
+    private void Button_MouseLeave(object sender, MouseEventArgs e) => scrollTextBlock.IsRolling = false;
 }

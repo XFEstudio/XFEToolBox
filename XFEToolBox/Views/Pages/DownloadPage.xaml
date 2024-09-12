@@ -11,12 +11,15 @@
       Title="DownloadPage" d:DataContext="{d:DesignInstance Type=viewmodel:DownloadPageViewModel}">
     
     <Grid>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" Padding="5">
             <ScrollViewer.Resources>
                 <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
             </ScrollViewer.Resources>
             <WrapPanel>
-                <ctr:MiniToolButton ToolName="Steam" IconSource="/Resources/Image/steam_logo.png"/>
+                <ctr:MiniToolButton ToolName="Steam" IconSource="/Resources/Image/DownloadImage/steam_logo.png" Tag="Steam"/>
+                <ctr:MiniToolButton ToolName="Steam++(Watt Toolkit)" IconSource="/Resources/Image/DownloadImage/steampp.png" Tag="Steampp"/>
+                <ctr:MiniToolButton ToolName="Visual Studio" IconSource="/Resources/Image/DownloadImage/visual_studio.png" Tag="VisualStudio"/>
+                <ctr:MiniToolButton ToolName="Cheat Engine" IconSource="/Resources/Image/DownloadImage/cheat_engine.png" Tag="CheatEngine"/>
             </WrapPanel>
         </ScrollViewer>
     </Grid>
