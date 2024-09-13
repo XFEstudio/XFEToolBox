@@ -141,7 +141,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
         if (!ignoreNextScroll)
         {
             var results = FindType<TabUnderLineButton>(parent);
-            var bestResult = results.FirstOrDefault();
+            var bestResult = results.First();
             double mostNearDistance = double.MinValue;
             foreach (var tabUnderLineButton in results)
             {

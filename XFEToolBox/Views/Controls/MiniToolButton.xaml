@@ -12,7 +12,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
-        <Button Width="50" Height="50" Command="{Binding Command,ElementName=toolButton}" MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave">
+        <Button Width="50" Height="50" Command="{Binding Command,ElementName=toolButton}" CommandParameter="{Binding CommandParameter,ElementName=toolButton}" MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave">
             <Button.Style>
                 <Style TargetType="Button">
                     <Setter Property="Template">

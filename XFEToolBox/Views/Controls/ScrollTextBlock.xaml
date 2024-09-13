@@ -6,8 +6,8 @@
              xmlns:local="clr-namespace:XFEToolBox.Views.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Name="scrollTextBlock" Loaded="ScrollTextBlock_Loaded">
-    <ScrollViewer x:Name="scrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" MaxWidth="{Binding MaxWidth, ElementName=scrollTextBlock}" MinWidth="{Binding MinWidth, ElementName=scrollTextBlock}" Width="{Binding Width,ElementName=scrollTextBlock}" Height="{Binding Height,ElementName=scrollTextBlock}">
-        <StackPanel x:Name="stackPanel" Orientation="Horizontal">
+    <ScrollViewer x:Name="scrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" MaxWidth="{Binding MaxWidth, ElementName=scrollTextBlock}" MinWidth="{Binding MinWidth, ElementName=scrollTextBlock}" Width="{Binding Width,ElementName=scrollTextBlock}" Height="{Binding Height,ElementName=scrollTextBlock}">  
+        <StackPanel x:Name="stackPanel" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
             <TextBlock x:Name="textBlock" Foreground="{Binding InnerForeground, ElementName=scrollTextBlock}" Background="{Binding InnerBackground, ElementName=scrollTextBlock}" Text="{Binding InnerText, ElementName=scrollTextBlock}" FontSize="{Binding InnerFontSize, ElementName=scrollTextBlock}" FontFamily="{Binding InnerFontFamily, ElementName=scrollTextBlock}" FontWeight="{Binding InnerFontWeight, ElementName=scrollTextBlock}" TextAlignment="{Binding InnerTextAlignment, ElementName=scrollTextBlock}" TextDecorations="{Binding InnerTextDecorations, ElementName=scrollTextBlock}" VerticalAlignment="{Binding InnerTextVerticalAlignment, ElementName=scrollTextBlock}" HorizontalAlignment="{Binding InnerTextHorizontalAlignment, ElementName=scrollTextBlock}"/>
         </StackPanel>
     </ScrollViewer>

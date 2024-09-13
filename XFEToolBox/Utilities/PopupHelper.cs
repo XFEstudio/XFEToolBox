@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using XFEToolBox.Model;
 using XFEToolBox.Views.Pages.Popups;
 using XFEToolBox.Views.Windows;
 
@@ -71,12 +72,16 @@ public static class PopupHelper
 
     public static MessageBoxResult? ShowYesOrNoDialog(string text, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(text, Colors.Black, showCancelButton, yesText, noText);
 
-    public static MessageBoxResult? ShowDialog(object content)
+    public static MessageBoxResult? ShowDialog(object content, double width = 320, double height = 230)
     {
-        var popupWindow = new PopupWindow();
+        var popupWindow = new PopupWindow
+        {
+            Width = width,
+            Height = height
+        };
         popupWindow.ViewModel.Content = content;
-        if (content is NormalDialogPopupPage normalDialogPopupPage)
-            normalDialogPopupPage.PopupWindow = popupWindow;
+        if (content is IPopupPage popupPage)
+            popupPage.PopupWindow = popupWindow;
         popupWindow.ShowDialog();
         return popupWindow.Result;
     }

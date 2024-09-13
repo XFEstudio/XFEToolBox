@@ -19,6 +19,13 @@ public partial class MiniToolButton : UserControl
     }
     public static readonly DependencyProperty ToolNameProperty = DependencyProperty.Register("ToolName", typeof(string), typeof(MiniToolButton), new PropertyMetadata("未命名工具"));
 
+    public object CommandParameter
+    {
+        get { return (object)GetValue(CommandParameterProperty); }
+        set { SetValue(CommandParameterProperty, value); }
+    }
+    public static readonly DependencyProperty CommandParameterProperty = DependencyProperty.Register("CommandParameter", typeof(object), typeof(MiniToolButton), new PropertyMetadata(null));
+
     public ImageSource IconSource
     {
         get { return (ImageSource)GetValue(IconSourceProperty); }
