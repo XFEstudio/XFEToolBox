@@ -16,7 +16,7 @@ public partial class DownloadPageViewModel(DownloadPage viewPage) : ObservableOb
     [RelayCommand]
     void GotoDownloadPage(MiniToolButton miniToolButton)
     {
-        if (!DownloadProfile.DownloadAgreementAccepted)
+        if (DownloadProfile.DownloadAgreementAccepted)
         {
             var result = PopupHelper.ShowDialog(new AgreementDialogPopupPage()
             {
