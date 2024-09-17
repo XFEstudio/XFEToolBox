@@ -1,28 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Media.Animation;
+using XFEToolBox.ViewModel.Pages;
 
-namespace XFEToolBox.Views.Pages
+namespace XFEToolBox.Views.Pages;
+
+/// <summary>
+/// DownloadInfoPage.xaml 的交互逻辑
+/// </summary>
+public partial class DownloadInfoPage : Page
 {
-    /// <summary>
-    /// DownloadInfoPage.xaml 的交互逻辑
-    /// </summary>
-    public partial class DownloadInfoPage : Page
+    public DownloadInfoPageViewModel ViewModel { get; set; }
+
+    private bool downloadMode;
+
+    public bool DownloadMode
     {
-        public DownloadInfoPage()
+        get { return downloadMode; }
+        set { downloadMode = value; ViewModel.DownloadButtonName = value ? "下载" : "浏览器中打开"; }
+    }
+
+    public DownloadInfoPage()
+    {
+        DataContext = ViewModel = new(this);
+        InitializeComponent();
+        UpdateArc(180);
+    }
+
+    public void UpdateArc(double angle)
+    {
+        double radius = 100;  // 圆的半径
+        double radians = Math.PI * angle / 180.0;
+
+        // 计算圆弧的终点坐标
+        double x = 100 + radius * Math.Cos(radians);
+        double y = 100 - radius * Math.Sin(radians);
+
+        // 更新 ArcSegment 的终点
+        arcSegment.Point = new Point(x, y);
+
+        // 根据角度判断是否需要大圆弧
+        arcSegment.IsLargeArc = angle > 180.0;
+    }
+
+    public void UpperTheGrid()
+    {
+        bottomGrid.BeginAnimation(HeightProperty, null);
+        var doubleAnimation = new DoubleAnimation
         {
-            InitializeComponent();
-        }
+            To = 400,
+            Duration = TimeSpan.FromMilliseconds(500),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        bottomGrid.BeginAnimation(HeightProperty, doubleAnimation);
+    }
+
+    public void LowerTheGrid()
+    {
+        bottomGrid.BeginAnimation(HeightProperty, null);
+        var doubleAnimation = new DoubleAnimation
+        {
+            To = 100,
+            Duration = TimeSpan.FromMilliseconds(500),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        bottomGrid.BeginAnimation(HeightProperty, doubleAnimation);
     }
 }

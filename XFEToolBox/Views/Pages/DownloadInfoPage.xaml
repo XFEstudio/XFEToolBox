@@ -32,16 +32,33 @@
                 <Image Source="/Resources/Image/DownloadImage/steam_logo.png"/>
                 <TextBlock Grid.Column="1" Text="{Binding AppTitle,StringFormat='软件名称：{0}'}" Foreground="White" FontSize="20" FontWeight="Bold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="10,0,0,0"/>
             </Grid>
-            <Grid Grid.Row="1" Height="100" VerticalAlignment="Bottom">
+            <Grid x:Name="bottomGrid" Grid.Row="1" Height="300" VerticalAlignment="Bottom">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="3*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.ColumnSpan="3" CornerRadius="15,15,0,0" Background="White" Opacity="0.8"/>
-                <ctr:RoundButton Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                    <TextBlock Text="下载" Foreground="{DynamicResource MainColor}" FontSize="25" Margin="0,10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                <ctr:RoundButton Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" Command="{Binding DownloadClickCommand}">
+                    <TextBlock Text="{Binding DownloadButtonName}" Foreground="{DynamicResource MainColor}" FontSize="25" Margin="0,10" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                 </ctr:RoundButton>
+                <Canvas Grid.ColumnSpan="3" Width="200" Height="200" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Path 用于绘制圆环 -->
+                    <Path Stroke="Blue" StrokeThickness="10">
+                        <Path.Data>
+                            <PathGeometry>
+                                <PathFigure StartPoint="100,50">
+                                    <!-- ArcSegment 动态绘制圆弧 -->
+                                    <ArcSegment x:Name="arcSegment"
+                                        Size="100,100"
+                                        SweepDirection="Clockwise"
+                                        IsLargeArc="False"
+                                        Point="200,100" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </Path.Data>
+                    </Path>
+                </Canvas>
             </Grid>
         </Grid>
     </Grid>
