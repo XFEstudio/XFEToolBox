@@ -2,9 +2,25 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace XFEToolBox.Views.Controls;
+
+public class CarouselImageItem : INotifyPropertyChanged
+{
+    private ImageSource? image;
+    public ImageSource? Image { get => image; set { image = value; OnPropertyChanged(nameof(Image)); } }
+
+    private string title = string.Empty;
+    public string Title { get => title; set { title = value; OnPropertyChanged(nameof(Title)); } }
+
+    private bool isSelected = false;
+    public bool IsSelected { get => isSelected; set { isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
 
 /// <summary>
 /// Carousel.xaml 的交互逻辑
@@ -16,22 +32,22 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
     private System.Windows.Threading.DispatcherTimer? timer;
 
     #region DependencyProperty
-    public ObservableCollection<ImageSource> ImageList
+    public ObservableCollection<CarouselImageItem> ImageList
     {
-        get { return (ObservableCollection<ImageSource>)GetValue(ImageListProperty); }
+        get { return (ObservableCollection<CarouselImageItem>)GetValue(ImageListProperty); }
         set { SetValue(ImageListProperty, value); }
     }
 
     public static readonly DependencyProperty ImageListProperty = DependencyProperty.Register(
-        "ImageList", typeof(ObservableCollection<ImageSource>), typeof(Carousel), new PropertyMetadata(new ObservableCollection<ImageSource>(), OnImageListChanged));
+        "ImageList", typeof(ObservableCollection<CarouselImageItem>), typeof(Carousel), new PropertyMetadata(new ObservableCollection<CarouselImageItem>(), OnImageListChanged));
 
     private static void OnImageListChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is Carousel c)
         {
-            if (e.OldValue is ObservableCollection<ImageSource> old)
+            if (e.OldValue is ObservableCollection<CarouselImageItem> old)
                 old.CollectionChanged -= c.ImageList_CollectionChanged;
-            if (e.NewValue is ObservableCollection<ImageSource> neu)
+            if (e.NewValue is ObservableCollection<CarouselImageItem> neu)
                 neu.CollectionChanged += c.ImageList_CollectionChanged;
 
             c.currentIndex = -1;
@@ -46,24 +62,28 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         UpdateImage();
     }
 
-    public ImageSource CurrentImageSource
+    public ImageSource? CurrentImageSource
     {
-        get { return (ImageSource)GetValue(CurrentImageSourceProperty); }
+        get { return (ImageSource?)GetValue(CurrentImageSourceProperty); }
         set { SetValue(CurrentImageSourceProperty, value); }
     }
     public static readonly DependencyProperty CurrentImageSourceProperty = DependencyProperty.Register("CurrentImageSource", typeof(ImageSource), typeof(Carousel), new PropertyMetadata(null));
 
-    public string PositionText
+    public string CurrentTitle
     {
-        get { return (string)GetValue(PositionTextProperty); }
-        private set { SetValue(PositionTextProperty, value); }
+        get { return (string)GetValue(CurrentTitleProperty); }
+        set { SetValue(CurrentTitleProperty, value); }
     }
-    public static readonly DependencyProperty PositionTextProperty = DependencyProperty.Register("PositionText", typeof(string), typeof(Carousel), new PropertyMetadata(string.Empty));
+    public static readonly DependencyProperty CurrentTitleProperty = DependencyProperty.Register("CurrentTitle", typeof(string), typeof(Carousel), new PropertyMetadata(string.Empty));
     #endregion
 
     public Carousel()
     {
         InitializeComponent();
+
+        // Ensure ImageList is not null
+        if (GetValue(ImageListProperty) == null)
+            ImageList = new ObservableCollection<CarouselImageItem>();
 
         Loaded += Carousel_Loaded;
         Unloaded += Carousel_Unloaded;
@@ -108,17 +128,23 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         if (ImageList == null || ImageList.Count == 0)
         {
             CurrentImageSource = null;
-            PositionText = string.Empty;
+            CurrentTitle = string.Empty;
             return;
         }
 
         if (currentIndex < 0)
             currentIndex = 0;
 
-        CurrentImageSource = ImageList[currentIndex];
-        PositionText = $"{currentIndex + 1}/{ImageList.Count}";
+        for (int i = 0; i < ImageList.Count; i++)
+        {
+            ImageList[i].IsSelected = (i == currentIndex);
+        }
+
+        var item = ImageList[currentIndex];
+        CurrentImageSource = item?.Image;
+        CurrentTitle = item?.Title ?? string.Empty;
         OnPropertyChanged(nameof(CurrentImageSource));
-        OnPropertyChanged(nameof(PositionText));
+        OnPropertyChanged(nameof(CurrentTitle));
     }
 
     private void PrevButton_Click(object sender, RoutedEventArgs e)
@@ -133,6 +159,30 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         if (ImageList == null || ImageList.Count == 0) return;
         currentIndex = (currentIndex + 1) % ImageList.Count;
         UpdateImage();
+    }
+
+    private void Indicator_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is CarouselImageItem item)
+        {
+            var idx = ImageList.IndexOf(item);
+            if (idx >= 0)
+            {
+                currentIndex = idx;
+                UpdateImage();
+            }
+        }
+    }
+
+    // Public API helpers
+    public void AddItem(ImageSource image, string title)
+    {
+        ImageList.Add(new CarouselImageItem { Image = image, Title = title });
+        if (ImageList.Count == 1)
+        {
+            currentIndex = 0;
+            UpdateImage();
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
