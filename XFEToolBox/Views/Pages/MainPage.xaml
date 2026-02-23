@@ -9,21 +9,18 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="MainPage" Loaded="Page_Loaded">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <TextBlock Margin="10,0" Text="最近使用" Foreground="{DynamicResource BackgroundColor}" FontSize="15" FontWeight="Bold"/>
-        <Border Grid.Row="1" Grid.ColumnSpan="2" CornerRadius="15" Background="White" Margin="10">
-            <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Padding="5">
-                <WrapPanel>
-                </WrapPanel>
-            </ScrollViewer>
-        </Border>
+        <ctr:SmoothScrollViewer>
+            <ScrollViewer.Resources>
+                <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
+            </ScrollViewer.Resources>
+            <StackPanel Orientation="Vertical">
+                <ctr:Carousel x:Name="mainCarousel" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="220"/>
+                <TextBlock Margin="10,0" Text="最近使用" Foreground="{DynamicResource BackgroundColor}" FontSize="15" FontWeight="Bold"/>
+                <Border CornerRadius="15" Background="White" Margin="10" Padding="10">
+                    <WrapPanel MinHeight="500">
+                    </WrapPanel>
+                </Border>
+            </StackPanel>
+        </ctr:SmoothScrollViewer>
     </Grid>
 </Page>
