@@ -3,10 +3,10 @@ using XFEToolBox.Core.Model;
 
 namespace XFEToolBox.Profiles.CacheProfiles;
 
-public partial class AppCacheProfile
+public partial class AppCacheProfile : XFEProfile
 {
     [ProfileProperty]
     private string noticeText = "";
-    public AppCacheProfile() => ProfilePath = @$"{AppPath.CacheProfile}\{typeof(AppCacheProfile)}.xprofile";
 
+    public AppCacheProfile() => ProfilePath = @$"{AppPath.CacheProfile}\{typeof(AppCacheProfile)}.xprofile";
 }

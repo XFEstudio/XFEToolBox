@@ -3,7 +3,7 @@ using XFEToolBox.Core.Model;
 
 namespace XFEToolBox.Profiles.CrossVersionProfiles;
 
-public partial class ConsoleProfile
+public partial class ConsoleProfile : XFEProfile
 {
     /// <summary>
     /// 控制台端口

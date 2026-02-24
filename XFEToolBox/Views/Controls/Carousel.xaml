@@ -25,7 +25,11 @@
         <!-- Center card column with rounded border and image -->
         <Border Grid.Column="1" CornerRadius="12" Background="#F0EEF6" Padding="8">
             <Grid>
-                <Image x:Name="PART_Image" Source="{Binding CurrentImageSource, RelativeSource={RelativeSource AncestorType=UserControl}}" Stretch="UniformToFill" ClipToBounds="True"/>
+                <!-- Two images for cross-fade -->
+                <Grid>
+                    <Image x:Name="ImageBack" Stretch="UniformToFill" Opacity="0" ClipToBounds="True"/>
+                    <Image x:Name="ImageFront" Stretch="UniformToFill" Opacity="1" ClipToBounds="True"/>
+                </Grid>
 
                 <!-- Bottom acrylic bar inside center card -->
                 <Border VerticalAlignment="Bottom" Margin="8" CornerRadius="8" Background="#CCFFFFFF" Height="64" Padding="12">
@@ -47,21 +51,39 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="Transparent" Padding="6" Cursor="Hand" MouseLeftButtonUp="Indicator_MouseLeftButtonUp">
-                                        <Ellipse Width="10" Height="10" Fill="#888" Opacity="0.5">
-                                            <Ellipse.Style>
-                                                <Style TargetType="Ellipse">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Fill" Value="#6A5ACD"/>
-                                                            <Setter Property="Opacity" Value="1"/>
-                                                            <Setter Property="Width" Value="14"/>
-                                                            <Setter Property="Height" Value="14"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Ellipse.Style>
+                                        <Ellipse x:Name="Dot" Width="10" Height="10" Opacity="0.5" RenderTransformOrigin="0.5,0.5">
+                                            <Ellipse.Fill>
+                                                <SolidColorBrush Color="#888888"/>
+                                            </Ellipse.Fill>
+                                            <Ellipse.RenderTransform>
+                                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                            </Ellipse.RenderTransform>
                                         </Ellipse>
                                     </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard Name="EnterDot">
+                                                    <Storyboard>
+                                                        <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FF6A5ACD" Duration="0:0:0.12"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1.4" Duration="0:0:0.18"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1.4" Duration="0:0:0.18"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard Name="ExitDot">
+                                                    <Storyboard>
+                                                        <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#888888" Duration="0:0:0.12"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="0.5" Duration="0:0:0.12"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.18"/>
+                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.18"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

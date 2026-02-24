@@ -4,7 +4,7 @@ using XFEToolBox.Views.Windows;
 
 namespace XFEToolBox.Profiles.CrossVersionProfiles;
 
-public partial class SystemProfile
+public partial class SystemProfile : XFEProfile
 {
     /// <summary>
     /// 当前窗口DPI缩放

@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 
 namespace XFEToolBox.Views.Controls;
 
@@ -95,6 +97,9 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         DataContext = this;
     }
 
+    private Image ImageFrontControl => (Image)FindName("ImageFront");
+    private Image ImageBackControl => (Image)FindName("ImageBack");
+
     private void Carousel_Loaded(object sender, RoutedEventArgs e)
     {
         if (timer == null)
@@ -106,7 +111,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
             timer.Tick += Timer_Tick;
         }
         timer.Start();
-        UpdateImage();
+        UpdateImage(true);
     }
 
     private void Carousel_Unloaded(object sender, RoutedEventArgs e)
@@ -123,7 +128,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         }
     }
 
-    private void UpdateImage()
+    private void UpdateImage(bool initial = false)
     {
         if (ImageList == null || ImageList.Count == 0)
         {
@@ -143,6 +148,50 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         var item = ImageList[currentIndex];
         CurrentImageSource = item?.Image;
         CurrentTitle = item?.Title ?? string.Empty;
+
+        // Cross-fade using named image controls
+        try
+        {
+            var front = ImageFrontControl;
+            var back = ImageBackControl;
+
+            if (front == null || back == null)
+                return;
+
+            // move front to back
+            if (front.Source != null)
+            {
+                back.Source = front.Source;
+                back.Opacity = 1;
+            }
+            else
+            {
+                back.Source = null;
+                back.Opacity = 0;
+            }
+
+            // set front to new image
+            front.Source = item?.Image;
+
+            if (initial)
+            {
+                front.Opacity = 1;
+                back.Opacity = 0;
+            }
+            else
+            {
+                var fadeOut = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromMilliseconds(500))) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+                var fadeIn = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromMilliseconds(500))) { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+
+                back.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+                front.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+        }
+        catch
+        {
+            // ignore animation errors in design time
+        }
+
         OnPropertyChanged(nameof(CurrentImageSource));
         OnPropertyChanged(nameof(CurrentTitle));
     }
@@ -177,11 +226,16 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
     // Public API helpers
     public void AddItem(ImageSource image, string title)
     {
+        var frozen = image as BitmapSource;
+        if (frozen != null && frozen.CanFreeze)
+        {
+            try { frozen.Freeze(); } catch { }
+        }
         ImageList.Add(new CarouselImageItem { Image = image, Title = title });
         if (ImageList.Count == 1)
         {
             currentIndex = 0;
-            UpdateImage();
+            UpdateImage(true);
         }
     }
 
