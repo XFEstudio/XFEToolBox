@@ -9,15 +9,15 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="MainPage">
     <Grid>
-        <ctr:SmoothScrollViewer>
+        <ctr:SmoothScrollViewer Padding="10,0,0,0">
             <ScrollViewer.Resources>
                 <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
             </ScrollViewer.Resources>
             <StackPanel Orientation="Vertical">
-                <ctr:Carousel x:Name="mainCarousel" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="220"/>
-                <TextBlock Margin="10,0" Text="最近使用" Foreground="{DynamicResource BackgroundColor}" FontSize="15" FontWeight="Bold"/>
-                <Border CornerRadius="15" Background="White" Margin="10" Padding="10">
-                    <WrapPanel MinHeight="500">
+                <ctr:Carousel x:Name="mainCarousel" HorizontalAlignment="Stretch" VerticalAlignment="Center" Height="350"/>
+                <TextBlock Text="最近使用" Foreground="{DynamicResource BackgroundColor}" FontSize="15" FontWeight="Bold"/>
+                <Border CornerRadius="15" Background="White" Margin="0,10" Padding="10">
+                    <WrapPanel MinHeight="300">
                     </WrapPanel>
                 </Border>
             </StackPanel>

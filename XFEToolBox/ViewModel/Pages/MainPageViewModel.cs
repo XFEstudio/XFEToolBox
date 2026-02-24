@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Windows.Media;
+using System.Diagnostics;
 using System.Windows.Media.Imaging;
 using XFEToolBox.Utilities.Helpers;
 using XFEToolBox.Views.Pages;
@@ -8,6 +8,7 @@ namespace XFEToolBox.ViewModel.Pages;
 
 public partial class MainPageViewModel : ObservableObject
 {
+    public bool IsInitialized { get; set; } = false;
     public MainPage MainPage { get; set; }
     public MainPageViewModel(MainPage mainPage)
     {
@@ -17,10 +18,28 @@ public partial class MainPageViewModel : ObservableObject
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        var videoInfoList = await BilibiliHelper.GetSeasonVideoList();
-        foreach (var videoInfo in videoInfoList)
+        if (IsInitialized)
+            return;
+        IsInitialized = true;
+        int retryCount = 0;
+        while (true)
         {
-            MainPage.mainCarousel.AddItem(new BitmapImage(new Uri(videoInfo["pic"].ToString())), videoInfo["title"].ToString());
+            try
+            {
+                var videoInfoList = await BilibiliHelper.GetSeasonVideoList();
+                foreach (var videoInfo in videoInfoList)
+                {
+                    MainPage.mainCarousel.AddItem(new BitmapImage(new Uri(videoInfo["pic"].ToString())), videoInfo["title"].ToString(), () => Process.Start("explorer.exe", $"https://www.bilibili.com/video/{videoInfo["bvid"]}"));
+                }
+                break;
+            }
+            catch (Exception ex)
+            {
+                if (retryCount > 3)
+                    break;
+                await Task.Delay(3000);
+                retryCount++;
+            }
         }
     }
 }

@@ -5,100 +5,145 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:XFEToolBox.Views.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="280" d:DesignWidth="800">
+             d:DesignHeight="320" d:DesignWidth="900">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="56"/>
+            <ColumnDefinition Width="0"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="56"/>
+            <ColumnDefinition Width="0"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left side bar column -->
-        <Border Grid.Column="0" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="PrevButton_Click">
-            <Grid>
-                <Border Width="36" HorizontalAlignment="Center" VerticalAlignment="Stretch" CornerRadius="18" Background="#33FFFFFF" Margin="0,8"/>
-                <!-- Scalable left-pointing triangle, centered -->
-                <Path Width="12" Height="18" Stretch="Uniform" Fill="#333333" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M1,0 L0,0.5 L1,1 Z"/>
-            </Grid>
-        </Border>
+        <!-- Left spacer column (kept for layout) -->
+        <Border Grid.Row="0" Grid.Column="0" Background="Transparent"/>
 
         <!-- Center card column with rounded border and image -->
-        <Border Grid.Column="1" CornerRadius="12" Background="#F0EEF6" Padding="8">
+        <Border Grid.Row="0" Grid.Column="1" CornerRadius="12" Background="#F0EEF6" Padding="8">
             <Grid>
                 <!-- Two images for cross-fade -->
                 <Grid>
-                    <Image x:Name="ImageBack" Stretch="UniformToFill" Opacity="0" ClipToBounds="True"/>
-                    <Image x:Name="ImageFront" Stretch="UniformToFill" Opacity="1" ClipToBounds="True"/>
+                    <Image x:Name="ImageBack" Stretch="UniformToFill" Opacity="0" ClipToBounds="True" MouseLeftButtonUp="Image_MouseLeftButtonUp"/>
+                    <Image x:Name="ImageFront" Stretch="UniformToFill" Opacity="1" ClipToBounds="True" MouseLeftButtonUp="Image_MouseLeftButtonUp"/>
                 </Grid>
 
-                <!-- Bottom acrylic bar inside center card -->
-                <Border VerticalAlignment="Bottom" Margin="8" CornerRadius="8" Background="#CCFFFFFF" Height="64" Padding="12">
+                <!-- Prev/Next buttons inside content area -->
+                <Button x:Name="PrevButton" Width="25" Height="80" Margin="8,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="#AAFFFFFF" BorderBrush="Transparent" Click="PrevButton_Click" Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Opacity" Value="0.5"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="1"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Path Width="12" Height="18" Stretch="Uniform" Fill="#333333" Data="M1,0 L0,0.5 L1,1 Z"/>
+                </Button>
+
+                <Button x:Name="NextButton" Width="25" Height="80" Margin="0,0,8,0" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#AAFFFFFF" BorderBrush="Transparent" Click="NextButton_Click" Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Opacity" Value="0.5"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="1"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <Path Width="12" Height="18" Stretch="Uniform" Fill="#333333" Data="M0,0 L1,0.5 L0,1 Z"/>
+                </Button>
+
+                <!-- Bottom acrylic bar inside center card (title only) -->
+                <Border VerticalAlignment="Bottom" CornerRadius="0" Background="#CCFFFFFF" Height="64" Padding="12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="120"/>
                         </Grid.ColumnDefinitions>
 
                         <TextBlock x:Name="PART_Title" Grid.Column="0" Text="{Binding CurrentTitle, RelativeSource={RelativeSource AncestorType=UserControl}}" VerticalAlignment="Center" Foreground="#222" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
 
-                        <ItemsControl Grid.Column="1" ItemsSource="{Binding ImageList, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="Transparent" Padding="6" Cursor="Hand" MouseLeftButtonUp="Indicator_MouseLeftButtonUp">
-                                        <Ellipse x:Name="Dot" Width="10" Height="10" Opacity="0.5" RenderTransformOrigin="0.5,0.5">
-                                            <Ellipse.Fill>
-                                                <SolidColorBrush Color="#888888"/>
-                                            </Ellipse.Fill>
-                                            <Ellipse.RenderTransform>
-                                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                            </Ellipse.RenderTransform>
-                                        </Ellipse>
-                                    </Border>
-                                    <DataTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <DataTrigger.EnterActions>
-                                                <BeginStoryboard Name="EnterDot">
-                                                    <Storyboard>
-                                                        <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FF6A5ACD" Duration="0:0:0.12"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1.4" Duration="0:0:0.18"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1.4" Duration="0:0:0.18"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.EnterActions>
-                                            <DataTrigger.ExitActions>
-                                                <BeginStoryboard Name="ExitDot">
-                                                    <Storyboard>
-                                                        <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#888888" Duration="0:0:0.12"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="0.5" Duration="0:0:0.12"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.18"/>
-                                                        <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.18"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </DataTrigger.ExitActions>
-                                        </DataTrigger>
-                                    </DataTemplate.Triggers>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
                     </Grid>
                 </Border>
+
             </Grid>
         </Border>
 
-        <!-- Right side bar column -->
-        <Border Grid.Column="2" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="NextButton_Click">
-            <Grid>
-                <Border Width="36" HorizontalAlignment="Center" VerticalAlignment="Stretch" CornerRadius="18" Background="#33FFFFFF" Margin="0,8"/>
-                <!-- Scalable right-pointing triangle, centered -->
-                <Path Width="12" Height="18" Stretch="Uniform" Fill="#333333" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M0,0 L1,0.5 L0,1 Z"/>
-            </Grid>
-        </Border>
+        <!-- Right spacer column -->
+        <Border Grid.Row="0" Grid.Column="2" Background="Transparent"/>
+
+        <!-- Indicators row, placed below content and centered -->
+        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Background="Transparent" Margin="0,8,0,0">
+            <ItemsControl ItemsSource="{Binding ImageList, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="Transparent" Padding="6" Cursor="Hand" MouseLeftButtonUp="Indicator_MouseLeftButtonUp">
+                            <Grid>
+                                <Ellipse x:Name="Dot" Width="5" Height="5" Opacity="0.5" RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="#FFFFFF"/>
+                                    </Ellipse.Fill>
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                            </Grid>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FF6A5ACD" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1.4" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1.4" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FFFFFF" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="0.5" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
     </Grid>
 </UserControl>

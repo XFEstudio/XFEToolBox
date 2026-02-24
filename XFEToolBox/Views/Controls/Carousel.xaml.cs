@@ -9,21 +9,6 @@ using System.Windows.Media.Imaging;
 
 namespace XFEToolBox.Views.Controls;
 
-public class CarouselImageItem : INotifyPropertyChanged
-{
-    private ImageSource? image;
-    public ImageSource? Image { get => image; set { image = value; OnPropertyChanged(nameof(Image)); } }
-
-    private string title = string.Empty;
-    public string Title { get => title; set { title = value; OnPropertyChanged(nameof(Title)); } }
-
-    private bool isSelected = false;
-    public bool IsSelected { get => isSelected; set { isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-}
-
 /// <summary>
 /// Carousel.xaml 的交互逻辑
 /// </summary>
@@ -85,7 +70,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
         // Ensure ImageList is not null
         if (GetValue(ImageListProperty) == null)
-            ImageList = new ObservableCollection<CarouselImageItem>();
+            ImageList = [];
 
         Loaded += Carousel_Loaded;
         Unloaded += Carousel_Unloaded;
@@ -223,15 +208,30 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         }
     }
 
-    // Public API helpers
-    public void AddItem(ImageSource image, string title)
+    private void Image_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        var frozen = image as BitmapSource;
-        if (frozen != null && frozen.CanFreeze)
+        if (currentIndex >= 0 && currentIndex < ImageList.Count)
+        {
+            var item = ImageList[currentIndex];
+            try
+            {
+                item?.Action?.Invoke();
+            }
+            catch
+            {
+                // ignore action exceptions
+            }
+        }
+    }
+
+    // Public API helpers
+    public void AddItem(ImageSource image, string title, Action? action = null)
+    {
+        if (image is BitmapSource frozen && frozen.CanFreeze)
         {
             try { frozen.Freeze(); } catch { }
         }
-        ImageList.Add(new CarouselImageItem { Image = image, Title = title });
+        ImageList.Add(new CarouselImageItem { Image = image, Title = title, Action = action });
         if (ImageList.Count == 1)
         {
             currentIndex = 0;
