@@ -1,7 +1,8 @@
 ﻿using System.Windows.Controls;
-using XFEToolBox.ViewModel.Pages;
+using XFEToolBox.Client.ViewModel.Pages;
+using DownloadPageViewModel = XFEToolBox.Client.ViewModel.Pages.DownloadPageViewModel;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// DownloadPage.xaml 的交互逻辑

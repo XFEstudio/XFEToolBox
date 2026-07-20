@@ -1,4 +1,4 @@
-﻿namespace XFEToolBox.Utilities;
+﻿namespace XFEToolBox.Client.Utilities;
 
 public class NamedTask(string name, Task task)
 {

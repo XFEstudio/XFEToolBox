@@ -1,13 +1,13 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Resources.Resource;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Controls;
-using XFEToolBox.Views.Pages;
-using XFEToolBox.Views.Pages.Popups;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Resources.Resource;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.Client.Views.Pages;
+using XFEToolBox.Client.Views.Pages.Popups;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class DownloadPageViewModel(DownloadPage viewPage) : ObservableObject
 {

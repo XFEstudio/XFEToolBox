@@ -6,11 +6,11 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using XFEExtension.NetCore.FormatExtension;
 using XFEExtension.NetCore.XFEConsole;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Pages;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class ConsolePageViewModel(ConsolePage viewPage) : ObservableObject
 {

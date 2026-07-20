@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public class FoldBlockDecSpan(string text, string title, List<DecTextSpan> decTextList, Color color, Color backgroundColor) : DecTextSpan(text, color, backgroundColor)
 {

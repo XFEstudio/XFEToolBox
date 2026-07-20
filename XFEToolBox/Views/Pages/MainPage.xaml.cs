@@ -1,9 +1,7 @@
 ﻿using System.Windows.Controls;
-using System.Windows.Media;
-using XFEToolBox.ViewModel.Pages;
-using XFEToolBox.Views.Controls;
+using XFEToolBox.Client.ViewModel.Pages;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// MainPage.xaml 的交互逻辑

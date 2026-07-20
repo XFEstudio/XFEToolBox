@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// ToolBoxPage.xaml 的交互逻辑

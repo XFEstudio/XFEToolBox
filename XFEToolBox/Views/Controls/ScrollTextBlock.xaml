@@ -1,9 +1,8 @@
-﻿<UserControl x:Class="XFEToolBox.Views.Controls.ScrollTextBlock"
+﻿<UserControl x:Class="XFEToolBox.Client.Views.Controls.ScrollTextBlock"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:XFEToolBox.Views.Controls"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" Name="scrollTextBlock" Loaded="ScrollTextBlock_Loaded">
     <ScrollViewer x:Name="scrollViewer" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" MaxWidth="{Binding MaxWidth, ElementName=scrollTextBlock}" MinWidth="{Binding MinWidth, ElementName=scrollTextBlock}" Width="{Binding Width,ElementName=scrollTextBlock}" Height="{Binding Height,ElementName=scrollTextBlock}">  

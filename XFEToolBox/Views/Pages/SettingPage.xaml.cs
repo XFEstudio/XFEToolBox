@@ -1,10 +1,11 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.ViewModel.Pages;
-using XFEToolBox.Views.Controls;
+using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.ViewModel.Pages;
+using SettingPageViewModel = XFEToolBox.Client.ViewModel.Pages.SettingPageViewModel;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// SettingPage.xaml 的交互逻辑

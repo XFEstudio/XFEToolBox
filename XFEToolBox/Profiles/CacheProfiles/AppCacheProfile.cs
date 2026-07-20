@@ -1,7 +1,7 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
 
-namespace XFEToolBox.Profiles.CacheProfiles;
+namespace XFEToolBox.Client.Profiles.CacheProfiles;
 
 public partial class AppCacheProfile : XFEProfile
 {

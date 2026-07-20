@@ -1,15 +1,15 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using XFEExtension.NetCore.InputSimulator;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Pages;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages;
+using XFEToolBox.Client.Views.Windows;
 
-namespace XFEToolBox.ViewModel.Windows;
+namespace XFEToolBox.Client.ViewModel.Windows;
 
 public partial class MainWindowViewModel : ObservableObject
 {

@@ -1,9 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
-using XFEToolBox.ViewModel.Pages;
+using XFEToolBox.Client.ViewModel.Pages;
+using DownloadInfoPageViewModel = XFEToolBox.Client.ViewModel.Pages.DownloadInfoPageViewModel;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// DownloadInfoPage.xaml 的交互逻辑

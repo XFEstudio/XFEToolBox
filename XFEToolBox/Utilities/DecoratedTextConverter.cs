@@ -6,7 +6,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public partial class DecoratedTextConverter
 {

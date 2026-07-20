@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using XFEExtension.NetCore.XFEConsole;
 
-namespace XFEToolBox;
+namespace XFEToolBox.Client;
 
 /// <summary>
 /// Interaction logic for App.xaml

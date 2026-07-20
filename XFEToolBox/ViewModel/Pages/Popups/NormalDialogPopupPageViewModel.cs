@@ -1,9 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using System.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Windows;
-using XFEToolBox.Views.Pages.Popups;
+using XFEToolBox.Client.Views.Pages.Popups;
 
-namespace XFEToolBox.ViewModel.Pages.Popups;
+namespace XFEToolBox.Client.ViewModel.Pages.Popups;
 
 public partial class NormalDialogPopupPageViewModel(NormalDialogPopupPage viewPage) : ObservableObject
 {

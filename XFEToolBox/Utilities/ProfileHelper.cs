@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public static class ProfileHelper
 {

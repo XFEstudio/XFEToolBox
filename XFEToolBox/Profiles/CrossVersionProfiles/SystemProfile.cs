@@ -1,8 +1,7 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
-using XFEToolBox.Views.Windows;
 
-namespace XFEToolBox.Profiles.CrossVersionProfiles;
+namespace XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
 public partial class SystemProfile : XFEProfile
 {
