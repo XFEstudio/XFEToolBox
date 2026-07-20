@@ -81,7 +81,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\XFEToolBox.Core\XFEToolBox.Core.csproj" />
+    <ProjectReference Include="..\XFEToolBox.Client.Core\XFEToolBox.Client.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
