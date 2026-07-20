@@ -1,26 +1,28 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.8.12009.203 stable
+VisualStudioVersion = 18.8.12009.203
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox", "XFEToolBox\XFEToolBox.csproj", "{7A065B44-8D37-4415-A97F-9F7C8F8E9567}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Client", "XFEToolBox\XFEToolBox.Client.csproj", "{7A065B44-8D37-4415-A97F-9F7C8F8E9567}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Test", "XFEToolBox.Test\XFEToolBox.Test.csproj", "{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Client.Test", "XFEToolBox.Test\XFEToolBox.Client.Test.csproj", "{9AEA29D2-6EC5-4CE2-BCC0-850160D81DBF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AA68EC1E-93C8-4D18-8372-64F3D91A66F1} = {AA68EC1E-93C8-4D18-8372-64F3D91A66F1}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XFEToolBox.Core", "XFEToolBox.Core\XFEToolBox.Core.csproj", "{AA68EC1E-93C8-4D18-8372-64F3D91A66F1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{6B2C3055-23D6-4804-928F-F2F0EBE5E6AA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{6B2C3055-23D6-4804-928F-F2F0EBE5E6AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBoxInstaller", "XFEToolBoxInstaller\XFEToolBoxInstaller.csproj", "{F6F4DC45-737B-47FD-84C5-072C50C64A8E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Client.Installer", "XFEToolBoxInstaller\XFEToolBox.Client.Installer.csproj", "{F6F4DC45-737B-47FD-84C5-072C50C64A8E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{F537CE27-96C2-498B-8CAE-D0EA21A7C425}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Server", "XFEToolBox.Server\XFEToolBox.Server.csproj", "{6DCDD456-623E-4DF0-869B-C2F208B623E7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Server.Core", "XFEToolBox.Server.Core\XFEToolBox.Server.Core.csproj", "{6497CE31-AEE5-498F-9EA3-B90A27935DDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XFEToolBox.Client.Core", "XFEToolBox.Client.Core\XFEToolBox.Client.Core.csproj", "{B8E72CA0-997E-4284-8832-C9C637016B55}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,10 @@ Global
 		{6497CE31-AEE5-498F-9EA3-B90A27935DDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6497CE31-AEE5-498F-9EA3-B90A27935DDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6497CE31-AEE5-498F-9EA3-B90A27935DDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8E72CA0-997E-4284-8832-C9C637016B55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8E72CA0-997E-4284-8832-C9C637016B55}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8E72CA0-997E-4284-8832-C9C637016B55}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E72CA0-997E-4284-8832-C9C637016B55}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,6 +68,7 @@ Global
 		{F6F4DC45-737B-47FD-84C5-072C50C64A8E} = {6B2C3055-23D6-4804-928F-F2F0EBE5E6AA}
 		{6DCDD456-623E-4DF0-869B-C2F208B623E7} = {F537CE27-96C2-498B-8CAE-D0EA21A7C425}
 		{6497CE31-AEE5-498F-9EA3-B90A27935DDC} = {F537CE27-96C2-498B-8CAE-D0EA21A7C425}
+		{B8E72CA0-997E-4284-8832-C9C637016B55} = {6B2C3055-23D6-4804-928F-F2F0EBE5E6AA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9EEA9668-487B-420D-A957-97140D8FBCF8}
