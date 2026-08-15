@@ -1,0 +1,50 @@
+@host = http://localhost:5058
+@adminKey = replace-me
+
+GET {{host}}/api/health
+
+### Published tool list
+POST {{host}}/api/v1/tools/list
+Content-Type: application/json
+
+{
+  "search": "",
+  "category": ""
+}
+
+### Tool details
+POST {{host}}/api/v1/tools/get
+Content-Type: application/json
+
+{
+  "toolId": "base64-generator"
+}
+
+### Admin package list
+POST {{host}}/api/v1/admin/tools/list
+X-Admin-Key: {{adminKey}}
+Content-Type: application/json
+
+{}
+
+### Upload: replace PACKAGE_BASE64 with the .xfetool file encoded as Base64.
+POST {{host}}/api/v1/admin/tools/upload
+X-Admin-Key: {{adminKey}}
+Content-Type: application/json
+
+{
+  "packageBase64": "PACKAGE_BASE64",
+  "published": true,
+  "overwrite": false
+}
+
+### Publish or unpublish
+POST {{host}}/api/v1/admin/tools/publication
+X-Admin-Key: {{adminKey}}
+Content-Type: application/json
+
+{
+  "toolId": "base64-generator",
+  "version": "1.0.0",
+  "published": true
+}

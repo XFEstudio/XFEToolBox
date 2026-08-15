@@ -4,7 +4,7 @@ namespace XFEToolBox.Test;
 
 public class Program
 {
-    [SMTest]
+    [Benchmark]
     public static void PathTest()
     {
         Console.WriteLine($"""
