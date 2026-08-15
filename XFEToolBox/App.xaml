@@ -9,6 +9,7 @@
                 <ResourceDictionary Source="/Resources/Style/MainStyle.xaml"/>
                 <ResourceDictionary Source="/Resources/Style/MyControlsStyle.xaml"/>
                 <ResourceDictionary Source="/Resources/Style/Theme/LightTheme.xaml"/>
+                <ResourceDictionary Source="/Resources/Style/AdminManagementStyle.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

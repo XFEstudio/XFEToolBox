@@ -1,4 +1,6 @@
 using System.Net;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using XFEToolBox.Core.Models.Users;
 using XFEToolBox.Server.Core.Exceptions;
 using XFEToolBox.Server.Core.Services;
@@ -15,6 +17,8 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
 
     public long MaxPackageBytes { get; set; }
 
+    public string SoftwareStorageRoot { get; set; } = string.Empty;
+
     [EntryPoint("v1/manage/overview")]
     public async Task GetOverviewEntryPoint()
     {
@@ -23,6 +27,17 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
         var packages = ToolPackageRepository is null
             ? []
             : await ToolPackageRepository.ListAsync(publishedOnly: false);
+        using var process = Process.GetCurrentProcess();
+        var cpuBefore = process.TotalProcessorTime;
+        var sampleStarted = Stopwatch.GetTimestamp();
+        await Task.Delay(120);
+        process.Refresh();
+        var sampleSeconds = Stopwatch.GetElapsedTime(sampleStarted).TotalSeconds;
+        var cpuUsage = sampleSeconds <= 0
+            ? 0
+            : (process.TotalProcessorTime - cpuBefore).TotalSeconds / sampleSeconds / Environment.ProcessorCount * 100;
+        var softwareStorageBytes = GetDirectorySize(SoftwareStorageRoot);
+        var memory = GetSystemMemoryInfo();
         await Close(new
         {
             serverName = "XFEToolBoxServer",
@@ -32,7 +47,20 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
             activeSessionCount = UserDataProfile.LoginTable.Count,
             packageCount = packages.Count,
             publishedPackageCount = packages.Count(package => package.Published),
-            storageBytes = packages.Sum(package => package.PackageSize)
+            storageBytes = packages.Sum(package => package.PackageSize) + softwareStorageBytes,
+            softwareCount = MainDataProfile.SoftwareCatalog.Count,
+            publishedSoftwareCount = MainDataProfile.SoftwareCatalog.Count(item => item.Published && item.Enabled),
+            softwareStorageBytes,
+            cpuUsagePercent = Math.Clamp(cpuUsage, 0, 100),
+            processorCount = Environment.ProcessorCount,
+            workingSetBytes = process.WorkingSet64,
+            privateMemoryBytes = process.PrivateMemorySize64,
+            managedMemoryBytes = GC.GetTotalMemory(forceFullCollection: false),
+            totalMemoryBytes = memory.TotalBytes,
+            usedMemoryBytes = memory.UsedBytes,
+            availableMemoryBytes = memory.AvailableBytes,
+            memoryUsagePercent = memory.UsagePercent,
+            uptimeSeconds = Math.Max(0, (DateTime.Now - process.StartTime).TotalSeconds)
         });
     }
 
@@ -49,6 +77,7 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
                 user.Id,
                 user.UserName,
                 user.NickName,
+                user.Bio,
                 user.Enable,
                 user.PermissionLevel,
                 role = user.Role.ToString()
@@ -268,4 +297,87 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
             return null;
         }
     }
+
+    private static long GetDirectorySize(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)) return 0;
+        try
+        {
+            return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
+                .Sum(file => new FileInfo(file).Length);
+        }
+        catch (IOException) { return 0; }
+        catch (UnauthorizedAccessException) { return 0; }
+    }
+
+    private static SystemMemoryInfo GetSystemMemoryInfo()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var status = new MemoryStatusEx { Length = (uint)Marshal.SizeOf<MemoryStatusEx>() };
+            if (GlobalMemoryStatusEx(ref status))
+            {
+                var total = (long)Math.Min(status.TotalPhysical, (ulong)long.MaxValue);
+                var available = (long)Math.Min(status.AvailablePhysical, (ulong)long.MaxValue);
+                return CreateMemoryInfo(total, available);
+            }
+        }
+
+        if (OperatingSystem.IsLinux() && File.Exists("/proc/meminfo"))
+        {
+            try
+            {
+                long totalKb = 0;
+                long availableKb = 0;
+                foreach (var line in File.ReadLines("/proc/meminfo"))
+                {
+                    if (line.StartsWith("MemTotal:", StringComparison.Ordinal)) totalKb = ParseMemInfoKilobytes(line);
+                    else if (line.StartsWith("MemAvailable:", StringComparison.Ordinal)) availableKb = ParseMemInfoKilobytes(line);
+                    if (totalKb > 0 && availableKb > 0) break;
+                }
+                if (totalKb > 0) return CreateMemoryInfo(totalKb * 1024, availableKb * 1024);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        var fallbackTotal = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+        var fallbackAvailable = Math.Max(0, fallbackTotal - Process.GetCurrentProcess().WorkingSet64);
+        return CreateMemoryInfo(fallbackTotal, fallbackAvailable);
+    }
+
+    private static SystemMemoryInfo CreateMemoryInfo(long total, long available)
+    {
+        total = Math.Max(0, total);
+        available = Math.Clamp(available, 0, total);
+        var used = Math.Max(0, total - available);
+        var percent = total == 0 ? 0 : used * 100d / total;
+        return new SystemMemoryInfo(total, used, available, Math.Clamp(percent, 0, 100));
+    }
+
+    private static long ParseMemInfoKilobytes(string line)
+    {
+        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 && long.TryParse(parts[1], out var value) ? value : 0;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx(ref MemoryStatusEx buffer);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MemoryStatusEx
+    {
+        public uint Length;
+        public uint MemoryLoad;
+        public ulong TotalPhysical;
+        public ulong AvailablePhysical;
+        public ulong TotalPageFile;
+        public ulong AvailablePageFile;
+        public ulong TotalVirtual;
+        public ulong AvailableVirtual;
+        public ulong AvailableExtendedVirtual;
+    }
+
+    private readonly record struct SystemMemoryInfo(long TotalBytes, long UsedBytes, long AvailableBytes, double UsagePercent);
 }

@@ -7,33 +7,141 @@
     <title>XFEToolBox Code Studio</title>
     <style>
         * { box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #1e1e2e; color: #d9d9e8; font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif; }
-        body { display: grid; grid-template-rows: 38px 1fr 24px; }
-        #tabs { display: flex; overflow-x: auto; background: #181825; border-bottom: 1px solid #303044; }
-        .tab { min-width: 130px; max-width: 220px; height: 38px; display: flex; align-items: center; padding: 0 12px; border-right: 1px solid #303044; color: #aaaabd; cursor: pointer; user-select: none; }
-        .tab:hover { background: #252538; }
-        .tab.active { color: #f4f4fb; background: #1e1e2e; box-shadow: inset 0 2px #9898e7; }
+        :root {
+            --accent: #9898e7;
+            --surface: #fbfbfe;
+            --surface-subtle: #f5f4fc;
+            --surface-hover: #efeffa;
+            --border: #e6e5f0;
+            --text: #4a4a60;
+            --muted: #9292a4;
+        }
+        html, body {
+            width: 100%; height: 100%; margin: 0; overflow: hidden;
+            background: var(--surface); color: var(--text);
+            font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+        }
+        body { display: grid; grid-template-rows: 42px 1fr 27px; }
+        #tabs {
+            display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; overflow-y: hidden;
+            padding: 5px 7px 0; background: var(--surface-subtle); border-bottom: 1px solid var(--border);
+        }
+        #tabs::-webkit-scrollbar { height: 3px; }
+        #tabs::-webkit-scrollbar-thumb { background: #c8c7e9; border-radius: 3px; }
+        .tab {
+            min-width: 126px; max-width: 220px; height: 36px; display: flex; align-items: center;
+            padding: 0 10px; gap: 7px; border: 1px solid transparent; border-bottom: 0;
+            border-radius: 10px 10px 0 0; color: #858598; cursor: pointer; user-select: none;
+            font-size: 12px; transition: background .14s ease, color .14s ease, border-color .14s ease;
+        }
+        .tab.dragging { opacity: .42; }
+        .tab.drag-over { background: #e4e3f8; box-shadow: inset 3px 0 var(--accent); }
+        .tab:hover { background: #ecebf8; color: #5b5b70; }
+        .tab.active { color: #45455b; background: var(--surface); border-color: var(--border); box-shadow: inset 0 3px var(--accent); }
+        .tab .file-icon {
+            width: 20px; height: 20px; display: grid; place-items: center; flex: 0 0 auto;
+            border-radius: 6px; background: #ecebfb; color: #7777c9; font-size: 8px; font-weight: 700;
+        }
         .tab .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-        .tab .dirty { color: #b9a7ff; width: 14px; text-align: right; }
+        .tab .dirty { color: var(--accent); width: 10px; text-align: center; font-size: 9px; }
+        .tab .close {
+            width: 20px; height: 20px; display: grid; place-items: center; flex: 0 0 auto;
+            margin-right: -5px; border: 0; border-radius: 6px; background: transparent;
+            color: #77778d; font: 15px/1 "Segoe UI"; cursor: pointer; opacity: 0;
+        }
+        .tab:hover .close, .tab.active .close { opacity: 1; }
+        .tab .close:hover { background: #deddf2; color: #3f3f55; }
         #editor { min-width: 0; min-height: 0; }
-        #status { display: flex; align-items: center; justify-content: flex-end; gap: 18px; padding: 0 12px; font-size: 11px; background: #7777c9; color: white; user-select: none; }
-        #empty { position: fixed; inset: 38px 0 24px; display: grid; place-items: center; color: #77778d; pointer-events: none; }
+        #status {
+            display: flex; align-items: center; justify-content: flex-end; gap: 0;
+            padding: 0 12px; font-size: 10px; background: #f1f0fa; color: #67677e;
+            border-top: 1px solid #e1e0ef; user-select: none;
+        }
+        #status span { display: flex; align-items: center; height: 100%; padding: 0 10px; }
+        #status span + span { border-left: 1px solid #dcdbea; }
+        #diagnostics { color: #6969b8; }
+        #empty { position: fixed; inset: 42px 0 27px; display: grid; place-items: center; pointer-events: none; }
+        .empty-card { text-align: center; color: var(--muted); }
+        .empty-icon {
+            width: 64px; height: 64px; display: grid; place-items: center; margin: 0 auto 14px;
+            border-radius: 20px; background: #f0effc; color: var(--accent); font-size: 18px; font-weight: 700;
+        }
+        .empty-title { color: #66667b; font-size: 14px; font-weight: 600; }
+        .empty-hint { margin-top: 5px; font-size: 11px; }
+        .empty-shortcuts { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+        kbd { padding: 3px 7px; border: 1px solid #deddec; border-radius: 6px; background: white; color: #77778d; font: 10px "Segoe UI"; }
+
+        body.dark {
+            --surface: #202033; --surface-subtle: #1b1b2b; --surface-hover: #2a2a40;
+            --border: #34344a; --text: #deddec; --muted: #85859b;
+        }
+        body.dark #tabs { background: #1b1b2b; }
+        body.dark .tab:hover { background: #29293e; color: #d3d3e4; }
+        body.dark .tab.drag-over { background: #353550; }
+        body.dark .tab.active { background: #202033; color: white; }
+        body.dark .tab .file-icon { background: #31314a; color: #b6b6f1; }
+        body.dark .tab .close { color: #b6b5c8; }
+        body.dark .tab .close:hover { background: #3b3b55; color: white; }
+        body.dark #status { background: #29293f; color: #c0bfd1; border-color: #383850; }
+        body.dark #status span + span { border-color: #414157; }
+        body.dark #diagnostics { color: #b8b7f0; }
+        body.dark .empty-icon { background: #2c2c46; }
+        body.dark .empty-title { color: #c4c4d5; }
+        body.dark kbd { background: #29293f; border-color: #414157; color: #c2c2d5; }
     </style>
     <script src="./monaco/vs/loader.js"></script>
 </head>
-<body>
+<body class="light">
     <div id="tabs"></div>
     <div id="editor"></div>
-    <div id="empty">从左侧选择文件，或新建一个 C#/XAML 文件</div>
-    <div id="status"><span id="diagnostics">0 个问题</span><span id="position">Ln 1, Col 1</span><span id="language">纯文本</span><span>UTF-8</span></div>
+    <div id="empty">
+        <div class="empty-card">
+            <div class="empty-icon">&lt;/&gt;</div>
+            <div class="empty-title">准备开始编写工具</div>
+            <div class="empty-hint">从左侧选择文件，或者在工程中创建一个新文件</div>
+            <div class="empty-shortcuts"><kbd>Ctrl + N</kbd><kbd>Ctrl + O</kbd><kbd>Ctrl + S</kbd></div>
+        </div>
+    </div>
+    <div id="status"><span id="diagnostics">✓ 0 个问题</span><span id="position">Ln 1, Col 1</span><span id="language">纯文本</span><span>UTF-8</span></div>
     <script>
         const states = new Map();
         let editor;
         let activePath = null;
         let suppressChange = false;
+        let currentTheme = 'light';
+        let tabOrder = [];
 
         require.config({ paths: { vs: './monaco/vs' } });
         require(['vs/editor/editor.main'], function () {
+            monaco.editor.defineTheme('xfe-light', {
+                base: 'vs', inherit: true,
+                rules: [
+                    { token: 'keyword', foreground: '7777C9', fontStyle: 'bold' },
+                    { token: 'string', foreground: '3F8A68' },
+                    { token: 'number', foreground: 'C46D38' },
+                    { token: 'comment', foreground: '9898A8', fontStyle: 'italic' },
+                    { token: 'type', foreground: '5C75B8' },
+                    { token: 'tag', foreground: '715DB5' },
+                    { token: 'attribute.name', foreground: 'A05E78' }
+                ],
+                colors: {
+                    'editor.background': '#FBFBFE', 'editor.foreground': '#444459',
+                    'editorLineNumber.foreground': '#B0AFC0', 'editorLineNumber.activeForeground': '#6969B8',
+                    'editor.selectionBackground': '#9898E74A', 'editor.inactiveSelectionBackground': '#B9B9E72E',
+                    'editorCursor.foreground': '#7777C9', 'editorIndentGuide.background1': '#E8E7F0',
+                    'editorIndentGuide.activeBackground1': '#C7C6DF', 'editor.lineHighlightBackground': '#F3F2FA',
+                    'editorWhitespace.foreground': '#D5D4E2', 'editorWidget.background': '#FFFFFF',
+                    'editorWidget.border': '#D9D8E7', 'editorSuggestWidget.selectedBackground': '#EDECF9',
+                    'editorSuggestWidget.background': '#FFFFFF', 'editorSuggestWidget.foreground': '#343449',
+                    'editorSuggestWidget.selectedForeground': '#29293D', 'editorSuggestWidget.highlightForeground': '#5555B8',
+                    'editorSuggestWidget.focusHighlightForeground': '#4545A7', 'editorSuggestWidget.selectedBackground': '#DCDCF6',
+                    'editorSuggestWidget.selectedIconForeground': '#4A4AA5', 'editorSuggestWidgetStatus.foreground': '#66667B',
+                    'editorSuggestWidget.border': '#BEBED8', 'editorHoverWidget.background': '#FFFFFF',
+                    'editorHoverWidget.foreground': '#343449', 'editorHoverWidget.border': '#BEBED8',
+                    'minimap.background': '#F8F8FC', 'scrollbarSlider.background': '#B7B6D84D',
+                    'scrollbarSlider.hoverBackground': '#9D9CCD66', 'scrollbarSlider.activeBackground': '#8585BC73'
+                }
+            });
             monaco.editor.defineTheme('xfe-dark', {
                 base: 'vs-dark', inherit: true,
                 rules: [
@@ -43,20 +151,30 @@
                     { token: 'comment', foreground: '6C7086', fontStyle: 'italic' }
                 ],
                 colors: {
-                    'editor.background': '#1e1e2e', 'editor.foreground': '#d9d9e8',
+                    'editor.background': '#202033', 'editor.foreground': '#d9d9e8',
                     'editorLineNumber.foreground': '#58586b', 'editorLineNumber.activeForeground': '#cdd6f4',
                     'editor.selectionBackground': '#55559A70', 'editor.inactiveSelectionBackground': '#45456A55',
-                    'editorCursor.foreground': '#b4befe', 'editorIndentGuide.background1': '#343447'
+                    'editorCursor.foreground': '#b4befe', 'editorIndentGuide.background1': '#343447',
+                    'editor.lineHighlightBackground': '#26263A', 'minimap.background': '#1E1E30',
+                    'editorSuggestWidget.background': '#29293E', 'editorSuggestWidget.foreground': '#ECECF6',
+                    'editorSuggestWidget.selectedForeground': '#FFFFFF', 'editorSuggestWidget.highlightForeground': '#C7C7FF',
+                    'editorSuggestWidget.focusHighlightForeground': '#D9D9FF', 'editorSuggestWidget.selectedBackground': '#444466',
+                    'editorSuggestWidget.selectedIconForeground': '#D7D7FF', 'editorSuggestWidgetStatus.foreground': '#B8B8CA',
+                    'editorSuggestWidget.border': '#555574', 'editorHoverWidget.background': '#29293E',
+                    'editorHoverWidget.foreground': '#ECECF6', 'editorHoverWidget.border': '#555574'
                 }
             });
             editor = monaco.editor.create(document.getElementById('editor'), {
-                theme: 'xfe-dark', automaticLayout: true, fontFamily: "'Cascadia Code', Consolas, monospace",
-                fontSize: 14, lineHeight: 22, minimap: { enabled: true }, smoothScrolling: true,
+                theme: 'xfe-light', automaticLayout: true, fontFamily: "'Cascadia Code', 'JetBrains Mono', Consolas, monospace",
+                fontSize: 13.5, lineHeight: 22, fontLigatures: true,
+                minimap: { enabled: true, renderCharacters: false, maxColumn: 100 }, smoothScrolling: true,
                 cursorSmoothCaretAnimation: 'on', bracketPairColorization: { enabled: true },
-                guides: { bracketPairs: true, indentation: true }, padding: { top: 10 },
+                cursorBlinking: 'smooth', guides: { bracketPairs: true, indentation: true }, padding: { top: 14, bottom: 12 },
                 quickSuggestions: { other: true, comments: false, strings: false },
                 suggestOnTriggerCharacters: true, wordBasedSuggestions: 'matchingDocuments',
-                formatOnPaste: true, formatOnType: true, tabSize: 4, insertSpaces: true
+                formatOnPaste: true, formatOnType: true, tabSize: 4, insertSpaces: true,
+                renderLineHighlight: 'all', renderWhitespace: 'selection', scrollBeyondLastLine: false,
+                stickyScroll: { enabled: true }, scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 }
             });
 
             registerCompletions();
@@ -73,28 +191,38 @@
             });
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => requestHostSave());
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => requestHostSave());
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN, () => post({ type: 'command', command: 'newFile' }));
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyN, () => post({ type: 'command', command: 'newProject' }));
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO, () => post({ type: 'command', command: 'openProject' }));
+            editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => post({ type: 'command', command: 'format' }));
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyE, () => post({ type: 'command', command: 'export' }));
+            editor.addCommand(monaco.KeyCode.F5, () => post({ type: 'command', command: 'run' }));
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.F5, () => post({ type: 'command', command: 'preview' }));
             post({ type: 'ready' });
         });
 
         function languageFor(path) {
             const lower = path.toLowerCase();
             if (lower.endsWith('.cs')) return 'csharp';
-            if (lower.endsWith('.xaml') || lower.endsWith('.xml') || lower.endsWith('.resx')) return 'xml';
+            if (lower.endsWith('.xaml') || lower.endsWith('.xml') || lower.endsWith('.resx') || lower.endsWith('.config') || lower.endsWith('.props') || lower.endsWith('.targets')) return 'xml';
             if (lower.endsWith('.json')) return 'json';
-            if (lower.endsWith('.md')) return 'markdown';
+            if (['.md', '.markdown', '.mdown', '.mkd', '.mkdn'].some(extension => lower.endsWith(extension))) return 'markdown';
+            if (lower.endsWith('.yml') || lower.endsWith('.yaml')) return 'yaml';
             return 'plaintext';
         }
 
-        function friendlyLanguage(id) { return ({ csharp: 'C#', xml: 'XAML / XML', json: 'JSON', markdown: 'Markdown', plaintext: '纯文本' })[id] || id; }
+        function friendlyLanguage(id) { return ({ csharp: 'C#', xml: 'XAML / XML', json: 'JSON', markdown: 'Markdown', yaml: 'YAML', plaintext: '纯文本' })[id] || id; }
 
         function loadWorkspace(payload) {
             states.forEach(state => state.model.dispose());
             states.clear();
+            tabOrder = [];
             activePath = null;
             (payload.files || []).forEach(file => {
                 const uri = monaco.Uri.parse('inmemory://xfetoolbox/' + encodeURI(file.path));
                 const model = monaco.editor.createModel(file.content || '', languageFor(file.path), uri);
                 states.set(file.path, { model, dirty: false });
+                tabOrder.push(file.path);
             });
             renderTabs();
             const first = payload.activePath && states.has(payload.activePath) ? payload.activePath : states.keys().next().value;
@@ -107,6 +235,7 @@
                 const uri = monaco.Uri.parse('inmemory://xfetoolbox/' + encodeURI(file.path));
                 states.set(file.path, { model: monaco.editor.createModel(file.content || '', languageFor(file.path), uri), dirty: true });
             }
+            if (!tabOrder.includes(file.path)) tabOrder.push(file.path);
             activateFile(file.path);
             renderTabs();
         }
@@ -115,17 +244,20 @@
             const state = states.get(path);
             if (!state) return;
             state.model.dispose(); states.delete(path);
+            tabOrder = tabOrder.filter(item => item !== path);
             if (activePath === path) {
                 activePath = null;
-                const next = states.keys().next().value;
-                if (next) activateFile(next); else editor.setModel(null);
+                const next = tabOrder[0];
+                if (next) activateFile(next); else { editor.setModel(null); updateEmptyStatus(); }
             }
             renderTabs();
+            document.getElementById('empty').style.display = states.size ? 'none' : 'grid';
         }
 
         function activateFile(path) {
             const state = states.get(path);
             if (!state || !editor) return;
+            if (!tabOrder.includes(path)) tabOrder.push(path);
             activePath = path;
             suppressChange = true;
             editor.setModel(state.model);
@@ -138,18 +270,79 @@
 
         function renderTabs() {
             const tabs = document.getElementById('tabs'); tabs.innerHTML = '';
-            states.forEach((state, path) => {
+            tabOrder.filter(path => states.has(path)).forEach(path => {
+                const state = states.get(path);
                 const tab = document.createElement('div'); tab.className = 'tab' + (path === activePath ? ' active' : '');
-                tab.title = path; tab.onclick = () => activateFile(path);
+                tab.title = `${path}\n拖动可调整顺序`; tab.onclick = () => activateFile(path); tab.draggable = true;
+                tab.ondragstart = event => beginTabDrag(event, path, tab);
+                tab.ondragover = event => dragTabOver(event, tab);
+                tab.ondragleave = () => tab.classList.remove('drag-over');
+                tab.ondrop = event => dropTab(event, path, tab);
+                tab.ondragend = () => clearTabDragStyles();
+                const icon = document.createElement('span'); icon.className = 'file-icon'; icon.textContent = iconFor(path);
                 const name = document.createElement('span'); name.className = 'name'; name.textContent = path.split('/').pop();
                 const dirty = document.createElement('span'); dirty.className = 'dirty'; dirty.textContent = state.dirty ? '●' : '';
-                tab.append(name, dirty); tabs.appendChild(tab);
+                const close = document.createElement('button'); close.className = 'close'; close.type = 'button'; close.title = '关闭选项卡'; close.textContent = '×';
+                close.onclick = event => { event.stopPropagation(); closeFileTab(path); };
+                tab.append(icon, name, dirty, close); tabs.appendChild(tab);
             });
+        }
+
+        function beginTabDrag(event, path, tab) {
+            event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/x-xfe-tab', path);
+            requestAnimationFrame(() => tab.classList.add('dragging'));
+        }
+        function dragTabOver(event, tab) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; tab.classList.add('drag-over'); }
+        function dropTab(event, targetPath, tab) {
+            event.preventDefault();
+            const sourcePath = event.dataTransfer.getData('text/x-xfe-tab');
+            tab.classList.remove('drag-over');
+            if (!sourcePath || sourcePath === targetPath) return;
+            const sourceIndex = tabOrder.indexOf(sourcePath); const targetIndex = tabOrder.indexOf(targetPath);
+            if (sourceIndex < 0 || targetIndex < 0) return;
+            tabOrder.splice(sourceIndex, 1); tabOrder.splice(targetIndex, 0, sourcePath); renderTabs();
+        }
+        function clearTabDragStyles() { document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('dragging', 'drag-over')); }
+        function closeFileTab(path) {
+            const index = tabOrder.indexOf(path); if (index < 0) return;
+            tabOrder.splice(index, 1);
+            if (activePath === path) {
+                const next = tabOrder[Math.min(index, tabOrder.length - 1)];
+                activePath = null;
+                if (next) activateFile(next); else { editor.setModel(null); updateEmptyStatus(); }
+            }
+            renderTabs();
+        }
+        function updateEmptyStatus() {
+            document.getElementById('empty').style.display = activePath ? 'none' : 'grid';
+            if (!activePath) {
+                document.getElementById('position').textContent = 'Ln 1, Col 1';
+                document.getElementById('language').textContent = '纯文本';
+                document.getElementById('diagnostics').textContent = '✓ 0 个问题';
+            }
+        }
+
+        function iconFor(path) {
+            const lower = path.toLowerCase();
+            if (lower.endsWith('.cs')) return 'C#';
+            if (lower.endsWith('.xaml') || lower.endsWith('.xml')) return '<>';
+            if (lower.endsWith('.json')) return '{}';
+            if (['.md', '.markdown', '.mdown', '.mkd', '.mkdn'].some(extension => lower.endsWith(extension))) return 'M';
+            if (lower.endsWith('.yml') || lower.endsWith('.yaml')) return 'Y';
+            return '·';
         }
 
         function requestHostSave() { post({ type: 'saveWorkspace', files: collectFiles() }); }
         function collectFiles() { return Array.from(states, ([path, state]) => ({ path, content: state.model.getValue() })); }
         function getWorkspaceJson() { return JSON.stringify(collectFiles()); }
+        function getFileContent(path) { return states.get(path)?.model.getValue() ?? null; }
+        function setFileContent(path, content) {
+            const state = states.get(path);
+            if (!state) return false;
+            const nextContent = content ?? '';
+            if (state.model.getValue() !== nextContent) state.model.setValue(nextContent);
+            return true;
+        }
         function markSaved() { states.forEach(state => state.dirty = false); renderTabs(); }
 
         function updateStatus() {
@@ -178,7 +371,7 @@
                 if (error) markers.push(marker(error.textContent.split('\n')[0], 1, 1));
             }
             monaco.editor.setModelMarkers(model, 'xfe-basic-diagnostics', markers);
-            document.getElementById('diagnostics').textContent = `${markers.length} 个问题`;
+            document.getElementById('diagnostics').textContent = markers.length ? `⚠ ${markers.length} 个问题` : '✓ 0 个问题';
         }
 
         function marker(message, line, column) { return { severity: monaco.MarkerSeverity.Error, message, startLineNumber: line, startColumn: column, endLineNumber: line, endColumn: column + 1 }; }
@@ -188,6 +381,12 @@
             monaco.languages.registerCompletionItemProvider('csharp', {
                 triggerCharacters: ['.', '<'],
                 provideCompletionItems: () => ({ suggestions: [
+                    ...['public', 'private', 'protected', 'internal', 'static', 'sealed', 'abstract', 'partial',
+                        'class', 'struct', 'interface', 'enum', 'record', 'namespace', 'using', 'var', 'string',
+                        'int', 'long', 'double', 'decimal', 'bool', 'object', 'void', 'async', 'await', 'return',
+                        'new', 'this', 'base', 'null', 'true', 'false', 'get', 'set', 'init', 'required', 'readonly',
+                        'virtual', 'override', 'event', 'delegate', 'if', 'else', 'switch', 'case', 'for', 'foreach',
+                        'while', 'try', 'catch', 'finally', 'throw'].map(keyword => word(keyword, K.Keyword)),
                     snippet('wpf-page', 'WPF UserControl 模板', 'public partial class ${1:ToolView} : UserControl\n{\n    public ${1:ToolView}()\n    {\n        InitializeComponent();\n    }\n}', K.Snippet),
                     snippet('observable-property', 'MVVM 可观察属性', '[ObservableProperty]\nprivate ${1:string} ${2:value} = ${3:string.Empty};', K.Snippet),
                     snippet('relay-command', 'MVVM 命令', '[RelayCommand]\nprivate void ${1:Execute}()\n{\n    ${0}\n}', K.Snippet),
@@ -226,8 +425,16 @@
             let depth = 0; return code.split('\n').map(line => { const value = line.trim(); if (value.startsWith('}')) depth = Math.max(0, depth - 1); const result = value ? '    '.repeat(depth) + value : ''; if (value.endsWith('{')) depth++; return result; }).join('\n');
         }
 
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.classList.toggle('dark', currentTheme === 'dark');
+            document.body.classList.toggle('light', currentTheme === 'light');
+            monaco.editor.setTheme(currentTheme === 'dark' ? 'xfe-dark' : 'xfe-light');
+            return currentTheme;
+        }
+
         function post(message) { if (window.chrome && window.chrome.webview) window.chrome.webview.postMessage(message); }
-        window.editorHost = { loadWorkspace, upsertFile, removeFile, activateFile, requestHostSave, getWorkspaceJson, markSaved };
+        window.editorHost = { loadWorkspace, upsertFile, removeFile, activateFile, closeFileTab, requestHostSave, getWorkspaceJson, getFileContent, setFileContent, markSaved, toggleTheme };
     </script>
 </body>
 </html>

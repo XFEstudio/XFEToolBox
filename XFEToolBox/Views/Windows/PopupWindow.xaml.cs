@@ -79,16 +79,7 @@ public partial class PopupWindow : Window
         await CloseWithResultAsync(MessageBoxResult.None);
     }
 
-    private async void CloseWindowImage_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        e.Handled = true;
+    private async void CaptionBar_CloseRequested(object? sender, EventArgs e) =>
         await CloseWithResultAsync(MessageBoxResult.None);
-    }
-
-    private void DragTabBorder_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (e.LeftButton == MouseButtonState.Pressed)
-            DragMove();
-    }
 
 }

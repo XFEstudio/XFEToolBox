@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Media;
@@ -9,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Views.Pages;
 using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Core.Downloads;
@@ -25,7 +27,10 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         ViewPage = viewPage;
         _software = software;
         IconSource = iconSource;
-        DownloadButtonName = software.DownloadMode == SoftwareDownloadMode.Direct ? "下载到本地" : "前往官方页面";
+        Channels = software.GetEffectiveChannels().Where(channel => channel.Enabled).ToArray();
+        selectedChannel = Channels.FirstOrDefault() ?? new SoftwareDownloadChannel { Name = "暂无可用渠道", Enabled = false };
+        DownloadButtonName = GetDownloadButtonName(selectedChannel);
+        CanDownload = selectedChannel.Enabled;
     }
 
     public DownloadInfoPage ViewPage { get; }
@@ -35,18 +40,35 @@ public partial class DownloadInfoPageViewModel : ObservableObject
     public string Publisher => _software.Publisher;
     public string Category => _software.Category;
     public string Version => _software.Version;
-    public string DownloadModeText => _software.DownloadMode == SoftwareDownloadMode.Direct ? "客户端直接下载" : "浏览器获取";
+    public IReadOnlyList<SoftwareDownloadChannel> Channels { get; }
+    public string DownloadModeText => SelectedChannel.Mode switch
+    {
+        SoftwareDownloadMode.Direct => "客户端直接下载",
+        SoftwareDownloadMode.Server => "工具服务器下载",
+        _ => "浏览器获取"
+    };
+    public string SelectedChannelName => SelectedChannel.Name;
     public string Notice => _software.Notice;
     public Visibility NoticeVisibility => string.IsNullOrWhiteSpace(_software.Notice) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility WebsiteVisibility => IsWebAddress(_software.WebsiteUrl) ? Visibility.Visible : Visibility.Collapsed;
 
     [ObservableProperty] private ImageSource iconSource;
+    [ObservableProperty] private SoftwareDownloadChannel selectedChannel;
     [ObservableProperty] private string downloadButtonName;
     [ObservableProperty] private string statusText = "确认信息后即可开始获取。";
     [ObservableProperty] private double progressValue;
     [ObservableProperty] private bool isProgressIndeterminate;
     [ObservableProperty] private Visibility progressVisibility = Visibility.Collapsed;
     [ObservableProperty] private bool canDownload = true;
+
+    partial void OnSelectedChannelChanged(SoftwareDownloadChannel value)
+    {
+        DownloadButtonName = GetDownloadButtonName(value);
+        CanDownload = value.Enabled;
+        StatusText = value.Enabled ? $"已选择“{value.Name}”，确认后即可开始获取。" : "该渠道当前不可用。";
+        OnPropertyChanged(nameof(DownloadModeText));
+        OnPropertyChanged(nameof(SelectedChannelName));
+    }
 
     [RelayCommand]
     private void OpenWebsite()
@@ -59,12 +81,13 @@ public partial class DownloadInfoPageViewModel : ObservableObject
     {
         if (!CanDownload || !EnsureAgreementAccepted()) return;
 
-        if (_software.DownloadMode == SoftwareDownloadMode.Browser)
+        var channel = SelectedChannel;
+        if (channel.Mode == SoftwareDownloadMode.Browser)
         {
             try
             {
-                OpenAddress(_software.DownloadUrl);
-                StatusText = "已在浏览器中打开服务器提供的官方获取页面。";
+                OpenAddress(channel.Url);
+                StatusText = $"已在浏览器中打开“{channel.Name}”。";
             }
             catch (Exception exception)
             {
@@ -73,7 +96,7 @@ public partial class DownloadInfoPageViewModel : ObservableObject
             return;
         }
 
-        var task = DownloadDirectAsync();
+        var task = DownloadDirectAsync(channel);
         TaskManager.TaskDictionary[task.Id] = new NamedTask($"下载 {_software.Name}", task);
         try
         {
@@ -126,7 +149,7 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         return true;
     }
 
-    private async Task DownloadDirectAsync()
+    private async Task DownloadDirectAsync(SoftwareDownloadChannel channel)
     {
         string? temporaryPath = null;
         CanDownload = false;
@@ -138,13 +161,15 @@ public partial class DownloadInfoPageViewModel : ObservableObject
 
         try
         {
-            if (!IsWebAddress(_software.DownloadUrl)) throw new InvalidOperationException("服务器返回了无效的下载地址。");
-
             Directory.CreateDirectory(DownloadProfile.DownloadDirectory);
-            using var response = await DownloadClient.GetAsync(_software.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+            using var response = channel.Mode == SoftwareDownloadMode.Server
+                ? await DownloadFromServerAsync(channel)
+                : IsWebAddress(channel.Url)
+                    ? await DownloadClient.GetAsync(channel.Url, HttpCompletionOption.ResponseHeadersRead)
+                    : throw new InvalidOperationException("服务器返回了无效的下载地址。");
             response.EnsureSuccessStatusCode();
 
-            var fileName = ResolveFileName(response, _software);
+            var fileName = ResolveFileName(response, _software.Id, channel);
             var destinationPath = GetAvailablePath(Path.Combine(DownloadProfile.DownloadDirectory, fileName));
             temporaryPath = destinationPath + $".{Guid.NewGuid():N}.download";
             var contentLength = response.Content.Headers.ContentLength;
@@ -174,10 +199,10 @@ public partial class DownloadInfoPageViewModel : ObservableObject
                 await output.FlushAsync();
             }
 
-            if (!string.IsNullOrWhiteSpace(_software.Sha256))
+            if (!string.IsNullOrWhiteSpace(channel.Sha256))
             {
                 StatusText = "正在校验文件完整性…";
-                await VerifySha256Async(temporaryPath, _software.Sha256);
+                await VerifySha256Async(temporaryPath, channel.Sha256);
             }
 
             File.Move(temporaryPath, destinationPath);
@@ -209,21 +234,35 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         {
             if (temporaryPath is not null && File.Exists(temporaryPath)) File.Delete(temporaryPath);
             CanDownload = true;
-            DownloadButtonName = "重新下载";
+            DownloadButtonName = GetDownloadButtonName(SelectedChannel);
         }
     }
 
-    private static string ResolveFileName(HttpResponseMessage response, SoftwareCatalogItem software)
+    private async Task<HttpResponseMessage> DownloadFromServerAsync(SoftwareDownloadChannel channel)
     {
-        var value = software.FileName;
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{ClientSession.ApiAddress}/v1/software/download")
+        {
+            Content = JsonContent.Create(new
+            {
+                execute = "v1/software/download",
+                softwareId = _software.Id,
+                channelId = channel.Id
+            })
+        };
+        return await DownloadClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+    }
+
+    private static string ResolveFileName(HttpResponseMessage response, string softwareId, SoftwareDownloadChannel channel)
+    {
+        var value = channel.FileName;
         if (string.IsNullOrWhiteSpace(value))
             value = response.Content.Headers.ContentDisposition?.FileNameStar ?? response.Content.Headers.ContentDisposition?.FileName;
         value = value?.Trim().Trim('"');
-        if (string.IsNullOrWhiteSpace(value) && Uri.TryCreate(software.DownloadUrl, UriKind.Absolute, out var uri))
+        if (string.IsNullOrWhiteSpace(value) && Uri.TryCreate(channel.Url, UriKind.Absolute, out var uri))
             value = Uri.UnescapeDataString(Path.GetFileName(uri.LocalPath));
 
         value = Path.GetFileName(value);
-        if (string.IsNullOrWhiteSpace(value)) value = $"{SanitizeFileName(software.Id)}.download";
+        if (string.IsNullOrWhiteSpace(value)) value = $"{SanitizeFileName(softwareId)}.download";
         return SanitizeFileName(value);
     }
 
@@ -273,6 +312,13 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         if (!IsWebAddress(value)) return;
         Process.Start(new ProcessStartInfo(value) { UseShellExecute = true });
     }
+
+    private static string GetDownloadButtonName(SoftwareDownloadChannel channel) => channel.Mode switch
+    {
+        SoftwareDownloadMode.Browser => $"前往{channel.Name}",
+        SoftwareDownloadMode.Server => $"从{channel.Name}下载",
+        _ => $"通过{channel.Name}下载"
+    };
 
     private static HttpClient CreateDownloadClient()
     {

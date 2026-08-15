@@ -26,6 +26,47 @@
         <Style x:Key="DetailPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DetailButtonStyle}">
             <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#8585DF"/><Setter Property="BorderBrush" Value="#8585DF"/>
         </Style>
+        <Style x:Key="ChannelItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Padding" Value="12,8"/><Setter Property="Foreground" Value="#505066"/><Setter Property="Background" Value="Transparent"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value><ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="ItemSurface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" CornerRadius="8"><ContentPresenter/></Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#EEEEFB"/></Trigger>
+                        <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#E3E3F8"/><Setter Property="Foreground" Value="#5F5FBA"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate></Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ChannelComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#55556A"/><Setter Property="Background" Value="#F8F8FD"/><Setter Property="BorderBrush" Value="#DDDDEC"/>
+            <Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,0,8,0"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ChannelItemStyle}"/>
+            <Setter Property="Template">
+                <Setter.Value><ControlTemplate TargetType="ComboBox">
+                    <Grid x:Name="Root">
+                        <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
+                                <Border x:Name="Surface" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderThickness="1" CornerRadius="10">
+                                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="30"/></Grid.ColumnDefinitions>
+                                        <ContentPresenter Margin="12,0,4,0" VerticalAlignment="Center" Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}" TextElement.Foreground="#55556A"/>
+                                        <Path Grid.Column="1" Width="8" Height="5" Stretch="Fill" Fill="#8585D8" Data="M 0,0 L 4,4 L 8,0 Z" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="#AAAADF"/></Trigger></ControlTemplate.Triggers>
+                            </ControlTemplate></ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" PopupAnimation="Fade">
+                            <Border MinWidth="{Binding ActualWidth, ElementName=Root}" Margin="0,5,0,0" Padding="5" Background="White" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="11">
+                                <Border.Effect><DropShadowEffect Color="#3C365D" BlurRadius="18" ShadowDepth="4" Opacity="0.20"/></Border.Effect>
+                                <ScrollViewer MaxHeight="190"><ItemsPresenter/></ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate></Setter.Value>
+            </Setter>
+        </Style>
     </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -63,6 +104,15 @@
                         <StackPanel><TextBlock Text="发布者" Foreground="#A0A0B1" FontSize="9"/><TextBlock Text="{Binding Publisher}" Foreground="#55556A" FontSize="10.5" Margin="0,3,8,0" TextTrimming="CharacterEllipsis"/></StackPanel>
                         <StackPanel Grid.Column="1"><TextBlock Text="版本" Foreground="#A0A0B1" FontSize="9"/><TextBlock Text="{Binding Version}" Foreground="#55556A" FontSize="10.5" Margin="0,3,8,0" TextTrimming="CharacterEllipsis"/></StackPanel>
                         <StackPanel Grid.Column="2"><TextBlock Text="获取方式" Foreground="#A0A0B1" FontSize="9"/><TextBlock Text="{Binding DownloadModeText}" Foreground="#55556A" FontSize="10.5" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/></StackPanel>
+                    </Grid>
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="下载渠道" Foreground="#77778B" FontSize="10.5" FontWeight="SemiBold"/>
+                            <TextBlock Text="可选择不同来源" Foreground="#A0A0B1" FontSize="8.5" Margin="0,2,0,0"/>
+                        </StackPanel>
+                        <ComboBox Grid.Column="1" Height="38" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel}"
+                                  DisplayMemberPath="Name" Style="{StaticResource ChannelComboBoxStyle}"/>
                     </Grid>
                 </StackPanel>
             </Border>

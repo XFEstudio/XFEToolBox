@@ -31,11 +31,6 @@ public partial class SystemProfile : XFEProfile
     [ProfileProperty]
     private bool startWithMaximize = false;
     /// <summary>
-    /// 工具服务器 API 地址。
-    /// </summary>
-    [ProfileProperty]
-    private string serverAddress = "http://localhost:3000/api";
-    /// <summary>
     /// 最近登录的账号。
     /// </summary>
     [ProfileProperty]

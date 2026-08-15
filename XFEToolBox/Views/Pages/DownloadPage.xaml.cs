@@ -110,7 +110,7 @@ public partial class DownloadPage : Page
         _software.Clear();
         EmptyState.Visibility = Visibility.Visible;
         EmptyTitle.Text = connectionError ? "无法读取软件下载目录" : "暂时没有找到软件";
-        EmptyHint.Text = connectionError ? "请检查服务器地址与运行状态，然后点击刷新" : "可以换个关键词或分类再试";
+        EmptyHint.Text = connectionError ? "请检查网络连接与服务状态，然后点击刷新" : "可以换个关键词或分类再试";
         SoftwareCountText.Text = string.Empty;
         StatusText.Text = message;
     }

@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=windows:MainWindowViewModel}"
-        Title="XFE工具箱" Height="460" Width="730" MinHeight="450" MinWidth="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
+        Title="XFE工具箱" Height="460" Width="730" MinHeight="450" MinWidth="720" WindowState="Normal" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="AccountEntryStyle" TargetType="Border">
             <Setter Property="Height" Value="46"/>
@@ -106,11 +106,7 @@
                     <Border x:Name="backTabBorder" CornerRadius="10" Style="{StaticResource TabBorderStyle}" Visibility="Collapsed" MouseLeftButtonUp="BackTabBorder_MouseLeftButtonUp">
                         <Image HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4" Source="/Resources/Image/back.png"/>
                     </Border>
-                    <Border Grid.Column="1" x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove" MouseDown="DragTabBorder_MouseDown">
-                        <Image x:Name="dragTabImage" Source="/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
-                    </Border>
-                    <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="2" Source="/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
-                    <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="3" Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp"/>
+                    <controls:WindowCaptionBar Grid.Column="1" Grid.ColumnSpan="3" CloseRequested="CaptionBar_CloseRequested"/>
                 </Grid>
             </Border>
             <Border Grid.Column="0" Grid.Row="0" Background="Transparent">
@@ -118,7 +114,8 @@
                     <Span Foreground="#9898e7" FontSize="18" FontWeight="Bold">XFE·工具箱</Span>
                 </TextBlock>
             </Border>
-            <StackPanel Grid.Column="0" Grid.Row="1">
+            <ScrollViewer Grid.Column="0" Grid.Row="1" Margin="0,0,0,65" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
                 <controls:NavigationButton x:Name="mainButton" Command="{Binding NavigateToPageCommand}" CommandParameter="home">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -154,11 +151,16 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="选项设置"/>
                     </Grid>
                 </controls:NavigationButton>
-            </StackPanel>
 
-            <!-- 登录与账户入口只占用原侧栏左下角，不影响原有导航。 -->
+                <controls:NavigationButton Visibility="{Binding AdministratorVisibility}" Command="{Binding NavigateToPageCommand}" CommandParameter="serverManagement">
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Image Source="/Resources/Image/wrench.png" Margin="7"/><TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="服务器管理"/></Grid>
+                </controls:NavigationButton>
+            </StackPanel>
+            </ScrollViewer>
+
+            <!-- 账户入口固定在左下角，点击后进入个人中心。 -->
             <Border x:Name="AccountEntry" Grid.Column="0" Grid.Row="1" Style="{StaticResource AccountEntryStyle}"
-                    MouseLeftButtonUp="AccountEntry_MouseLeftButtonUp">
+                    ToolTip="打开个人中心" MouseLeftButtonUp="AccountEntry_MouseLeftButtonUp">
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <Border Width="29" Height="29" CornerRadius="10" Background="#9898E7">
@@ -170,27 +172,6 @@
                     </StackPanel>
                 </Grid>
             </Border>
-
-            <Popup x:Name="AccountPopup" PlacementTarget="{Binding ElementName=AccountEntry}" Placement="Right" VerticalOffset="-165"
-                   AllowsTransparency="True" StaysOpen="False" PopupAnimation="Fade">
-                <Border Width="285" Padding="18" Background="White" BorderBrush="#E4E4EF" BorderThickness="1" CornerRadius="16">
-                    <Border.Effect><DropShadowEffect Color="#3C365D" BlurRadius="22" ShadowDepth="5" Opacity="0.22"/></Border.Effect>
-                    <Grid>
-                        <StackPanel>
-                            <TextBlock Text="{Binding CurrentUserName}" FontSize="17" FontWeight="Bold" Foreground="#313145"/>
-                            <TextBlock Text="{Binding CurrentUserRole}" Foreground="#858598" FontSize="11" Margin="0,3,0,10"/>
-                            <StackPanel Visibility="{Binding AdministratorVisibility}">
-                                <TextBlock Text="服务器管理" Foreground="#77778F" FontSize="11" Margin="0,0,0,3"/>
-                                <Button Content="服务器概览" Tag="serverOverview" Style="{StaticResource AccountMenuButton}" Click="AdminMenuButton_Click"/>
-                                <Button Content="用户与权限" Tag="userManagement" Style="{StaticResource AccountMenuButton}" Click="AdminMenuButton_Click"/>
-                                <Button Content="工具发布" Tag="toolManagement" Style="{StaticResource AccountMenuButton}" Click="AdminMenuButton_Click"/>
-                                <Button Content="工具代码编辑器" Tag="editor" Style="{StaticResource AccountMenuButton}" Click="AdminMenuButton_Click"/>
-                            </StackPanel>
-                            <Button Content="退出登录" Height="32" Margin="0,9,0,0" Foreground="#B25555" Background="Transparent" BorderBrush="#E6CACA" Click="PopupLogoutButton_Click"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Popup>
 
             <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
             <Image Grid.Column="1" Grid.Row="1" Source="/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"/>

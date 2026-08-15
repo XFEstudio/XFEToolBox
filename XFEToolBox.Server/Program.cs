@@ -11,6 +11,7 @@ using XFEExtension.NetCore.ServerInteractive.Utilities.Server;
 
 EnsureInitialAdministrator();
 EnsureInitialSoftwareCatalog();
+
 AppDomain.CurrentDomain.ProcessExit += (_, _) => SaveProfiles();
 
 var validationOptions = new ToolPackageValidationOptions
@@ -24,7 +25,11 @@ var configuredStorageRoot = ServerProfile.StorageRoot;
 var storageRoot = Path.GetFullPath(Path.IsPathRooted(configuredStorageRoot)
     ? configuredStorageRoot
     : Path.Combine(AppContext.BaseDirectory, configuredStorageRoot));
-var adminApiKey = ServerProfile.AdminApiKey;
+var configuredSoftwareStorageRoot = ServerProfile.SoftwareStorageRoot;
+var softwareStorageRoot = Path.GetFullPath(Path.IsPathRooted(configuredSoftwareStorageRoot)
+    ? configuredSoftwareStorageRoot
+    : Path.Combine(AppContext.BaseDirectory, configuredSoftwareStorageRoot));
+Directory.CreateDirectory(softwareStorageRoot);
 var packageRepository = new FileSystemToolPackageRepository(
     new ToolPackageValidator(validationOptions),
     validationOptions,
@@ -34,12 +39,16 @@ var server = XFEServerBuilder.CreateBuilder()
     .UseXFEServer()
     .AddServerCore(XFEServerCoreBuilder.CreateBuilder()
         .AddParameter("ToolPackageRepository", packageRepository)
-        .AddParameter("AdminApiKey", adminApiKey)
+        .AddParameter("AdminApiKey", ServerProfile.AdminApiKey)
         .AddParameter("MaxPackageBytes", validationOptions.MaxPackageBytes)
+        .AddParameter("SoftwareStorageRoot", softwareStorageRoot)
+        .AddParameter("MaxSoftwareBytes", ServerProfile.MaxSoftwareBytes)
         .AddService<HealthService>()
         .AddService<SoftwareCatalogService>()
+        .AddService<SoftwareAdminService>()
         .AddService<ToolCatalogService>()
         .AddService<ToolAdminService>()
+        .AddService<RegistrationService>()
         .AddService<UserProfileService>()
         .AddService<AdminManagementService>()
         .UseXFEStandardServerCore<ToolBoxUserFaceInfo>(options =>
@@ -72,6 +81,7 @@ var server = XFEServerBuilder.CreateBuilder()
 Console.WriteLine("XFEToolBox Server");
 Console.WriteLine($"  地址：{ServerProfile.HttpAddress.TrimEnd('/')}/api");
 Console.WriteLine($"  数据：{storageRoot}");
+Console.WriteLine($"  软件：{softwareStorageRoot}");
 Console.WriteLine($"  用户：{UserDataProfile.UserTable.Count}");
 await server.Start();
 return;

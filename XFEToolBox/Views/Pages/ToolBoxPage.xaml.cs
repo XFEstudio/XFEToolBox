@@ -8,7 +8,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.Core.Model;
@@ -106,7 +105,7 @@ public partial class ToolBoxPage : Page
 
                 using var client = new HttpClient
                 {
-                    BaseAddress = new Uri(SystemProfile.ServerAddress.TrimEnd('/') + "/"),
+                    BaseAddress = new Uri(ClientSession.ApiAddress + "/"),
                     Timeout = TimeSpan.FromMinutes(2)
                 };
                 var catalogClient = new ToolCatalogClient(client);

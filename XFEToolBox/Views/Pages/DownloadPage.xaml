@@ -1,6 +1,7 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.DownloadPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       Background="Transparent" Title="" Loaded="Page_Loaded">
     <Page.Resources>
         <Style x:Key="DownloadToolbarButtonStyle" TargetType="Button">
@@ -127,14 +128,10 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid Margin="0,0,0,10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="128"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <Border Height="38" Background="#26FFFFFF" BorderBrush="#60FFFFFF" BorderThickness="1" CornerRadius="10">
-                <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="⌕" Foreground="#E8E8FF" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBox x:Name="SearchTextBox" Grid.Column="1" Padding="0,0,10,0" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0"
-                             Foreground="White" CaretBrush="White" ToolTip="搜索软件名称、介绍、发布者或标签" KeyDown="SearchTextBox_KeyDown"/>
-                </Grid>
-            </Border>
+            <controls:TextEditor x:Name="SearchTextBox" Height="38" Padding="11,0" Background="#26FFFFFF" Foreground="White" CaretBrush="White"
+                                 EditorCornerRadius="10" EditorBorderBrush="#60FFFFFF" EditorHoverBorderBrush="#B0FFFFFF" EditorFocusedBorderBrush="White"
+                                 HintText="搜索软件名称、介绍、发布者或标签" HintForeground="#E8E8FF" HintTextMargin="0" Icon="{StaticResource SearchIconGeometry}"
+                                 IconBrush="#E8E8FF" ToolTip="搜索软件名称、介绍、发布者或标签" KeyDown="SearchTextBox_KeyDown"/>
             <Border Grid.Column="1" Height="38" Margin="8,0,0,0" Padding="10,0" Background="#26FFFFFF" BorderBrush="#60FFFFFF" BorderThickness="1" CornerRadius="10">
                 <ComboBox x:Name="CategoryFilter" Style="{StaticResource CategoryComboBoxStyle}" VerticalContentAlignment="Center"
                           SelectionChanged="CategoryFilter_SelectionChanged"/>

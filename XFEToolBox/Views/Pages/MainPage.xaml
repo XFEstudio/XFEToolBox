@@ -61,6 +61,45 @@
                         </StackPanel>
                     </Grid>
                 </Border>
+
+                <StackPanel Visibility="{Binding AdminServerPanelVisibility}" Margin="3,18,3,6">
+                    <Grid Margin="4,0,4,9">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="#75F0A6" Margin="0,0,8,0" VerticalAlignment="Center"><Ellipse.Effect><DropShadowEffect Color="#58D98B" BlurRadius="7" ShadowDepth="0" Opacity="0.9"/></Ellipse.Effect></Ellipse>
+                                <TextBlock Text="{Binding AdminServerStatus}" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <TextBlock Text="服务器运行信息仅对管理员显示" Foreground="#C8FFFFFF" FontSize="9.5" Margin="16,3,0,0"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding AdminUpdatedText}" Foreground="#D8FFFFFF" FontSize="9.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                    <UniformGrid Columns="3">
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80A7C0FF" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5A4B7BFF"/><GradientStop Color="#30595DCC" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#A9CAFF" Margin="0,0,7,0"/><TextBlock Text="CPU 使用率" Foreground="#ECF4FF" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminCpuText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminCpuDetail}" Foreground="#D6E6FF" FontSize="9" Margin="0,5,0,0"/></StackPanel>
+                        </Border>
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#8096F0EE" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5535C6CF"/><GradientStop Color="#305DA8D6" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#8FF1E7" Margin="0,0,7,0"/><TextBlock Text="服务器内存" Foreground="#EAFFFD" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminMemoryText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminMemoryDetail}" Foreground="#D2FAF6" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Border>
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#8098F0BE" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5545C98A"/><GradientStop Color="#306EAE97" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#A7F2C5" Margin="0,0,7,0"/><TextBlock Text="用户与会话" Foreground="#ECFFF3" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminUsersText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminUsersDetail}" Foreground="#D5F9E3" FontSize="9" Margin="0,5,0,0"/></StackPanel>
+                        </Border>
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80F2A9D0" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#55E36FAE"/><GradientStop Color="#308E74D8" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#FFC0DE" Margin="0,0,7,0"/><TextBlock Text="已发布内容" Foreground="#FFF0F7" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminContentText}" Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminContentDetail}" Foreground="#FFDAEC" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Border>
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80FFD09A" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#55F0A85B"/><GradientStop Color="#30D97B7B" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#FFD394" Margin="0,0,7,0"/><TextBlock Text="存储占用" Foreground="#FFF7EA" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminStorageText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminStorageDetail}" Foreground="#FFE7C9" FontSize="9" Margin="0,5,0,0"/></StackPanel>
+                        </Border>
+                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80D3B2FF" BorderThickness="1" CornerRadius="14">
+                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#557F6BE8"/><GradientStop Color="#30B05DD8" Offset="1"/></LinearGradientBrush></Border.Background>
+                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#DCC0FF" Margin="0,0,7,0"/><TextBlock Text="持续运行" Foreground="#F7EEFF" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminUptimeText}" Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminUptimeDetail}" Foreground="#EBD9FF" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </Border>
+                    </UniformGrid>
+                </StackPanel>
             </StackPanel>
         </controls:SmoothScrollViewer>
     </Grid>

@@ -2,6 +2,7 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using XFEToolBox.Client.Views.Windows;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Views.Pages.Popups;
@@ -10,6 +11,8 @@ namespace XFEToolBox.Client.Utilities;
 
 public static class PopupHelper
 {
+    private const double DimmedOwnerOpacity = 0.58;
+
     private static NormalDialogPopupPage CreateNormalDialogPage(object content)
     {
         var dialogPage = new NormalDialogPopupPage();
@@ -93,7 +96,47 @@ public static class PopupHelper
         popupWindow.ViewModel.Content = content;
         if (content is IPopupPage popupPage)
             popupPage.PopupWindow = popupWindow;
-        popupWindow.ShowDialog();
+
+        var owner = options.Owner;
+        var originalOwnerOpacity = owner?.Opacity ?? 1;
+        try
+        {
+            if (options.DimOwner && owner is not null)
+                AnimateOwnerOpacity(owner, Math.Min(originalOwnerOpacity, DimmedOwnerOpacity), 140);
+            popupWindow.ShowDialog();
+        }
+        finally
+        {
+            if (options.DimOwner && owner is not null)
+                RestoreOwnerOpacity(owner, originalOwnerOpacity);
+        }
         return popupWindow.Result;
+    }
+
+    private static void AnimateOwnerOpacity(Window owner, double targetOpacity, int durationMilliseconds)
+    {
+        owner.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(
+            owner.Opacity,
+            targetOpacity,
+            TimeSpan.FromMilliseconds(durationMilliseconds))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.HoldEnd
+        });
+    }
+
+    private static void RestoreOwnerOpacity(Window owner, double originalOpacity)
+    {
+        var currentOpacity = owner.Opacity;
+        owner.BeginAnimation(UIElement.OpacityProperty, null);
+        owner.Opacity = originalOpacity;
+        owner.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(
+            currentOpacity,
+            originalOpacity,
+            TimeSpan.FromMilliseconds(170))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop
+        });
     }
 }

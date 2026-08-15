@@ -3,7 +3,10 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
+using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Client.Views.Windows;
 using XFEToolBox.Core.Tools;
 
@@ -17,7 +20,42 @@ public partial class ToolManagementPage : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync();
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
-    private void OpenEditorButton_Click(object sender, RoutedEventArgs e) => new ToolCodeEditorWindow().Show();
+    private void OpenEditorButton_Click(object sender, RoutedEventArgs e)
+    {
+        var launcher = new ToolProjectLauncherPopupPage();
+        var result = PopupHelper.ShowDialog(launcher, new PopupWindowOptions
+        {
+            Title = "工具项目",
+            Subtitle = "选择历史项目或浏览本地项目",
+            Width = 700,
+            Height = 520,
+            ContentMargin = new Thickness(0)
+        });
+        if (result == MessageBoxResult.OK && launcher.SelectedProjectPath is not null)
+            OpenEditor(launcher.SelectedProjectPath);
+    }
+
+    private void NewToolButton_Click(object sender, RoutedEventArgs e)
+    {
+        var creator = new NewToolProjectPopupPage();
+        var result = PopupHelper.ShowDialog(creator, new PopupWindowOptions
+        {
+            Title = "新建工具",
+            Subtitle = "创建标准 XFEToolBox 工具工程",
+            Width = 620,
+            Height = 430,
+            ContentMargin = new Thickness(0)
+        });
+        if (result == MessageBoxResult.OK && creator.CreatedProjectPath is not null)
+            OpenEditor(creator.CreatedProjectPath);
+    }
+
+    private static void OpenEditor(string projectPath)
+    {
+        var editor = new ToolCodeEditorWindow(projectPath);
+        editor.Show();
+        editor.Activate();
+    }
 
     private async void UploadButton_Click(object sender, RoutedEventArgs e)
     {
@@ -29,9 +67,9 @@ public partial class ToolManagementPage : Page
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
             var response = await ClientSession.Requester.Request<ToolPackageUploadResult>(
                 "adminUploadTool", Convert.ToBase64String(bytes), true, true);
-            if (response.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Created))
+            if (response.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Created) || response.Result is null)
             {
-                StatusText.Text = response.Message;
+                StatusText.Text = string.IsNullOrWhiteSpace(response.Message) ? "服务器没有返回工具包信息。" : response.Message;
                 return;
             }
             StatusText.Text = $"已上传 {response.Result.Manifest.Name} {response.Result.Manifest.Version}";

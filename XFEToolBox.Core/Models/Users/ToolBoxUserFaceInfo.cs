@@ -12,17 +12,24 @@ public class ToolBoxUserFaceInfo : IUserFaceInfo
 
     public int PermissionLevel { get; set; }
 
+    public string Bio { get; set; } = string.Empty;
+
     public ToolBoxUserRole Role => PermissionLevel >= (int)ToolBoxUserRole.Administrator
         ? ToolBoxUserRole.Administrator
         : ToolBoxUserRole.User;
 
     public bool IsAdministrator => Role == ToolBoxUserRole.Administrator;
 
-    public static ToolBoxUserFaceInfo FromUser(IUserInfo user) => new()
+    public static ToolBoxUserFaceInfo FromUser(IUserInfo user)
     {
-        Id = user.Id,
-        UserName = user.UserName,
-        NickName = user.NickName,
-        PermissionLevel = user.PermissionLevel
-    };
+        var result = new ToolBoxUserFaceInfo
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            NickName = user.NickName,
+            PermissionLevel = user.PermissionLevel
+        };
+        if (user is ToolBoxUser toolBoxUser) result.Bio = toolBoxUser.Bio;
+        return result;
+    }
 }

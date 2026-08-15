@@ -21,6 +21,44 @@ public partial class ToolBoxRequestService : StandardRequestServiceBase
     [Response("v1/user/me", Name = "currentUser")]
     public object ParseCurrentUserResponse() => Deserialize<ToolBoxUserFaceInfo>();
 
+    [Request("v1/user/register", Name = "register")]
+    public object BuildRegisterRequest() => new
+    {
+        execute = "v1/user/register",
+        userName = Parameters[0],
+        password = Parameters[1],
+        nickName = Parameters[2]
+    };
+
+    [Response("v1/user/register", Name = "register")]
+    public object ParseRegisterResponse() => Deserialize<ToolBoxUserFaceInfo>();
+
+    [Request("v1/user/profile/update", Name = "updateProfile")]
+    public object BuildUpdateProfileRequest() => new
+    {
+        execute = "v1/user/profile/update",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        nickName = Parameters[0],
+        bio = Parameters[1]
+    };
+
+    [Response("v1/user/profile/update", Name = "updateProfile")]
+    public object ParseUpdateProfileResponse() => Deserialize<ToolBoxUserFaceInfo>();
+
+    [Request("v1/user/password/change", Name = "changePassword")]
+    public object BuildChangePasswordRequest() => new
+    {
+        execute = "v1/user/password/change",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        currentPassword = Parameters[0],
+        newPassword = Parameters[1]
+    };
+
+    [Response("v1/user/password/change", Name = "changePassword")]
+    public object ParseChangePasswordResponse() => Deserialize<JsonElement>();
+
     [Request("v1/tools/list", Name = "catalogTools")]
     public object BuildCatalogToolsRequest() => new
     {
@@ -129,6 +167,64 @@ public partial class ToolBoxRequestService : StandardRequestServiceBase
 
     [Response("v1/manage/tools/publication", Name = "adminSetPublication")]
     public object ParseAdminSetPublicationResponse() => Deserialize<ToolPackageUploadResult>();
+
+    [Request("v1/manage/software/list", Name = "adminSoftware")]
+    public object BuildAdminSoftwareRequest() => AuthenticatedBody("v1/manage/software/list");
+
+    [Response("v1/manage/software/list", Name = "adminSoftware")]
+    public object ParseAdminSoftwareResponse() => Deserialize<SoftwareCatalogItem[]>();
+
+    [Request("v1/manage/software/upsert", Name = "adminUpsertSoftware")]
+    public object BuildAdminUpsertSoftwareRequest() => new
+    {
+        execute = "v1/manage/software/upsert",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        software = Parameters[0]
+    };
+
+    [Response("v1/manage/software/upsert", Name = "adminUpsertSoftware")]
+    public object ParseAdminUpsertSoftwareResponse() => Deserialize<SoftwareCatalogItem>();
+
+    [Request("v1/manage/software/publication", Name = "adminSetSoftwarePublication")]
+    public object BuildAdminSetSoftwarePublicationRequest() => new
+    {
+        execute = "v1/manage/software/publication",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        softwareId = Parameters[0],
+        published = Parameters[1]
+    };
+
+    [Response("v1/manage/software/publication", Name = "adminSetSoftwarePublication")]
+    public object ParseAdminSetSoftwarePublicationResponse() => Deserialize<SoftwareCatalogItem>();
+
+    [Request("v1/manage/software/upload", Name = "adminUploadSoftware")]
+    public object BuildAdminUploadSoftwareRequest() => new
+    {
+        execute = "v1/manage/software/upload",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        softwareId = Parameters[0],
+        channelId = Parameters[1],
+        fileName = Parameters[2],
+        fileBase64 = Parameters[3]
+    };
+
+    [Response("v1/manage/software/upload", Name = "adminUploadSoftware")]
+    public object ParseAdminUploadSoftwareResponse() => Deserialize<SoftwareCatalogItem>();
+
+    [Request("v1/manage/software/delete", Name = "adminDeleteSoftware")]
+    public object BuildAdminDeleteSoftwareRequest() => new
+    {
+        execute = "v1/manage/software/delete",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        softwareId = Parameters[0]
+    };
+
+    [Response("v1/manage/software/delete", Name = "adminDeleteSoftware")]
+    public object ParseAdminDeleteSoftwareResponse() => Deserialize<JsonElement>();
 
     private object AuthenticatedBody(string execute) => new
     {

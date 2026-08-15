@@ -17,9 +17,13 @@ public partial class ServerProfile : XFEProfile
 
     [ProfileProperty] private string _storageRoot = "Data/ToolPackages";
 
+    [ProfileProperty] private string _softwareStorageRoot = "Data/SoftwareFiles";
+
     [ProfileProperty] private string _adminApiKey = string.Empty;
 
     [ProfileProperty] private long _maxPackageBytes = 10 * 1024 * 1024;
+
+    [ProfileProperty] private long _maxSoftwareBytes = 256 * 1024 * 1024;
 
     [ProfileProperty] private long _maxExpandedBytes = 30 * 1024 * 1024;
 
@@ -32,4 +36,6 @@ public partial class ServerProfile : XFEProfile
     [ProfileProperty] private string _initialAdminUserName = "admin";
 
     [ProfileProperty] private string _initialAdminPassword = DefaultInitialAdminPassword;
+
+    [ProfileProperty] private bool _allowRegistration = true;
 }

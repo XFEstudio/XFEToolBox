@@ -62,98 +62,91 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <StreamGeometry x:Key="SearchIconGeometry">M 7,1 A 6,6 0 1 1 7,13 A 6,6 0 1 1 7,1 M 11.25,11.25 L 15,15</StreamGeometry>
     <Style TargetType="{x:Type ctr:SwitchButton}">
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="IsTabStop" Value="True"/>
+        <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="0,10"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Grid>
+                    <Grid x:Name="root" SnapsToDevicePixels="True">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32"/>
+                            <ColumnDefinition Width="40"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Grid x:Name="buttonGrid" Width="32" Height="17">
-                            <Border x:Name="outBorder" BorderBrush="{DynamicResource MainColor}" BorderThickness="1.5" Width="32" Height="17" CornerRadius="8" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0.5,0.5">
-                                <Border.Background>
-                                    <SolidColorBrush x:Name="backgroundBursh" Color="White"/>
-                                </Border.Background>
-                            </Border>
-                            <Border x:Name="switchBorder" Width="14.5" Height="14.5" Background="White" CornerRadius="20" BorderBrush="Gray" BorderThickness="1" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="1,0,0,0" RenderTransformOrigin="0.5,0.5">
+                        <Grid Width="40" Height="20">
+                            <Border x:Name="track" Width="40" Height="20" CornerRadius="10" Background="#F3F3F3" BorderBrush="#767676" BorderThickness="1"/>
+                            <Border x:Name="thumb" Width="12" Height="12" Background="#5F5F5F" CornerRadius="6" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0" RenderTransformOrigin="0.5,0.5">
                                 <Border.RenderTransform>
-                                    <TranslateTransform x:Name="borderTransform" X="0" Y="0"/>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="thumbScale" ScaleX="1" ScaleY="1"/>
+                                        <TranslateTransform x:Name="thumbTransform" X="0"/>
+                                    </TransformGroup>
                                 </Border.RenderTransform>
                             </Border>
                         </Grid>
-                        <ContentPresenter x:Name="content" Grid.Column="1" Opacity="0.5" Margin="10,0,0,0"/>
+                        <ContentPresenter x:Name="content" Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <EventTrigger RoutedEvent="MouseEnter" SourceName="buttonGrid">
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="track" Property="Background" Value="{DynamicResource MainColor}"/>
+                            <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource MainColor}"/>
+                            <Setter TargetName="thumb" Property="Background" Value="White"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="thumbTransform" Storyboard.TargetProperty="X" To="20" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="thumbTransform" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <EventTrigger RoutedEvent="MouseEnter" SourceName="track">
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <ThicknessAnimation Storyboard.TargetName="switchBorder" Storyboard.TargetProperty="BorderThickness" To="0.5" Duration="0:0:0.3">
-                                        <ThicknessAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </ThicknessAnimation.EasingFunction>
-                                    </ThicknessAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1.18" Duration="0:0:0.16">
+                                        <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1.18" Duration="0:0:0.16">
+                                        <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
-                        <EventTrigger RoutedEvent="MouseLeave" SourceName="buttonGrid">
+                        <EventTrigger RoutedEvent="MouseLeave" SourceName="track">
                             <BeginStoryboard>
                                 <Storyboard>
-                                    <ThicknessAnimation Storyboard.TargetName="switchBorder" Storyboard.TargetProperty="BorderThickness" To="1" Duration="0:0:0.3">
-                                        <ThicknessAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </ThicknessAnimation.EasingFunction>
-                                    </ThicknessAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.16">
+                                        <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                    <DoubleAnimation Storyboard.TargetName="thumbScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.16">
+                                        <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
-                        <EventTrigger RoutedEvent="Checked">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="borderTransform" Storyboard.TargetProperty="X" From="0" To="15" Duration="0:0:0.3">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="content" Storyboard.TargetProperty="Opacity" From="0.5" To="1" Duration="0:0:0.3">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <ColorAnimation Storyboard.TargetName="backgroundBursh" Storyboard.TargetProperty="Color" From="White" To="#9898e7" Duration="0:0:0.3">
-                                        <ColorAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </ColorAnimation.EasingFunction>
-                                    </ColorAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="Unchecked">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="borderTransform" Storyboard.TargetProperty="X" From="15" To="0" Duration="0:0:0.3">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <DoubleAnimation Storyboard.TargetName="content" Storyboard.TargetProperty="Opacity" From="1" To="0.5" Duration="0:0:0.3">
-                                        <DoubleAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </DoubleAnimation.EasingFunction>
-                                    </DoubleAnimation>
-                                    <ColorAnimation Storyboard.TargetName="backgroundBursh" Storyboard.TargetProperty="Color" From="#9898e7" To="White" Duration="0:0:0.3">
-                                        <ColorAnimation.EasingFunction>
-                                            <CubicEase EasingMode="EaseOut"/>
-                                        </ColorAnimation.EasingFunction>
-                                    </ColorAnimation>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="thumb" Property="Width" Value="14"/>
+                            <Setter TargetName="thumb" Property="Height" Value="14"/>
+                            <Setter TargetName="thumb" Property="CornerRadius" Value="7"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="root" Property="Opacity" Value="0.45"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -369,12 +362,61 @@
         </Setter>
     </Style>
     <Style TargetType="{x:Type ctr:TextEditor}">
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctr:TextEditor}">
-                    <Border Padding="{TemplateBinding Padding}" CornerRadius="{TemplateBinding EditorCornerRadius}" BorderBrush="{TemplateBinding EditorBorderBrush}" BorderThickness="{TemplateBinding EditorBorderThickness}" Background="{TemplateBinding Background}">
-                        <ctr:HintTextBox BorderThickness="0" Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}" HintBackground="{TemplateBinding HintBackground}" Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HintForeground="{TemplateBinding HintForeground}" HintText="{TemplateBinding HintText}" HintFontSize="{TemplateBinding HintFontSize}" HintFontFamily="{TemplateBinding HintFontFamily}" HintFontWeight="{TemplateBinding HintFontWeight}" HintTextHorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" HintTextVerticalAlignment="{TemplateBinding HintTextVerticalAlignment}" HintTextMargin="{TemplateBinding HintTextMargin}" HintTextOpacity="{TemplateBinding HintTextOpacity}" CaretBrush="{TemplateBinding CaretBrush}" SelectionBrush="{TemplateBinding SelectionBrush}" SelectionTextBrush="{TemplateBinding SelectionTextBrush}" IsReadOnly="{TemplateBinding IsReadOnly}" IsReadOnlyCaretVisible="{TemplateBinding IsReadOnlyCaretVisible}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}" AcceptsReturn="{TemplateBinding AcceptsReturn}" AcceptsTab="{TemplateBinding AcceptsTab}" IsEnabled="{TemplateBinding IsEnabled}" IsInactiveSelectionHighlightEnabled="{TemplateBinding IsInactiveSelectionHighlightEnabled}" UndoLimit="{TemplateBinding UndoLimit}" IsUndoEnabled="{TemplateBinding IsUndoEnabled}" TextWrapping="{TemplateBinding TextWrapping}" TextAlignment="{TemplateBinding TextAlignment}" TextDecorations="{TemplateBinding TextDecorations}"/>
+                    <Border x:Name="editorBorder" Padding="{TemplateBinding Padding}" CornerRadius="{TemplateBinding EditorCornerRadius}" BorderBrush="{TemplateBinding EditorBorderBrush}" BorderThickness="{TemplateBinding EditorBorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path x:Name="iconPath" Width="{TemplateBinding IconSize}" Height="{TemplateBinding IconSize}" Margin="{TemplateBinding IconMargin}" Data="{TemplateBinding Icon}" Stroke="{TemplateBinding IconBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <ctr:HintTextBox Grid.Column="1" BorderThickness="0"
+                                             Background="{TemplateBinding Background}" Foreground="{TemplateBinding Foreground}"
+                                             FontFamily="{TemplateBinding FontFamily}" FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}"
+                                             HintBackground="{TemplateBinding HintBackground}"
+                                             Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             HintForeground="{TemplateBinding HintForeground}" HintText="{TemplateBinding HintText}"
+                                             HintFontSize="{TemplateBinding HintFontSize}" HintFontFamily="{TemplateBinding HintFontFamily}" HintFontWeight="{TemplateBinding HintFontWeight}"
+                                             HintTextHorizontalAlignment="{TemplateBinding HintTextHorizontalAlignment}" HintTextVerticalAlignment="{TemplateBinding HintTextVerticalAlignment}"
+                                             HintTextMargin="{TemplateBinding HintTextMargin}" HintTextOpacity="{TemplateBinding HintTextOpacity}"
+                                             CaretBrush="{TemplateBinding CaretBrush}" SelectionBrush="{TemplateBinding SelectionBrush}" SelectionTextBrush="{TemplateBinding SelectionTextBrush}"
+                                             IsReadOnly="{TemplateBinding IsReadOnly}" IsReadOnlyCaretVisible="{TemplateBinding IsReadOnlyCaretVisible}"
+                                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                             HorizontalScrollBarVisibility="{TemplateBinding HorizontalScrollBarVisibility}" VerticalScrollBarVisibility="{TemplateBinding VerticalScrollBarVisibility}"
+                                             AcceptsReturn="{TemplateBinding AcceptsReturn}" AcceptsTab="{TemplateBinding AcceptsTab}"
+                                             MaxLength="{TemplateBinding MaxLength}" MinLines="{TemplateBinding MinLines}" MaxLines="{TemplateBinding MaxLines}"
+                                             CharacterCasing="{TemplateBinding CharacterCasing}"
+                                             IsEnabled="{TemplateBinding IsEnabled}" IsInactiveSelectionHighlightEnabled="{TemplateBinding IsInactiveSelectionHighlightEnabled}"
+                                             UndoLimit="{TemplateBinding UndoLimit}" IsUndoEnabled="{TemplateBinding IsUndoEnabled}"
+                                             TextWrapping="{TemplateBinding TextWrapping}" TextAlignment="{TemplateBinding TextAlignment}" TextDecorations="{TemplateBinding TextDecorations}"/>
+                        </Grid>
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="iconPath" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="editorBorder" Property="BorderBrush" Value="{Binding EditorHoverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="editorBorder" Property="BorderBrush" Value="{Binding EditorFocusedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <Setter TargetName="editorBorder" Property="BorderThickness" Value="1.5"/>
+                        </Trigger>
+                        <Trigger Property="AcceptsReturn" Value="True">
+                            <Setter Property="VerticalContentAlignment" Value="Top"/>
+                            <Setter Property="HintTextVerticalAlignment" Value="Top"/>
+                            <Setter TargetName="iconPath" Property="VerticalAlignment" Value="Top"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="editorBorder" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

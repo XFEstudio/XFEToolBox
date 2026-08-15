@@ -44,6 +44,8 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="HtmlSanitizer" Version="9.1.968-beta" />
+    <PackageReference Include="Markdig" Version="0.44.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
     <PackageReference Include="XFEExtension.NetCore" Version="5.1.0" />
     <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="3.0.1" />

@@ -30,16 +30,11 @@
             </Grid.RowDefinitions>
 
             <!-- 与主窗口完全相同的顶部拖拽横条及其悬停、按压效果。 -->
-            <Grid Margin="19,0,0,0">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="45"/></Grid.ColumnDefinitions>
-                <Border x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}"
-                        MouseMove="DragTabBorder_MouseMove" Visibility="{Binding MoveButtonVisibility}">
-                    <Image x:Name="dragTabImage" Source="/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
-                </Border>
-                <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="1"
-                       Source="/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4"
-                       MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp" Visibility="{Binding CloseButtonVisibility}"/>
-            </Grid>
+            <controls:WindowCaptionBar Margin="19,0,0,0" AllowMaximize="False"
+                                       MinimizeButtonVisibility="Collapsed"
+                                       DragHandleVisibility="{Binding MoveButtonVisibility}"
+                                       CloseButtonVisibility="{Binding CloseButtonVisibility}"
+                                       CloseRequested="CaptionBar_CloseRequested"/>
 
             <StackPanel Grid.Row="1" Margin="22,0,52,5" VerticalAlignment="Center">
                 <TextBlock Text="{Binding PopupTitle}" Foreground="White" FontSize="14" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>

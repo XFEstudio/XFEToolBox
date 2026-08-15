@@ -289,6 +289,16 @@ public partial class PasswordHintTextBox : UserControl
         visibleButton.Click += VisibleButton_Click;
     }
 
+    public void Clear()
+    {
+        Password = string.Empty;
+    }
+
+    public new bool Focus()
+    {
+        return hintTextBox.Focus();
+    }
+
     private string GetMaskText(int length)
     {
         string maskText = string.Empty;

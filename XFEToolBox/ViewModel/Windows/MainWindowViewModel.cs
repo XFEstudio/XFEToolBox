@@ -168,8 +168,11 @@ public partial class MainWindowViewModel : ObservableObject
             case "setting":
                 CurrentPage = SettingPage.Current;
                 break;
-            case "editor":
-                if (ClientSession.IsAdministrator) new ToolCodeEditorWindow().Show();
+            case "profile":
+                CurrentPage = PersonalCenterPage.Current;
+                break;
+            case "serverManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = ServerManagementPage.Current;
                 break;
             case "serverOverview":
                 if (ClientSession.IsAdministrator) CurrentPage = ServerOverviewPage.Current;
@@ -179,6 +182,9 @@ public partial class MainWindowViewModel : ObservableObject
                 break;
             case "toolManagement":
                 if (ClientSession.IsAdministrator) CurrentPage = ToolManagementPage.Current;
+                break;
+            case "softwareManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = SoftwareManagementPage.Current;
                 break;
             default:
                 break;

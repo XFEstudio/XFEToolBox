@@ -22,4 +22,6 @@ public sealed class PopupWindowOptions
     public bool ShowCloseButton { get; set; } = true;
 
     public bool ShowDragBar { get; set; } = true;
+
+    public bool DimOwner { get; set; } = true;
 }

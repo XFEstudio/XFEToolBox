@@ -1,43 +1,91 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.Admin.ServerOverviewPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="Transparent" Title="" Loaded="Page_Loaded">
+      Background="Transparent" Title="" Loaded="Page_Loaded" Unloaded="Page_Unloaded">
     <Page.Resources>
         <Style x:Key="MetricCard" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="7"/>
-            <Setter Property="BorderBrush" Value="#ECECF5"/>
+            <Setter Property="MinHeight" Value="124"/>
+            <Setter Property="Padding" Value="17,14"/>
+            <Setter Property="Margin" Value="5"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1" ScaleY="1"/></Setter.Value></Setter>
         </Style>
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Background" Value="#7777DB"/><Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="16,8"/><Setter Property="Cursor" Value="Hand"/>
+        <Style x:Key="MetricLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#DDFFFFFF"/><Setter Property="FontSize" Value="10"/>
+        </Style>
+        <Style x:Key="MetricValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/><Setter Property="FontSize" Value="22"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Margin" Value="0,7,0,0"/>
+        </Style>
+        <Style x:Key="MetricDetail" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#D0FFFFFF"/><Setter Property="FontSize" Value="9"/><Setter Property="Margin" Value="0,5,0,0"/><Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style x:Key="MetricProgress" TargetType="ProgressBar">
+            <Setter Property="Height" Value="5"/><Setter Property="Minimum" Value="0"/><Setter Property="Maximum" Value="100"/><Setter Property="Margin" Value="0,8,0,0"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="#2FFFFFFF"/><Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style x:Key="RefreshButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="34"/><Setter Property="Padding" Value="15,0"/><Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#26FFFFFF"/><Setter Property="BorderBrush" Value="#70FFFFFF"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#3AFFFFFF"/><Setter TargetName="Surface" Property="BorderBrush" Value="White"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.72"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
         </Style>
     </Page.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="14,10,14,12">
-            <Grid Height="38" Margin="7,0,7,8">
-                <Button Content="刷新" Style="{StaticResource ActionButton}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="RefreshButton_Click"/>
-            </Grid>
-            <UniformGrid Columns="2">
-                <Border Style="{StaticResource MetricCard}"><StackPanel><TextBlock Text="运行状态" Foreground="#85859B"/><TextBlock x:Name="StatusValue" Text="正在读取…" FontSize="23" FontWeight="Bold" Foreground="#45A36F" Margin="0,8,0,0"/></StackPanel></Border>
-                <Border Style="{StaticResource MetricCard}"><StackPanel><TextBlock Text="用户 / 活跃会话" Foreground="#85859B"/><TextBlock x:Name="UsersValue" Text="--" FontSize="23" FontWeight="Bold" Foreground="#5555B8" Margin="0,8,0,0"/></StackPanel></Border>
-                <Border Style="{StaticResource MetricCard}"><StackPanel><TextBlock Text="工具包 / 已发布" Foreground="#85859B"/><TextBlock x:Name="PackagesValue" Text="--" FontSize="23" FontWeight="Bold" Foreground="#5555B8" Margin="0,8,0,0"/></StackPanel></Border>
-                <Border Style="{StaticResource MetricCard}"><StackPanel><TextBlock Text="存储占用" Foreground="#85859B"/><TextBlock x:Name="StorageValue" Text="--" FontSize="23" FontWeight="Bold" Foreground="#5555B8" Margin="0,8,0,0"/></StackPanel></Border>
-            </UniformGrid>
-            <Border Style="{StaticResource MetricCard}" Margin="7,16,7,7">
-                <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <Border Width="48" Height="48" CornerRadius="14" Background="#EEEEFF"><TextBlock Text="☁" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#6666CC"/></Border>
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
-                        <TextBlock x:Name="ServerNameValue" Text="XFEToolBoxServer" FontSize="16" FontWeight="SemiBold" Foreground="#333348"/>
-                        <TextBlock x:Name="UpdatedValue" Text="尚未连接" Foreground="#8A8A9D" Margin="0,4,0,0"/>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/></ScrollViewer.Resources>
+        <StackPanel Margin="14,10,14,14">
+            <Grid Margin="5,0,5,8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="LiveIndicator" Width="9" Height="9" Fill="#71EEA2" Margin="0,0,8,0" VerticalAlignment="Center"><Ellipse.Effect><DropShadowEffect Color="#57D88A" BlurRadius="8" ShadowDepth="0" Opacity="0.9"/></Ellipse.Effect></Ellipse>
+                        <TextBlock x:Name="ServerNameValue" Text="XFEToolBoxServer" Foreground="White" FontSize="17" FontWeight="SemiBold"/>
                     </StackPanel>
+                    <TextBlock x:Name="UpdatedValue" Text="正在连接服务器…" Foreground="#D0FFFFFF" FontSize="9.5" Margin="17,4,0,0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Border Padding="9,4" Background="#24FFFFFF" BorderBrush="#55FFFFFF" BorderThickness="1" CornerRadius="10" Margin="0,0,8,0"><StackPanel Orientation="Horizontal"><Ellipse Width="6" Height="6" Fill="#72EFA3" Margin="0,0,6,0"/><TextBlock Text="每 2 秒实时更新" Foreground="#ECFFFFFF" FontSize="9"/></StackPanel></Border>
+                    <Button Content="立即刷新" Style="{StaticResource RefreshButtonStyle}" Click="RefreshButton_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <UniformGrid Columns="3">
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#80A8F0C3">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6042C883"/><GradientStop Color="#3275AF91" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="运行状态" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="StatusValue" Text="正在读取…" Style="{StaticResource MetricValue}"/><TextBlock x:Name="UptimeValue" Text="等待服务器响应" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#809EC1FF">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#604D7BFA"/><GradientStop Color="#325B70D0" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="CPU 使用率" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="CpuValue" Text="--" Style="{StaticResource MetricValue}"/><ProgressBar x:Name="CpuUsageBar" Style="{StaticResource MetricProgress}"/><TextBlock x:Name="CpuDetailValue" Text="--" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#808CEDE5">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6033BFC4"/><GradientStop Color="#325B9EC5" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="服务器内存使用率" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="MemoryValue" Text="--" Style="{StaticResource MetricValue}"/><ProgressBar x:Name="MemoryUsageBar" Style="{StaticResource MetricProgress}"/><TextBlock x:Name="MemoryDetailValue" Text="--" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#80D2B1FF">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#60725FD7"/><GradientStop Color="#32905EC4" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="用户与会话" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="UsersValue" Text="--" Style="{StaticResource MetricValue}"/><TextBlock x:Name="UsersDetailValue" Text="注册用户 / 有效会话" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#80FFB4D9">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#60DD70AA"/><GradientStop Color="#328474CF" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="已发布内容" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="PackagesValue" Text="--" Style="{StaticResource MetricValue}" FontSize="18"/><TextBlock x:Name="PackagesDetailValue" Text="工具版本与软件下载目录" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+                <Border Style="{StaticResource MetricCard}" BorderBrush="#80FFD29B">
+                    <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#60E99B4E"/><GradientStop Color="#32CE737A" Offset="1"/></LinearGradientBrush></Border.Background>
+                    <StackPanel><TextBlock Text="服务器存储" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="StorageValue" Text="--" Style="{StaticResource MetricValue}"/><TextBlock x:Name="StorageDetailValue" Text="工具包与软件文件" Style="{StaticResource MetricDetail}"/></StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Margin="5,10,5,2" Padding="18,15" Background="#F7F7FD" BorderBrush="#66FFFFFF" BorderThickness="1" CornerRadius="17">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="52"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <Border Width="42" Height="42" CornerRadius="13" Background="#E9E9FA"><TextBlock Text="☁" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#6969CE"/></Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="运行指标来自当前工具服务器" Foreground="#3F3F55" FontSize="13" FontWeight="SemiBold"/>
+                        <TextBlock Text="CPU 为进程实时采样；内存为操作系统物理内存总量、已用量与可用量。" Foreground="#8B8B9E" FontSize="9.5" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBlock x:Name="ProcessMemoryValue" Grid.Column="2" Foreground="#68687D" FontSize="10" VerticalAlignment="Center" Margin="15,0,0,0"/>
                 </Grid>
             </Border>
-            <TextBlock x:Name="ErrorText" Foreground="#D45454" Margin="10,10" TextWrapping="Wrap"/>
+            <TextBlock x:Name="ErrorText" Foreground="#FFE0E0" Margin="8,8,8,0" TextWrapping="Wrap"/>
         </StackPanel>
     </ScrollViewer>
 </Page>

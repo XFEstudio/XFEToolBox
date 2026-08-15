@@ -10,6 +10,8 @@ namespace XFEToolBox.Client.Utilities.Server;
 
 public static class ClientSession
 {
+    public const string ApiAddress = "http://localhost:3000/api";
+
     private static ClientRequester _requester = CreateRequester();
 
     public static event EventHandler? SessionChanged;
@@ -26,7 +28,6 @@ public static class ClientSession
     {
         try
         {
-            EnsureAddress();
             var response = await _requester.Request<UserLoginResult<ToolBoxUserFaceInfo>>(
                 "login", account.Trim(), password);
             if (response.StatusCode != HttpStatusCode.OK || response.Result?.UserInfo is null)
@@ -59,7 +60,6 @@ public static class ClientSession
         if (string.IsNullOrWhiteSpace(SystemProfile.LoginSession)) return false;
         try
         {
-            EnsureAddress();
             _requester.Session = SystemProfile.LoginSession;
             var response = await _requester.Request<ToolBoxUserFaceInfo>("relogin");
             if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
@@ -78,6 +78,61 @@ public static class ClientSession
         }
     }
 
+    public static async Task<(bool Success, string Message)> RegisterAsync(string account, string password, string nickName)
+    {
+        try
+        {
+            var response = await _requester.Request<ToolBoxUserFaceInfo>(
+                "register", account.Trim(), password, nickName.Trim());
+            if ((int)response.StatusCode is < 200 or >= 300 || response.Result is null)
+                return (false, string.IsNullOrWhiteSpace(response.Message) ? "注册失败。" : response.Message);
+
+            SystemProfile.LastLoginAccount = account.Trim();
+            SystemProfile.SaveProfile();
+            return await LoginAsync(account, password);
+        }
+        catch (Exception exception)
+        {
+            return (false, $"注册失败：{exception.Message}");
+        }
+    }
+
+    public static async Task<(bool Success, string Message)> UpdateProfileAsync(string nickName, string bio)
+    {
+        try
+        {
+            var response = await _requester.Request<ToolBoxUserFaceInfo>("updateProfile", nickName.Trim(), bio.Trim());
+            if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
+                return (false, string.IsNullOrWhiteSpace(response.Message) ? "保存失败。" : response.Message);
+
+            CurrentUser = response.Result;
+            SessionChanged?.Invoke(null, EventArgs.Empty);
+            return (true, "个人资料已保存。");
+        }
+        catch (Exception exception)
+        {
+            return (false, $"保存失败：{exception.Message}");
+        }
+    }
+
+    public static async Task<(bool Success, string Message)> ChangePasswordAsync(string currentPassword, string newPassword)
+    {
+        try
+        {
+            var response = await _requester.Request<System.Text.Json.JsonElement>(
+                "changePassword", currentPassword, newPassword);
+            if (response.StatusCode != HttpStatusCode.OK)
+                return (false, string.IsNullOrWhiteSpace(response.Message) ? "修改密码失败。" : response.Message);
+
+            Logout();
+            return (true, "密码已修改，请使用新密码重新登录。");
+        }
+        catch (Exception exception)
+        {
+            return (false, $"修改密码失败：{exception.Message}");
+        }
+    }
+
     public static void Logout()
     {
         _requester.Session = string.Empty;
@@ -87,28 +142,8 @@ public static class ClientSession
         SessionChanged?.Invoke(null, EventArgs.Empty);
     }
 
-    public static void RefreshAddress()
-    {
-        var session = _requester.Session;
-        _requester = CreateRequester();
-        _requester.Session = session;
-    }
-
-    private static void EnsureAddress()
-    {
-        var expected = NormalizeAddress(SystemProfile.ServerAddress);
-        if (!string.Equals(_requester.RequestAddress, expected, StringComparison.OrdinalIgnoreCase))
-            RefreshAddress();
-    }
-
     private static ClientRequester CreateRequester() => ClientRequesterBuilder.CreateBuilder()
         .UseXFEStandardRequest<ToolBoxUserFaceInfo>()
         .AddRequest<ToolBoxRequestService>()
-        .Build(options => options.RequestAddress = NormalizeAddress(SystemProfile.ServerAddress));
-
-    private static string NormalizeAddress(string address)
-    {
-        var value = string.IsNullOrWhiteSpace(address) ? "http://localhost:3000/api" : address.Trim();
-        return value.TrimEnd('/');
-    }
+        .Build(options => options.RequestAddress = ApiAddress);
 }
