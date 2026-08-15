@@ -1,7 +1,7 @@
 ﻿using System.Net.Http;
 using XFEExtension.NetCore.XFETransform.JsonConverter;
 
-namespace XFEToolBox.Utilities.Helpers;
+namespace XFEToolBox.Client.Utilities.Helpers;
 
 public static class BilibiliHelper
 {

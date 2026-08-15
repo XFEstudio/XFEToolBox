@@ -2,10 +2,10 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Behavior;
+using XFEToolBox.Client.Views.Behavior;
+using XFEToolBox.Client.Utilities;
 
-namespace XFEToolBox.Views.Controls;
+namespace XFEToolBox.Client.Views.Controls;
 
 /// <summary>
 /// ScrollTextBlock.xaml 的交互逻辑

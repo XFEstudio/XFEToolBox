@@ -1,11 +1,11 @@
-﻿<Page x:Class="XFEToolBox.Views.Pages.ConsolePage"
+﻿<Page x:Class="XFEToolBox.Client.Views.Pages.ConsolePage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls"
-      xmlns:local="clr-namespace:XFEToolBox.Views.Pages"
-      xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel.Pages"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="clr-namespace:XFEToolBox.Client.Views.Pages"
+      xmlns:viewmodel="clr-namespace:XFEToolBox.Client.ViewModel.Pages"
+      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="ConsolePage" d:DataContext="{d:DesignInstance Type=viewmodel:ConsolePageViewModel}">
@@ -63,13 +63,13 @@
                 </StackPanel>
             </Grid>
             <Border Grid.Column="0" Grid.Row="1" CornerRadius="0,0,15,0" Background="Black" Padding="0,5,3,5">
-                <ctr:SmoothScrollViewer x:Name="scrollViewer" AnimateMilliseconds="200" VerticalScrollBarVisibility="Auto" IsTabStop="False" ScrollChanged="ScrollViewer_ScrollChanged">
+                <controls:SmoothScrollViewer x:Name="scrollViewer" AnimateMilliseconds="200" VerticalScrollBarVisibility="Auto" IsTabStop="False" ScrollChanged="ScrollViewer_ScrollChanged">
                     <ScrollViewer.Resources>
                         <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
                     </ScrollViewer.Resources>
                     <StackPanel x:Name="consoleStackPanel">
                     </StackPanel>
-                </ctr:SmoothScrollViewer>
+                </controls:SmoothScrollViewer>
             </Border>
         </Grid>
     </Border>

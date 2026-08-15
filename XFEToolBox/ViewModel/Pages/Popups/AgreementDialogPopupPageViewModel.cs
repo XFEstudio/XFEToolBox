@@ -1,10 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Controls;
-using XFEToolBox.Views.Pages.Popups;
+using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages.Popups;
 
-namespace XFEToolBox.ViewModel.Pages.Popups;
+namespace XFEToolBox.Client.ViewModel.Pages.Popups;
 
 public partial class AgreementDialogPopupPageViewModel(AgreementDialogPopupPage viewPage) : ObservableObject
 {

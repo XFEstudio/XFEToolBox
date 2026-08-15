@@ -1,7 +1,7 @@
 ﻿using System.Windows.Controls;
-using XFEToolBox.ViewModel.Pages;
+using XFEToolBox.Client.ViewModel.Pages;
 
-namespace XFEToolBox.Views.Pages;
+namespace XFEToolBox.Client.Views.Pages;
 
 /// <summary>
 /// ConsolePage.xaml 的交互逻辑

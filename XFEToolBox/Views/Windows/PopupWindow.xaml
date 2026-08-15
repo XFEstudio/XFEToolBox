@@ -1,12 +1,12 @@
-﻿<Window x:Class="XFEToolBox.Views.Windows.PopupWindow"
+﻿<Window x:Class="XFEToolBox.Client.Views.Windows.PopupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel.Windows"
-        xmlns:local="clr-namespace:XFEToolBox.Views.Windows"
+        xmlns:viewmodel="clr-namespace:XFEToolBox.Client.ViewModel.Windows"
+        xmlns:windows="clr-namespace:XFEToolBox.Client.ViewModel.Windows"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type=viewmodel:PopupWindowViewModel}"
+        d:DataContext="{d:DesignInstance Type=windows:PopupWindowViewModel}"
         Title="PopupWindow" ShowInTaskbar="False" Width="320" Height="230" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterOwner">
     <Window.Effect>
         <DropShadowEffect BlurRadius="8" ShadowDepth="3" Direction="-45"/>

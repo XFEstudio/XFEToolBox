@@ -1,9 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
-using XFEToolBox.Views.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
+using XFEToolBox.Client.Views.Windows;
 
-namespace XFEToolBox.ViewModel.Windows;
+namespace XFEToolBox.Client.ViewModel.Windows;
 
 public partial class PopupWindowViewModel(PopupWindow viewPage) : ObservableObject
 {

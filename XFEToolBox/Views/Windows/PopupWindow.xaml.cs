@@ -1,7 +1,7 @@
 ﻿using System.Windows;
-using XFEToolBox.ViewModel.Windows;
+using PopupWindowViewModel = XFEToolBox.Client.ViewModel.Windows.PopupWindowViewModel;
 
-namespace XFEToolBox.Views.Windows;
+namespace XFEToolBox.Client.Views.Windows;
 
 /// <summary>
 /// PopupWindow.xaml 的交互逻辑

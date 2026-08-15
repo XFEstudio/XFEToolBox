@@ -9,7 +9,9 @@ public partial class ServerProfile : XFEProfile
 {
     public ServerProfile() => DefaultProfileOperationMode = ProfileOperationMode.Xml;
 
-    [ProfileProperty] private string _serverHttpAddress = "http://localhost:5058/";
+    [ProfileProperty] private string _httpAddress = "http://localhost:3000/";
+
+    [ProfileProperty] private string _httpsAddress = "https://localhost:3400/";
 
     [ProfileProperty] private string _storageRoot = "Data/ToolPackages";
 
@@ -22,4 +24,10 @@ public partial class ServerProfile : XFEProfile
     [ProfileProperty] private int _maxFileCount = 256;
 
     [ProfileProperty] private double _maxCompressionRatio = 100;
+
+    [ProfileProperty] private int _loginKeepDays = 30;
+
+    [ProfileProperty] private string _initialAdminUserName = "admin";
+
+    [ProfileProperty] private string _initialAdminPassword = "ChangeMe_123!";
 }

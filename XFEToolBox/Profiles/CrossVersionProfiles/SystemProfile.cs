@@ -1,8 +1,7 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
-using XFEToolBox.Views.Windows;
 
-namespace XFEToolBox.Profiles.CrossVersionProfiles;
+namespace XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
 public partial class SystemProfile : XFEProfile
 {
@@ -15,12 +14,12 @@ public partial class SystemProfile : XFEProfile
     /// 主窗体宽度
     /// </summary>
     [ProfileProperty]
-    private double mainWindowWidth = 720;
+    private double mainWindowWidth = 1024;
     /// <summary>
     /// 主窗体高度
     /// </summary>
     [ProfileProperty]
-    private double mainWindowHeight = 450;
+    private double mainWindowHeight = 680;
     /// <summary>
     /// 是否开机自启动
     /// </summary>
@@ -31,6 +30,21 @@ public partial class SystemProfile : XFEProfile
     /// </summary>
     [ProfileProperty]
     private bool startWithMaximize = false;
+    /// <summary>
+    /// 工具服务器 API 地址。
+    /// </summary>
+    [ProfileProperty]
+    private string serverAddress = "http://localhost:3000/api";
+    /// <summary>
+    /// 最近登录的账号。
+    /// </summary>
+    [ProfileProperty]
+    private string lastLoginAccount = string.Empty;
+    /// <summary>
+    /// 可用于自动重登的会话令牌。
+    /// </summary>
+    [ProfileProperty]
+    private string loginSession = string.Empty;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

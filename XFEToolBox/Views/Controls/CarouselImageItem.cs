@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows.Media;
 
-namespace XFEToolBox.Views.Controls;
+namespace XFEToolBox.Client.Views.Controls;
 
 public class CarouselImageItem : INotifyPropertyChanged
 {

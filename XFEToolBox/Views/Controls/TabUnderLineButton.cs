@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace XFEToolBox.Views.Controls;
+namespace XFEToolBox.Client.Views.Controls;
 
 public class TabUnderLineButton : RadioButton
 {

@@ -14,5 +14,4 @@
   <ItemGroup>
     <ProjectReference Include="..\XFEToolBox.Server.Core\XFEToolBox.Server.Core.csproj" />
   </ItemGroup>
-
 </Project>

@@ -1,8 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using XFEToolBox.Views.Pages;
+using XFEToolBox.Client.Views.Pages;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class DownloadInfoPageViewModel(DownloadInfoPage viewPage) : ObservableObject
 {

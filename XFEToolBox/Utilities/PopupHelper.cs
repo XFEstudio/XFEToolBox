@@ -2,11 +2,11 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using XFEToolBox.Model;
-using XFEToolBox.Views.Pages.Popups;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Views.Pages.Popups;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public static class PopupHelper
 {

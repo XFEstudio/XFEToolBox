@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
-namespace XFEToolBox.Views.Controls;
+namespace XFEToolBox.Client.Views.Controls;
 
 /// <summary>
 /// Carousel.xaml 的交互逻辑

@@ -1,6 +1,6 @@
-﻿using XFEToolBox.Views.Windows;
+﻿using XFEToolBox.Client.Views.Windows;
 
-namespace XFEToolBox.Model;
+namespace XFEToolBox.Client.Model;
 
 public interface IPopupPage
 {

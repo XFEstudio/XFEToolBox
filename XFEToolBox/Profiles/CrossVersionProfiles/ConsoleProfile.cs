@@ -1,7 +1,7 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
 
-namespace XFEToolBox.Profiles.CrossVersionProfiles;
+namespace XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
 public partial class ConsoleProfile : XFEProfile
 {

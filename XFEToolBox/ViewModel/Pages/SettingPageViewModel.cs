@@ -1,19 +1,19 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using XFEExtension.NetCore.FileExtension;
+using XFEToolBox.Client.Views.Controls;
 using XFEToolBox.Core.Model;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Controls;
-using XFEToolBox.Views.Pages;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObject
 {
@@ -55,13 +55,13 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
         {
             switch (textEditorTagPath)
             {
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
                     ReadWithDefaultValue(textBox, 3280);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
                     ReadWithDefaultValue(textBox, 8000);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
                     ReadWithDefaultValue(textBox, 9);
                     break;
                 default:
@@ -105,13 +105,13 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
         {
             switch (commandPath)
             {
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
                     SetWithDefaultValue(textEditor, 3280);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
                     SetWithDefaultValue(textEditor, 8000);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
                     SetWithDefaultValue(textEditor, 9);
                     break;
                 default:

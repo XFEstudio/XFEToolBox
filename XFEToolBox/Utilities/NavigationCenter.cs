@@ -1,7 +1,7 @@
 ﻿using System.Windows.Controls;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Views.Windows;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 /// <summary>
 /// 导航中心

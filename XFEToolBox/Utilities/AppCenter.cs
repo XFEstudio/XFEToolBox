@@ -1,8 +1,8 @@
 ﻿using System.Windows;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public static class AppCenter
 {

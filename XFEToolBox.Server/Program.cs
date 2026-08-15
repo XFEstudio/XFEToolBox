@@ -1,11 +1,15 @@
+using XFEToolBox.Core.Models.Users;
 using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
 using XFEToolBox.Server.Profiles;
+using XFEToolBox.Server.Profiles.Data;
 using XFEToolBox.Server.Services;
+using XFEExtension.NetCore.ServerInteractive.Interfaces;
 using XFEExtension.NetCore.ServerInteractive.Utilities.Extensions;
 using XFEExtension.NetCore.ServerInteractive.Utilities.Server;
 
-AppDomain.CurrentDomain.ProcessExit += (_, _) => ServerProfile.SaveProfile();
+EnsureInitialAdministrator();
+AppDomain.CurrentDomain.ProcessExit += (_, _) => SaveProfiles();
 
 var validationOptions = new ToolPackageValidationOptions
 {
@@ -26,9 +30,6 @@ var packageRepository = new FileSystemToolPackageRepository(
     validationOptions,
     new ToolPackageStorageOptions { StorageRoot = storageRoot });
 
-if (string.IsNullOrWhiteSpace(adminApiKey))
-    Console.WriteLine("[WARN]未配置管理员密钥，管理接口将返回 503。请设置 XFETOOLBOX_ADMIN_KEY。");
-
 var server = XFEServerBuilder.CreateBuilder()
     .UseXFEServer()
     .AddServerCore(XFEServerCoreBuilder.CreateBuilder()
@@ -38,17 +39,67 @@ var server = XFEServerBuilder.CreateBuilder()
         .AddService<HealthService>()
         .AddService<ToolCatalogService>()
         .AddService<ToolAdminService>()
+        .AddService<UserProfileService>()
+        .AddService<AdminManagementService>()
+        .UseXFEStandardServerCore<ToolBoxUserFaceInfo>(options =>
+        {
+            options.GetUserFunction = static () => UserDataProfile.UserTable;
+            options.AddUserFunction = static userInfo =>
+            {
+                if (userInfo is ToolBoxUser user)
+                    UserDataProfile.UserTable.Add(user);
+            };
+            options.GetEncryptedUserLoginModelFunction = static () => UserDataProfile.LoginTable;
+            options.AddEncryptedUserLoginModelFunction = UserDataProfile.LoginTable.Add;
+            options.RemoveEncryptedUserLoginModelFunction = UserDataProfile.LoginTable.Remove;
+            options.GetLoginKeepDays = static () => ServerProfile.LoginKeepDays;
+            options.LoginResultConvertFunction = static user =>
+                ToolBoxUserFaceInfo.FromUser((IUserInfo)user);
+        })
         .Build(options =>
         {
             options.AcceptGet = true;
             options.AcceptPost = true;
             options.AcceptNonStandardJson = true;
             options.GetIPFunction = static args => args.RequestHeaders["X-Forwarded-For"] ?? args.ClientIP;
-            options.BindIP(ServerProfile.ServerHttpAddress);
+            options.BindIP(ServerProfile.HttpAddress);
             options.MainEntryPoint = "api";
-            options.ServerCoreName = "ToolServer";
+            options.ServerCoreName = "XFEToolBoxServer";
         }))
     .Build();
 
-Console.WriteLine($"XFEToolBox 工具服务器数据目录：{storageRoot}");
+Console.WriteLine("XFEToolBox Server");
+Console.WriteLine($"  地址：{ServerProfile.HttpAddress.TrimEnd('/')}/api");
+Console.WriteLine($"  数据：{storageRoot}");
+Console.WriteLine($"  用户：{UserDataProfile.UserTable.Count}");
 await server.Start();
+return;
+
+static void EnsureInitialAdministrator()
+{
+    if (UserDataProfile.UserTable.Any(user =>
+            user.PermissionLevel >= (int)ToolBoxUserRole.Administrator)) return;
+
+    var userName = Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_USER")
+                   ?? ServerProfile.InitialAdminUserName;
+    var password = Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_PASSWORD")
+                   ?? ServerProfile.InitialAdminPassword;
+    UserDataProfile.UserTable.Add(new ToolBoxUser
+    {
+        UserName = userName,
+        Password = password,
+        NickName = "工具箱管理员",
+        Enable = true,
+        Role = ToolBoxUserRole.Administrator
+    });
+    UserDataProfile.SaveProfile();
+    Console.WriteLine($"[初始化] 已创建管理员账号：{userName}");
+    if (Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_PASSWORD") is null)
+        Console.WriteLine("[安全提示] 当前使用初始密码 ChangeMe_123!，请登录后立即修改。");
+}
+
+static void SaveProfiles()
+{
+    ServerProfile.SaveProfile();
+    UserDataProfile.SaveProfile();
+}

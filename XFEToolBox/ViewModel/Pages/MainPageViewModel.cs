@@ -1,10 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows.Media.Imaging;
-using XFEToolBox.Utilities.Helpers;
-using XFEToolBox.Views.Pages;
+using CommunityToolkit.Mvvm.ComponentModel;
+using XFEToolBox.Client.Utilities.Helpers;
+using XFEToolBox.Client.Views.Pages;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class MainPageViewModel : ObservableObject
 {

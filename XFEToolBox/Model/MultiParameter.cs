@@ -1,4 +1,4 @@
-﻿namespace XFEToolBox.Model;
+﻿namespace XFEToolBox.Client.Model;
 
 public class MultiParameter
 {
