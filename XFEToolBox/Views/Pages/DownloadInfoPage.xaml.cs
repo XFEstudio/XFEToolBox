@@ -1,70 +1,42 @@
-﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Animation;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using XFEToolBox.Client.ViewModel.Pages;
-using DownloadInfoPageViewModel = XFEToolBox.Client.ViewModel.Pages.DownloadInfoPageViewModel;
+using XFEToolBox.Core.Downloads;
 
 namespace XFEToolBox.Client.Views.Pages;
 
-/// <summary>
-/// DownloadInfoPage.xaml 的交互逻辑
-/// </summary>
 public partial class DownloadInfoPage : Page
 {
-    public DownloadInfoPageViewModel ViewModel { get; set; }
+    public DownloadInfoPageViewModel ViewModel { get; }
 
-    private bool downloadMode;
-
-    public bool DownloadMode
+    public DownloadInfoPage() : this(
+        new SoftwareCatalogItem
+        {
+            Id = "preview",
+            Name = "软件名称",
+            Summary = "由工具服务器提供的软件简介。",
+            Description = "选择下载页中的软件后，这里会显示完整的软件信息、发布者与获取方式。",
+            Publisher = "软件发布者",
+            Category = "软件分类",
+            DownloadUrl = "https://example.com/",
+            WebsiteUrl = "https://example.com/",
+            DownloadMode = SoftwareDownloadMode.Browser
+        },
+        CreateDefaultIcon())
     {
-        get { return downloadMode; }
-        set { downloadMode = value; ViewModel.DownloadButtonName = value ? "下载" : "浏览器中打开"; }
     }
 
-    public DownloadInfoPage()
+    public DownloadInfoPage(SoftwareCatalogItem software, ImageSource iconSource)
     {
-        DataContext = ViewModel = new(this);
         InitializeComponent();
-        UpdateArc(180);
+        DataContext = ViewModel = new DownloadInfoPageViewModel(this, software, iconSource);
     }
 
-    public void UpdateArc(double angle)
+    private static ImageSource CreateDefaultIcon()
     {
-        double radius = 100;  // 圆的半径
-        double radians = Math.PI * angle / 180.0;
-
-        // 计算圆弧的终点坐标
-        double x = 100 + radius * Math.Cos(radians);
-        double y = 100 - radius * Math.Sin(radians);
-
-        // 更新 ArcSegment 的终点
-        arcSegment.Point = new Point(x, y);
-
-        // 根据角度判断是否需要大圆弧
-        arcSegment.IsLargeArc = angle > 180.0;
-    }
-
-    public void UpperTheGrid()
-    {
-        bottomGrid.BeginAnimation(HeightProperty, null);
-        var doubleAnimation = new DoubleAnimation
-        {
-            To = 400,
-            Duration = TimeSpan.FromMilliseconds(500),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        bottomGrid.BeginAnimation(HeightProperty, doubleAnimation);
-    }
-
-    public void LowerTheGrid()
-    {
-        bottomGrid.BeginAnimation(HeightProperty, null);
-        var doubleAnimation = new DoubleAnimation
-        {
-            To = 100,
-            Duration = TimeSpan.FromMilliseconds(500),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        bottomGrid.BeginAnimation(HeightProperty, doubleAnimation);
+        var image = new BitmapImage(new Uri("pack://application:,,,/Resources/Image/download.png", UriKind.Absolute));
+        image.Freeze();
+        return image;
     }
 }

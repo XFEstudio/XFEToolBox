@@ -1,5 +1,6 @@
 using System.Text.Json;
 using XFEToolBox.Client.Models.Server;
+using XFEToolBox.Core.Downloads;
 using XFEToolBox.Core.Models.Users;
 using XFEToolBox.Core.Tools;
 using XFEExtension.NetCore.ServerInteractive.Attributes;
@@ -40,6 +41,17 @@ public partial class ToolBoxRequestService : StandardRequestServiceBase
 
     [Response("v1/tools/get", Name = "catalogToolDetails")]
     public object ParseCatalogToolDetailsResponse() => Deserialize<ToolPackageDetails>();
+
+    [Request("v1/software/list", Name = "softwareCatalog")]
+    public object BuildSoftwareCatalogRequest() => new
+    {
+        execute = "v1/software/list",
+        search = Parameters.Length > 0 ? Parameters[0] : null,
+        category = Parameters.Length > 1 ? Parameters[1] : null
+    };
+
+    [Response("v1/software/list", Name = "softwareCatalog")]
+    public object ParseSoftwareCatalogResponse() => Deserialize<SoftwareCatalogResponse>();
 
     [Request("v1/manage/overview", Name = "adminOverview")]
     public object BuildAdminOverviewRequest() => AuthenticatedBody("v1/manage/overview");

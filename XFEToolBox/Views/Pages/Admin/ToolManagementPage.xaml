@@ -1,18 +1,17 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.Admin.ToolManagementPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="#F7F8FC" Title="工具管理" Loaded="Page_Loaded">
-    <Grid Margin="25,20">
+      Background="Transparent" Title="" Loaded="Page_Loaded">
+    <Grid Margin="14,10,14,12">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <Grid>
-            <StackPanel><TextBlock Text="工具发布中心" FontSize="26" FontWeight="Bold" Foreground="#29293D"/><TextBlock Text="上传 .xfetool 源码包、切换发布状态并打开代码编辑器。" Foreground="#7C7C91" Margin="0,5,0,0"/></StackPanel>
+        <Grid Height="38">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button Content="打开编辑器" Padding="14,8" Margin="0,0,8,0" Click="OpenEditorButton_Click"/>
                 <Button Content="上传工具包" Padding="14,8" Margin="0,0,8,0" Background="#7777DB" Foreground="White" BorderThickness="0" Click="UploadButton_Click"/>
                 <Button Content="刷新" Padding="14,8" Click="RefreshButton_Click"/>
             </StackPanel>
         </Grid>
-        <Border Grid.Row="1" Background="White" CornerRadius="15" BorderBrush="#E9E9F3" BorderThickness="1" Margin="0,18,0,12" Padding="8">
+        <Border Grid.Row="1" Background="White" CornerRadius="15" BorderBrush="#E9E9F3" BorderThickness="1" Margin="0,10,0,10" Padding="8">
             <DataGrid x:Name="ToolGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" GridLinesVisibility="Horizontal" SelectionMode="Single">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="工具" Binding="{Binding Manifest.Name}" Width="*"/>
@@ -24,7 +23,7 @@
             </DataGrid>
         </Border>
         <Grid Grid.Row="2">
-            <TextBlock x:Name="StatusText" Foreground="#66667A" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            <TextBlock x:Name="StatusText" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
             <Button Content="切换选中版本的发布状态" Padding="16,8" HorizontalAlignment="Right" Click="TogglePublicationButton_Click"/>
         </Grid>
     </Grid>

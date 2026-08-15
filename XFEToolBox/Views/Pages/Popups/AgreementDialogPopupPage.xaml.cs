@@ -22,7 +22,7 @@ public partial class AgreementDialogPopupPage : Page, IPopupPage
 
     private void SmoothScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        if (e.VerticalOffset + e.ViewportHeight == e.ExtentHeight)
+        if (e.VerticalOffset + e.ViewportHeight >= e.ExtentHeight - 1)
             ViewModel.ReadCheckButtonEnable = true;
     }
 }

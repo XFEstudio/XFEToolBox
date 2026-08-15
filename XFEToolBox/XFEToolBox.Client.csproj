@@ -101,19 +101,4 @@
     <Resource Include="Resources\Image\wrench_tool.png" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Resources\Resource\DownloadInfoResource.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>DownloadInfoResource.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\Resource\DownloadInfoResource.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>DownloadInfoResource.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
 </Project>
