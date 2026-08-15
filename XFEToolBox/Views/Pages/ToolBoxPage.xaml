@@ -10,7 +10,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                        <Border x:Name="ButtonBorder" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -74,8 +74,8 @@
                              Foreground="#4C4C61" ToolTip="搜索工具名称、介绍或标签" KeyDown="SearchTextBox_KeyDown"/>
                 </Grid>
             </Border>
-            <Button Grid.Column="1" Content="搜索" Margin="12,0,0,0" Style="{StaticResource PrimaryToolbarButtonStyle}" Click="SearchButton_Click"/>
-            <Button Grid.Column="2" Content="刷新" Margin="12,0,0,0" Style="{StaticResource ToolbarButtonStyle}" Click="RefreshButton_Click"/>
+            <Button Grid.Column="1" Content="搜索" Style="{StaticResource PrimaryToolbarButtonStyle}" Click="SearchButton_Click"/>
+            <Button Grid.Column="2" Content="刷新" Style="{StaticResource ToolbarButtonStyle}" Click="RefreshButton_Click"/>
         </Grid>
 
         <Grid Grid.Row="2">
