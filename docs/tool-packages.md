@@ -37,6 +37,7 @@ base64-generator.xfetool
   "version": "1.0.0",
   "description": "文本与 Base64 的相互转换。",
   "author": "XFEstudio",
+  "icon": "assets/icon.png",
   "category": "编码",
   "tags": ["base64", "编码"],
   "minimumHostVersion": "0.2.0",
@@ -53,6 +54,7 @@ base64-generator.xfetool
 ```
 
 - `id`：稳定不变的工具标识，仅允许小写字母、数字、`.` 和 `-`，并以字母开头。
+- `icon`：可选的包内图标路径，支持 PNG、JPEG、GIF、BMP 和 ICO；未设置时客户端使用默认工具图标。
 - `version`、`minimumHostVersion`：SemVer，例如 `1.2.0`、`2.0.0-beta.1`。
 - `viewXaml`、`viewCodeBehind`：必填，且文件必须存在于包内。
 - `viewModel`、`viewModelClass`：可选，但设置其中的类名时必须同时提供源码文件。
@@ -60,14 +62,13 @@ base64-generator.xfetool
 
 ## 启动
 
-不要把管理密钥写进仓库。PowerShell 示例：
+服务器配置统一由 AutoConfig XML 管理。首次启动会生成配置文件：
 
 ```powershell
-$env:XFETOOLBOX_ADMIN_KEY = "请替换为足够长的随机密钥"
 dotnet run --project .\XFEToolBox.Server\XFEToolBox.Server.csproj
 ```
 
-默认监听 `http://localhost:5058/`，所有业务路由使用 `api` 主入口。相对数据目录位于服务器可执行文件目录下，亦可用 `XFETOOLBOX_STORAGE_ROOT` 指定绝对目录。监听地址、包限制和备用管理密钥由 `Profiles/ServerProfile.cs` 对应的 AutoConfig XML 配置管理；生产环境优先使用环境变量传入密钥。
+停止服务器后，在 `ServerProfile` 对应的 AutoConfig XML 中设置 `AdminApiKey`、`StorageRoot`、监听地址、初始管理员账号以及包限制，再重新启动。相对数据目录以服务器可执行文件目录为基准；也可以直接在 `StorageRoot` 中填写绝对路径。不要把包含真实管理密钥的配置文件提交到仓库。
 
 ## API
 
@@ -91,14 +92,15 @@ dotnet run --project .\XFEToolBox.Server\XFEToolBox.Server.csproj
 上传示例：
 
 ```powershell
-$headers = @{ "X-Admin-Key" = $env:XFETOOLBOX_ADMIN_KEY }
+$adminApiKey = "与 AutoConfig 中 AdminApiKey 相同的密钥"
+$headers = @{ "X-Admin-Key" = $adminApiKey }
 $packagePath = (Resolve-Path .\base64-generator.xfetool).Path
 $body = @{
     packageBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($packagePath))
     published = $true
     overwrite = $false
 } | ConvertTo-Json -Compress
-Invoke-RestMethod -Method Post -Uri http://localhost:5058/api/v1/admin/tools/upload -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/v1/admin/tools/upload -Headers $headers -ContentType "application/json" -Body $body
 ```
 
 ## 安全约定

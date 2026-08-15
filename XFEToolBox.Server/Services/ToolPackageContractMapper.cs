@@ -10,6 +10,7 @@ internal static class ToolPackageContractMapper
         Id = package.Manifest.Id,
         Name = package.Manifest.Name,
         Description = package.Manifest.Description,
+        IconDataUrl = package.IconDataUrl,
         Author = package.Manifest.Author,
         Category = package.Manifest.Category,
         LatestVersion = package.Manifest.Version,

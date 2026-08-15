@@ -63,13 +63,53 @@
                 </StackPanel>
             </Grid>
             <Border Grid.Column="0" Grid.Row="1" CornerRadius="0,0,15,0" Background="Black" Padding="0,5,3,5">
-                <controls:SmoothScrollViewer x:Name="scrollViewer" AnimateMilliseconds="200" VerticalScrollBarVisibility="Auto" IsTabStop="False" ScrollChanged="ScrollViewer_ScrollChanged">
-                    <ScrollViewer.Resources>
-                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
-                    </ScrollViewer.Resources>
-                    <StackPanel x:Name="consoleStackPanel">
-                    </StackPanel>
-                </controls:SmoothScrollViewer>
+                <ListBox x:Name="consoleListBox"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         IsTabStop="False"
+                         ScrollViewer.CanContentScroll="True"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel">
+                    <ListBox.Template>
+                        <ControlTemplate TargetType="ListBox">
+                            <controls:SmoothScrollViewer x:Name="PART_ScrollViewer"
+                                                         AnimateMilliseconds="200"
+                                                         CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                                                         HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                                         VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                                         Focusable="False"
+                                                         ScrollChanged="ScrollViewer_ScrollChanged">
+                                <controls:SmoothScrollViewer.Resources>
+                                    <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
+                                </controls:SmoothScrollViewer.Resources>
+                                <ItemsPresenter/>
+                            </controls:SmoothScrollViewer>
+                        </ControlTemplate>
+                    </ListBox.Template>
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
             </Border>
         </Grid>
     </Border>

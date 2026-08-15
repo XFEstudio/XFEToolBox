@@ -19,6 +19,11 @@ public sealed class ToolPackageManifest
 
     public required string Author { get; init; }
 
+    /// <summary>
+    /// Optional package-relative path to a PNG, JPEG, GIF, BMP or ICO icon.
+    /// </summary>
+    public string? Icon { get; init; }
+
     public string Category { get; init; } = "其他";
 
     public string[] Tags { get; init; } = [];

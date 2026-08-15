@@ -14,12 +14,12 @@ public partial class SystemProfile : XFEProfile
     /// 主窗体宽度
     /// </summary>
     [ProfileProperty]
-    private double mainWindowWidth = 1024;
+    private double mainWindowWidth = 720;
     /// <summary>
     /// 主窗体高度
     /// </summary>
     [ProfileProperty]
-    private double mainWindowHeight = 680;
+    private double mainWindowHeight = 450;
     /// <summary>
     /// 是否开机自启动
     /// </summary>

@@ -13,7 +13,11 @@ public partial class MainPage : Page
     public MainPage()
     {
         Current = this;
-        ViewModel = new(this);
         InitializeComponent();
+        ViewModel = new(this);
+        DataContext = ViewModel;
     }
+
+    private async void MainCarousel_RetryRequested(object? sender, EventArgs e) =>
+        await ViewModel.ReloadAsync();
 }

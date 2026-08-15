@@ -8,6 +8,8 @@ public sealed class StoredToolPackage
 
     public required string Sha256 { get; init; }
 
+    public string? IconDataUrl { get; init; }
+
     public long PackageSize { get; init; }
 
     public DateTimeOffset UploadedAtUtc { get; init; }

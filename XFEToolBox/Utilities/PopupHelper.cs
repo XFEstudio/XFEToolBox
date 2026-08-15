@@ -72,13 +72,24 @@ public static class PopupHelper
 
     public static MessageBoxResult? ShowYesOrNoDialog(string text, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(text, Colors.Black, showCancelButton, yesText, noText);
 
-    public static MessageBoxResult? ShowDialog(object content, double width = 320, double height = 230)
+    public static MessageBoxResult? ShowDialog(object content, double width = 320, double height = 230) =>
+        ShowDialog(content, new PopupWindowOptions { Width = width, Height = height });
+
+    /// <summary>
+    /// 使用主窗体风格的通用弹窗显示任意页面或控件。
+    /// </summary>
+    /// <param name="content">要显示的 Page、UserControl 或其他内容。</param>
+    /// <param name="options">标题、副标题、尺寸、Owner 与交互选项。</param>
+    public static MessageBoxResult? ShowDialog(object content, PopupWindowOptions options)
     {
-        var popupWindow = new PopupWindow
-        {
-            Width = width,
-            Height = height
-        };
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(options);
+
+        options.Owner ??= Application.Current?.Windows.OfType<Window>()
+            .FirstOrDefault(window => window.IsActive && window is not PopupWindow);
+
+        var popupWindow = new PopupWindow();
+        popupWindow.ApplyOptions(options);
         popupWindow.ViewModel.Content = content;
         if (content is IPopupPage popupPage)
             popupPage.PopupWindow = popupWindow;

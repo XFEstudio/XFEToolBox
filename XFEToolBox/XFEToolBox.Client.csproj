@@ -44,13 +44,13 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3719.77" />
-    <PackageReference Include="XFEExtension.NetCore" Version="4.2.4" />
-    <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4129.50" />
+    <PackageReference Include="XFEExtension.NetCore" Version="5.1.0" />
+    <PackageReference Include="XFEExtension.NetCore.AutoConfig" Version="3.0.1" />
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="2.0.0" />
     <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.3.0" />
     <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
-    <PackageReference Include="XFEExtension.NetCore.XFEConsole" Version="2.2.2" />
+    <PackageReference Include="XFEExtension.NetCore.XFEConsole" Version="2.5.0" />
   </ItemGroup>
 
   <ItemGroup>

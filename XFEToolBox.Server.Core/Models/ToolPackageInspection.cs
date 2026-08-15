@@ -8,5 +8,7 @@ public sealed class ToolPackageInspection
 
     public required IReadOnlySet<string> Files { get; init; }
 
+    public string? IconDataUrl { get; init; }
+
     public long ExpandedSize { get; init; }
 }

@@ -38,6 +38,7 @@ static void ValidPackagePasses()
     Assert(result.Manifest.Id == "base64-generator", "工具 ID 不正确。");
     Assert(result.Files.Contains("src/Views/Base64Tool.xaml"), "未发现入口 XAML。");
     Assert(result.Files.Contains("src/ViewModels/Base64ToolViewModel.cs"), "未发现 ViewModel。");
+    Assert(result.IconDataUrl?.StartsWith("data:image/png;base64,", StringComparison.Ordinal) == true, "工具图标未被读取。");
 }
 
 static void PathTraversalIsRejected()
@@ -108,6 +109,7 @@ static MemoryStream CreatePackage(Action<ZipArchive>? customize = null)
             Version = "1.0.0",
             Description = "测试工具包",
             Author = "XFEstudio",
+            Icon = "assets/icon.png",
             Category = "编码",
             Tags = ["base64"],
             MinimumHostVersion = "0.2.0",
@@ -130,6 +132,7 @@ static MemoryStream CreatePackage(Action<ZipArchive>? customize = null)
             """);
         AddText(archive, "src/Views/Base64Tool.xaml.cs", "namespace XFEToolBox.Tools.Base64.Views; public sealed class Base64Tool { }");
         AddText(archive, "src/ViewModels/Base64ToolViewModel.cs", "namespace XFEToolBox.Tools.Base64.ViewModels; public sealed class Base64ToolViewModel { }");
+        AddBytes(archive, "assets/icon.png", Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
         customize?.Invoke(archive);
     }
 
@@ -142,6 +145,13 @@ static void AddText(ZipArchive archive, string path, string content)
     var entry = archive.CreateEntry(path, CompressionLevel.Fastest);
     using var writer = new StreamWriter(entry.Open());
     writer.Write(content);
+}
+
+static void AddBytes(ZipArchive archive, string path, byte[] content)
+{
+    var entry = archive.CreateEntry(path, CompressionLevel.Fastest);
+    using var stream = entry.Open();
+    stream.Write(content);
 }
 
 static void Assert(bool condition, string message)

@@ -1,30 +1,128 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.ToolBoxPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="#F7F8FC" Title="在线工具" Loaded="Page_Loaded">
-    <Grid Margin="25,20">
+      Background="#F7F8FC" Title="工具箱" Loaded="Page_Loaded">
+    <Page.Resources>
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="38"/><Setter Property="Padding" Value="17,0"/><Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="Foreground" Value="#66667A"/><Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0EC"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#B7B7E9"/><Setter Property="Opacity" Value="0.9"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.75"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PrimaryToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
+            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#8585DF"/><Setter Property="BorderBrush" Value="#8585DF"/>
+        </Style>
+        <Style x:Key="ToolCardStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="132"/><Setter Property="Margin" Value="5"/><Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Stretch"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CardBorder" Margin="2" Padding="15" Background="White" BorderBrush="#E7E7F1" BorderThickness="1" CornerRadius="16" RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+                            <Border.Effect><DropShadowEffect Color="#7777C9" BlurRadius="14" ShadowDepth="3" Opacity="0.06"/></Border.Effect>
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#FCFCFF"/><Setter TargetName="CardBorder" Property="BorderBrush" Value="#BEBEEE"/>
+                                <Setter TargetName="CardBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#7777C9" BlurRadius="18" ShadowDepth="4" Opacity="0.22"/></Setter.Value></Setter>
+                                <Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.018" ScaleY="1.018"/></Setter.Value></Setter>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.985" ScaleY="0.985"/></Setter.Value></Setter></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.62"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid Margin="22,18,22,16">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-        <StackPanel><TextBlock Text="在线工具库" FontSize="26" FontWeight="Bold" Foreground="#29293D"/><TextBlock Text="从服务器获取经过校验的 XAML + C# 工具源码包。" Foreground="#7C7C91" Margin="0,5,0,0"/></StackPanel>
-        <Grid Grid.Row="1" Margin="0,18,0,12">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBox x:Name="SearchTextBox" Height="38" Padding="12,0" VerticalContentAlignment="Center" BorderBrush="#DEDEEA" KeyDown="SearchTextBox_KeyDown"/>
-            <Button Grid.Column="1" Content="搜索" Padding="18,8" Margin="8,0" Background="#7777DB" Foreground="White" BorderThickness="0" Click="SearchButton_Click"/>
-            <Button Grid.Column="2" Content="刷新" Padding="18,8" Click="RefreshButton_Click"/>
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="58"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Width="46" Height="46" CornerRadius="15" Background="#EDEDFB" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <Image Source="/Resources/Image/toolbox.png" Width="25" Height="25"/>
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="工具箱" FontSize="25" FontWeight="Bold" Foreground="#303044"/>
+                <TextBlock Text="发现并缓存适合你的实用工具" Foreground="#86869A" FontSize="11" Margin="0,4,0,0"/>
+            </StackPanel>
         </Grid>
-        <Border Grid.Row="2" Background="White" CornerRadius="15" BorderBrush="#E9E9F3" BorderThickness="1" Padding="8">
-            <DataGrid x:Name="ToolGrid" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" GridLinesVisibility="Horizontal" SelectionMode="Single">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="1.2*"/>
-                    <DataGridTextColumn Header="说明" Binding="{Binding Description}" Width="2*"/>
-                    <DataGridTextColumn Header="分类" Binding="{Binding Category}" Width="100"/>
-                    <DataGridTextColumn Header="版本" Binding="{Binding LatestVersion}" Width="85"/>
-                    <DataGridTextColumn Header="作者" Binding="{Binding Author}" Width="110"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
-        <Grid Grid.Row="3" Margin="0,12,0,0">
-            <TextBlock x:Name="StatusText" Text="准备就绪" Foreground="#6E6E84" VerticalAlignment="Center"/>
-            <Button Content="下载选中工具包" HorizontalAlignment="Right" Padding="18,8" Background="#7777DB" Foreground="White" BorderThickness="0" Click="DownloadButton_Click"/>
+
+        <Grid Grid.Row="1" Margin="0,16,0,9">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Border Height="38" Background="White" BorderBrush="#E0E0EC" BorderThickness="1" CornerRadius="10">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="⌕" Foreground="#9696AA" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBox x:Name="SearchTextBox" Grid.Column="1" Padding="0,0,10,0" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0"
+                             Foreground="#4C4C61" ToolTip="搜索工具名称、介绍或标签" KeyDown="SearchTextBox_KeyDown"/>
+                </Grid>
+            </Border>
+            <Button Grid.Column="1" Content="搜索" Margin="12,0,0,0" Style="{StaticResource PrimaryToolbarButtonStyle}" Click="SearchButton_Click"/>
+            <Button Grid.Column="2" Content="刷新" Margin="12,0,0,0" Style="{StaticResource ToolbarButtonStyle}" Click="RefreshButton_Click"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/></ScrollViewer.Resources>
+                <ItemsControl x:Name="ToolCards">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource ToolCardStyle}" CommandParameter="{Binding}" IsEnabled="{Binding IsEnabled}" Click="ToolCard_Click">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="58"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Border Width="48" Height="48" CornerRadius="15" Background="#EFEFFD" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Image Source="{Binding IconSource}" Width="29" Height="29" Stretch="Uniform"/>
+                                    </Border>
+                                    <Grid Grid.Column="1">
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                        <Grid>
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#414156" TextTrimming="CharacterEllipsis" Margin="0,0,62,0"/>
+                                            <TextBlock Text="{Binding CacheState}" HorizontalAlignment="Right" Foreground="#7777CF" FontSize="10" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock Grid.Row="1" Text="{Binding Description}" Foreground="#858599" FontSize="10.5" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,7,0,7"/>
+                                        <Grid Grid.Row="2">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Padding="7,2" Background="#F0F0FA" CornerRadius="8"><TextBlock Text="{Binding Category}" Foreground="#77778D" FontSize="9"/></Border>
+                                                <Border Padding="7,2" Background="#F7F7FB" CornerRadius="8" Margin="5,0,0,0"><TextBlock Text="{Binding LatestVersion, StringFormat=v{0}}" Foreground="#9999AA" FontSize="9"/></Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Author}" HorizontalAlignment="Right" Foreground="#A0A0AF" FontSize="9" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="80"/>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                <Border Width="58" Height="58" Background="#ECECF8" CornerRadius="19" HorizontalAlignment="Center"><Image Source="/Resources/Image/wrench_tool.png" Width="30" Height="30" Opacity="0.7"/></Border>
+                <TextBlock Text="暂时没有找到工具" Foreground="#68687D" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,11,0,0"/>
+                <TextBlock Text="可以换个关键词，或稍后刷新再试" Foreground="#A0A0B0" FontSize="10" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="3" Margin="4,9,4,0">
+            <TextBlock x:Name="StatusText" Text="准备就绪" Foreground="#77778B" FontSize="10.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <TextBlock x:Name="ToolCountText" HorizontalAlignment="Right" Foreground="#A0A0AF" FontSize="10" VerticalAlignment="Center"/>
         </Grid>
     </Grid>
 </Page>

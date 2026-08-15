@@ -22,19 +22,13 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindow ViewPage { get; set; }
 
     [ObservableProperty]
-    private Page? currentPage = LoginPage.Current;
+    private Page? currentPage = MainPage.Current;
 
     public string CurrentUserName => ClientSession.CurrentUser?.NickName ?? "尚未登录";
 
     public string CurrentUserRole => ClientSession.IsAdministrator ? "管理员" : ClientSession.IsLoggedIn ? "普通用户" : "连接工具服务器";
 
-    public Visibility AuthenticatedVisibility => ClientSession.IsLoggedIn ? Visibility.Visible : Visibility.Collapsed;
-
     public Visibility AdministratorVisibility => ClientSession.IsAdministrator ? Visibility.Visible : Visibility.Collapsed;
-
-    public Visibility LoginVisibility => ClientSession.IsLoggedIn ? Visibility.Collapsed : Visibility.Visible;
-
-    public Visibility LogoutVisibility => ClientSession.IsLoggedIn ? Visibility.Visible : Visibility.Collapsed;
 
     public MainWindowViewModel(MainWindow viewPage)
     {
@@ -44,11 +38,7 @@ public partial class MainWindowViewModel : ObservableObject
         _ = RestoreSessionAsync();
     }
 
-    private async Task RestoreSessionAsync()
-    {
-        if (await ClientSession.TryRestoreAsync())
-            CurrentPage = MainPage.Current;
-    }
+    private static async Task RestoreSessionAsync() => await ClientSession.TryRestoreAsync();
 
     private void ClientSession_SessionChanged(object? sender, EventArgs e)
     {
@@ -56,11 +46,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(CurrentUserName));
             OnPropertyChanged(nameof(CurrentUserRole));
-            OnPropertyChanged(nameof(AuthenticatedVisibility));
             OnPropertyChanged(nameof(AdministratorVisibility));
-            OnPropertyChanged(nameof(LoginVisibility));
-            OnPropertyChanged(nameof(LogoutVisibility));
-            CurrentPage = ClientSession.IsLoggedIn ? MainPage.Current : LoginPage.Current;
         });
     }
 
@@ -181,9 +167,6 @@ public partial class MainWindowViewModel : ObservableObject
                 break;
             case "setting":
                 CurrentPage = SettingPage.Current;
-                break;
-            case "login":
-                CurrentPage = LoginPage.Current;
                 break;
             case "editor":
                 if (ClientSession.IsAdministrator) new ToolCodeEditorWindow().Show();

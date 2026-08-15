@@ -18,13 +18,11 @@ var validationOptions = new ToolPackageValidationOptions
     MaxFileCount = ServerProfile.MaxFileCount,
     MaxCompressionRatio = ServerProfile.MaxCompressionRatio
 };
-var configuredStorageRoot = Environment.GetEnvironmentVariable("XFETOOLBOX_STORAGE_ROOT")
-                            ?? ServerProfile.StorageRoot;
+var configuredStorageRoot = ServerProfile.StorageRoot;
 var storageRoot = Path.GetFullPath(Path.IsPathRooted(configuredStorageRoot)
     ? configuredStorageRoot
     : Path.Combine(AppContext.BaseDirectory, configuredStorageRoot));
-var adminApiKey = Environment.GetEnvironmentVariable("XFETOOLBOX_ADMIN_KEY")
-                  ?? ServerProfile.AdminApiKey;
+var adminApiKey = ServerProfile.AdminApiKey;
 var packageRepository = new FileSystemToolPackageRepository(
     new ToolPackageValidator(validationOptions),
     validationOptions,
@@ -80,10 +78,8 @@ static void EnsureInitialAdministrator()
     if (UserDataProfile.UserTable.Any(user =>
             user.PermissionLevel >= (int)ToolBoxUserRole.Administrator)) return;
 
-    var userName = Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_USER")
-                   ?? ServerProfile.InitialAdminUserName;
-    var password = Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_PASSWORD")
-                   ?? ServerProfile.InitialAdminPassword;
+    var userName = ServerProfile.InitialAdminUserName;
+    var password = ServerProfile.InitialAdminPassword;
     UserDataProfile.UserTable.Add(new ToolBoxUser
     {
         UserName = userName,
@@ -94,7 +90,7 @@ static void EnsureInitialAdministrator()
     });
     UserDataProfile.SaveProfile();
     Console.WriteLine($"[初始化] 已创建管理员账号：{userName}");
-    if (Environment.GetEnvironmentVariable("XFETOOLBOX_INITIAL_ADMIN_PASSWORD") is null)
+    if (password == ServerProfile.DefaultInitialAdminPassword)
         Console.WriteLine("[安全提示] 当前使用初始密码 ChangeMe_123!，请登录后立即修改。");
 }
 

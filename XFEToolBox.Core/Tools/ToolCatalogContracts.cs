@@ -8,6 +8,8 @@ public sealed class ToolPackageSummary
 
     public required string Description { get; init; }
 
+    public string? IconDataUrl { get; init; }
+
     public required string Author { get; init; }
 
     public required string Category { get; init; }

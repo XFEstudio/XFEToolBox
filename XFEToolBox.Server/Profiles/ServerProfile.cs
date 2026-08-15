@@ -7,6 +7,8 @@ namespace XFEToolBox.Server.Profiles;
 /// </summary>
 public partial class ServerProfile : XFEProfile
 {
+    public const string DefaultInitialAdminPassword = "ChangeMe_123!";
+
     public ServerProfile() => DefaultProfileOperationMode = ProfileOperationMode.Xml;
 
     [ProfileProperty] private string _httpAddress = "http://localhost:3000/";
@@ -29,5 +31,5 @@ public partial class ServerProfile : XFEProfile
 
     [ProfileProperty] private string _initialAdminUserName = "admin";
 
-    [ProfileProperty] private string _initialAdminPassword = "ChangeMe_123!";
+    [ProfileProperty] private string _initialAdminPassword = DefaultInitialAdminPassword;
 }

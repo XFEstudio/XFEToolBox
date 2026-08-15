@@ -12,6 +12,17 @@ namespace XFEToolBox.Server.Core.Services;
 
 public sealed partial class ToolPackageValidator(ToolPackageValidationOptions options)
 {
+    private const long MaxIconBytes = 512 * 1024;
+    private static readonly IReadOnlyDictionary<string, string> s_iconContentTypes =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".png"] = "image/png",
+            [".jpg"] = "image/jpeg",
+            [".jpeg"] = "image/jpeg",
+            [".gif"] = "image/gif",
+            [".bmp"] = "image/bmp",
+            [".ico"] = "image/x-icon"
+        };
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
@@ -48,11 +59,13 @@ public sealed partial class ToolPackageValidator(ToolPackageValidationOptions op
 
             ValidateManifest(manifest, files);
             ValidateXamlFiles(archive);
+            var iconDataUrl = ReadIconDataUrl(archive, manifest.Icon);
 
             return new ToolPackageInspection
             {
                 Manifest = manifest,
                 Files = files,
+                IconDataUrl = iconDataUrl,
                 ExpandedSize = archive.Entries.Sum(entry => entry.Length)
             };
         }
@@ -120,6 +133,7 @@ public sealed partial class ToolPackageValidator(ToolPackageValidationOptions op
         ValidateText(manifest.Description, "工具描述", 2000);
         ValidateText(manifest.Author, "作者", 100);
         ValidateText(manifest.Category, "分类", 50);
+        ValidateIcon(manifest.Icon, files);
         if (string.IsNullOrWhiteSpace(manifest.Version) || manifest.Version.Length > 64 || !SemanticVersionComparer.IsValid(manifest.Version))
             throw new ToolPackageValidationException("工具版本必须是有效的 SemVer 版本，例如 1.0.0 或 1.0.0-beta.1。");
         if (!string.IsNullOrWhiteSpace(manifest.MinimumHostVersion) && !SemanticVersionComparer.IsValid(manifest.MinimumHostVersion))
@@ -180,6 +194,35 @@ public sealed partial class ToolPackageValidator(ToolPackageValidationOptions op
             throw new ToolPackageValidationException($"{fieldName} 路径或扩展名不合法：{value}");
         if (!files.Contains(path))
             throw new ToolPackageValidationException($"{fieldName} 指向的文件不存在：{value}");
+    }
+
+    private static void ValidateIcon(string? value, IReadOnlySet<string> files)
+    {
+        if (value is null) return;
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ToolPackageValidationException("工具图标路径不能为空。");
+
+        var path = NormalizePath(value);
+        if (!IsSafeRelativePath(path) || !s_iconContentTypes.ContainsKey(Path.GetExtension(path)))
+            throw new ToolPackageValidationException($"工具图标必须是安全的 PNG、JPEG、GIF、BMP 或 ICO 文件路径：{value}");
+        if (!files.Contains(path))
+            throw new ToolPackageValidationException($"工具图标指向的文件不存在：{value}");
+    }
+
+    private static string? ReadIconDataUrl(ZipArchive archive, string? iconPath)
+    {
+        if (string.IsNullOrWhiteSpace(iconPath)) return null;
+        var normalizedPath = NormalizePath(iconPath);
+        var entry = archive.Entries.Single(entry =>
+            string.Equals(NormalizePath(entry.FullName), normalizedPath, StringComparison.OrdinalIgnoreCase));
+        if (entry.Length > MaxIconBytes)
+            throw new ToolPackageValidationException($"工具图标不能超过 {MaxIconBytes / 1024} KiB。");
+
+        using var output = new MemoryStream((int)entry.Length);
+        using (var input = entry.Open())
+            input.CopyTo(output);
+        var contentType = s_iconContentTypes[Path.GetExtension(normalizedPath)];
+        return $"data:{contentType};base64,{Convert.ToBase64String(output.ToArray())}";
     }
 
     private static void ValidateText(string? value, string fieldName, int maximumLength)

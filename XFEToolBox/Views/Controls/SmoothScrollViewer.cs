@@ -13,8 +13,8 @@ public class SmoothScrollViewer : ScrollViewer
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         double wheelChange = e.Delta;
+        lastLocation = VerticalOffset;
         double newOffset = lastLocation - wheelChange * ScrollDistanceMultiplier;
-        ScrollToVerticalOffset(lastLocation);
         if (newOffset < 0)
             newOffset = 0;
         if (newOffset > ScrollableHeight)

@@ -120,6 +120,7 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
             {
                 Manifest = inspection.Manifest,
                 Sha256 = sha256,
+                IconDataUrl = inspection.IconDataUrl,
                 PackageSize = packageSize,
                 UploadedAtUtc = DateTimeOffset.UtcNow,
                 Published = published
@@ -166,6 +167,7 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
             {
                 Manifest = current.Manifest,
                 Sha256 = current.Sha256,
+                IconDataUrl = current.IconDataUrl,
                 PackageSize = current.PackageSize,
                 UploadedAtUtc = current.UploadedAtUtc,
                 Published = published

@@ -14,7 +14,8 @@ public class CarouselImageItem : INotifyPropertyChanged
     private bool isSelected = false;
     public bool IsSelected { get => isSelected; set { isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
 
-    public Action? Action { get; set; }
+    private Action? action;
+    public Action? Action { get => action; set { action = value; OnPropertyChanged(nameof(Action)); } }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

@@ -1,9 +1,13 @@
 ﻿using System.Windows;
 using System.Windows.Media.Animation;
+using System.Windows.Controls;
+using System.Windows.Input;
 using XFEExtension.NetCore.InputSimulator;
+using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
+using XFEToolBox.Client.Views.Pages.Popups;
 using MainWindowViewModel = XFEToolBox.Client.ViewModel.Windows.MainWindowViewModel;
 
 namespace XFEToolBox.Client.Views.Windows;
@@ -20,6 +24,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         ViewModel = new MainWindowViewModel(this);
         DataContext = ViewModel;
+        AccountPopup.DataContext = ViewModel;
         Current = this;
         Width = SystemProfile.MainWindowWidth;
         Height = SystemProfile.MainWindowHeight;
@@ -53,7 +58,7 @@ public partial class MainWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        mainButton.IsChecked = ClientSession.IsLoggedIn;
+        mainButton.IsChecked = true;
         ViewModel.GetDPIScale();
     }
 
@@ -76,4 +81,52 @@ public partial class MainWindow : Window
     private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
 
     private void BackTabBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => NavigationCenter.GoBack();
+
+    private void AccountEntry_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (ClientSession.IsLoggedIn)
+        {
+            AccountPopup.IsOpen = !AccountPopup.IsOpen;
+            return;
+        }
+
+        AnimateMainSurface(0.86);
+        try
+        {
+            PopupHelper.ShowDialog(new LoginPopupPage(), new PopupWindowOptions
+            {
+                Title = "XFE·工具箱",
+                Subtitle = "工具服务器账户",
+                Width = 410,
+                Height = 470,
+                Owner = this,
+                ContentMargin = new Thickness(0)
+            });
+        }
+        finally
+        {
+            AnimateMainSurface(1);
+        }
+    }
+
+    private void AnimateMainSurface(double opacity) => MainSurface.BeginAnimation(OpacityProperty, new DoubleAnimation
+    {
+        To = opacity,
+        Duration = TimeSpan.FromMilliseconds(180),
+        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+    });
+
+    private void PopupLogoutButton_Click(object sender, RoutedEventArgs e)
+    {
+        ClientSession.Logout();
+        AccountPopup.IsOpen = false;
+    }
+
+    private void AdminMenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string pageTag })
+            ViewModel.NavigateToPageCommand.Execute(pageTag);
+        AccountPopup.IsOpen = false;
+    }
 }
