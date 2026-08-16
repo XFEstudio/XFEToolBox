@@ -2,4 +2,18 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <SolidColorBrush x:Key="MainColor" Color="#9898e7"/>
     <SolidColorBrush x:Key="BackgroundColor" Color="White"/>
+    <SolidColorBrush x:Key="ToolTextPrimaryBrush" Color="#46465C"/>
+    <SolidColorBrush x:Key="ToolTextSecondaryBrush" Color="#7E7E92"/>
+    <SolidColorBrush x:Key="ToolTextDisabledBrush" Color="#AAAABB"/>
+    <SolidColorBrush x:Key="ToolSurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ToolControlBackgroundBrush" Color="#FAFAFE"/>
+    <SolidColorBrush x:Key="ToolControlHoverBrush" Color="#F1F0FC"/>
+    <SolidColorBrush x:Key="ToolControlPressedBrush" Color="#E7E6FA"/>
+    <SolidColorBrush x:Key="ToolControlDisabledBrush" Color="#F1F1F6"/>
+    <SolidColorBrush x:Key="ToolControlBorderBrush" Color="#DDDDEC"/>
+    <SolidColorBrush x:Key="ToolControlHoverBorderBrush" Color="#B9B9E6"/>
+    <SolidColorBrush x:Key="ToolAccentSoftBrush" Color="#EEEEFC"/>
+    <SolidColorBrush x:Key="ToolAccentSelectedBrush" Color="#E1E1F8"/>
+    <SolidColorBrush x:Key="ToolDividerBrush" Color="#E8E8F1"/>
+    <SolidColorBrush x:Key="ToolDangerBrush" Color="#BC5966"/>
 </ResourceDictionary>

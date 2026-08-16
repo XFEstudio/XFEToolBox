@@ -122,15 +122,14 @@ public partial class DecoratedTextConverter
                     foldGrid.Children.Add(titleBorder);
                     var buttonText = new TextBlock
                     {
-                        Foreground = new SolidColorBrush(foldBlockDecSpan.BackgroundColor),
-                        Background = new SolidColorBrush(foldBlockDecSpan.Color),
                         Text = "▼",
                         FontSize = 18
                     };
                     var button = new Button
                     {
-                        Style = (Style)Application.Current.FindResource("FoldButton"),
-                        Background = new SolidColorBrush(foldBlockDecSpan.Color),
+                        MinWidth = 32,
+                        Height = 30,
+                        Padding = new Thickness(0),
                         Content = buttonText
                     };
                     var foldButtonBorder = new Border

@@ -1,207 +1,334 @@
-﻿using System.Windows;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using XFEToolBox.Client.Views.Behavior;
-using XFEToolBox.Client.Utilities;
 
 namespace XFEToolBox.Client.Views.Controls;
 
 /// <summary>
-/// ScrollTextBlock.xaml 的交互逻辑
+/// 单行文本控件：默认以省略号展示溢出内容，悬停时滚动显示完整文本。
 /// </summary>
 public partial class ScrollTextBlock : UserControl
 {
-    #region DependencyProperty
     public double RollingTimeMillisecond
     {
-        get { return (double)GetValue(RollingTimeMillisecondProperty); }
-        set { SetValue(RollingTimeMillisecondProperty, value); }
+        get => (double)GetValue(RollingTimeMillisecondProperty);
+        set => SetValue(RollingTimeMillisecondProperty, value);
     }
-    public static readonly DependencyProperty RollingTimeMillisecondProperty = DependencyProperty.Register("RollingTimeMillisecond", typeof(double), typeof(ScrollTextBlock), new PropertyMetadata(5000d));
+    public static readonly DependencyProperty RollingTimeMillisecondProperty =
+        DependencyProperty.Register(nameof(RollingTimeMillisecond), typeof(double), typeof(ScrollTextBlock), new PropertyMetadata(5000d));
 
     public bool AutoAlignment
     {
-        get { return (bool)GetValue(AutoAlignmentProperty); }
-        set { SetValue(AutoAlignmentProperty, value); }
+        get => (bool)GetValue(AutoAlignmentProperty);
+        set => SetValue(AutoAlignmentProperty, value);
     }
-    public static readonly DependencyProperty AutoAlignmentProperty = DependencyProperty.Register("AutoAlignment", typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(true));
+    public static readonly DependencyProperty AutoAlignmentProperty =
+        DependencyProperty.Register(nameof(AutoAlignment), typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(true, OnLayoutPropertyChanged));
 
     public bool RollingBack
     {
-        get { return (bool)GetValue(RollingBackProperty); }
-        set { SetValue(RollingBackProperty, value); }
+        get => (bool)GetValue(RollingBackProperty);
+        set => SetValue(RollingBackProperty, value);
     }
-    public static readonly DependencyProperty RollingBackProperty = DependencyProperty.Register("RollingBack", typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(false));
+    public static readonly DependencyProperty RollingBackProperty =
+        DependencyProperty.Register(nameof(RollingBack), typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(false, OnLayoutPropertyChanged));
 
     public bool NeedRolling
     {
-        get { return (bool)GetValue(NeedRollingProperty); }
-        set { SetValue(NeedRollingProperty, value); }
+        get => (bool)GetValue(NeedRollingProperty);
+        set => SetValue(NeedRollingProperty, value);
     }
-    public static readonly DependencyProperty NeedRollingProperty = DependencyProperty.Register("NeedRolling", typeof(bool), typeof(UserControl), new PropertyMetadata(false));
+    public static readonly DependencyProperty NeedRollingProperty =
+        DependencyProperty.Register(nameof(NeedRolling), typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(false));
 
     public bool IsRolling
     {
-        get { return (bool)GetValue(IsRollingProperty); }
-        set { SetValue(IsRollingProperty, value); if (IsRolling) StartRolling(); else EndRolling(); }
+        get => (bool)GetValue(IsRollingProperty);
+        set => SetValue(IsRollingProperty, value);
     }
-    public static readonly DependencyProperty IsRollingProperty = DependencyProperty.Register("IsRolling", typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(false));
+    public static readonly DependencyProperty IsRollingProperty =
+        DependencyProperty.Register(nameof(IsRolling), typeof(bool), typeof(ScrollTextBlock),
+            new PropertyMetadata(false, OnIsRollingChanged));
 
     public bool AutoRolling
     {
-        get { return (bool)GetValue(AutoRollingProperty); }
-        set { SetValue(AutoRollingProperty, value); }
+        get => (bool)GetValue(AutoRollingProperty);
+        set => SetValue(AutoRollingProperty, value);
     }
-    public static readonly DependencyProperty AutoRollingProperty = DependencyProperty.Register("AutoRolling", typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(true));
+    public static readonly DependencyProperty AutoRollingProperty =
+        DependencyProperty.Register(nameof(AutoRolling), typeof(bool), typeof(ScrollTextBlock), new PropertyMetadata(false, OnLayoutPropertyChanged));
 
     public string InnerText
     {
-        get { return (string)GetValue(InnerTextProperty); }
-        set { SetValue(InnerTextProperty, value); }
+        get => (string)GetValue(InnerTextProperty);
+        set => SetValue(InnerTextProperty, value);
     }
-    public static readonly DependencyProperty InnerTextProperty = DependencyProperty.Register("InnerText", typeof(string), typeof(ScrollTextBlock), new PropertyMetadata("请输入文本"));
+    public static readonly DependencyProperty InnerTextProperty =
+        DependencyProperty.Register(nameof(InnerText), typeof(string), typeof(ScrollTextBlock),
+            new PropertyMetadata("请输入文本", OnLayoutPropertyChanged));
 
     public Brush InnerForeground
     {
-        get { return (Brush)GetValue(InnerForegroundProperty); }
-        set { SetValue(InnerForegroundProperty, value); }
+        get => (Brush)GetValue(InnerForegroundProperty);
+        set => SetValue(InnerForegroundProperty, value);
     }
-    public static readonly DependencyProperty InnerForegroundProperty = DependencyProperty.Register("InnerForeground", typeof(Brush), typeof(ScrollTextBlock), new PropertyMetadata(new SolidColorBrush(Colors.Black)));
+    public static readonly DependencyProperty InnerForegroundProperty =
+        DependencyProperty.Register(nameof(InnerForeground), typeof(Brush), typeof(ScrollTextBlock),
+            new PropertyMetadata(new SolidColorBrush(Colors.Black)));
 
     public Brush InnerBackground
     {
-        get { return (Brush)GetValue(InnerBackgroundProperty); }
-        set { SetValue(InnerBackgroundProperty, value); }
+        get => (Brush)GetValue(InnerBackgroundProperty);
+        set => SetValue(InnerBackgroundProperty, value);
     }
-    public static readonly DependencyProperty InnerBackgroundProperty = DependencyProperty.Register("InnerBackground", typeof(Brush), typeof(ScrollTextBlock), new PropertyMetadata(new SolidColorBrush(Colors.Transparent)));
+    public static readonly DependencyProperty InnerBackgroundProperty =
+        DependencyProperty.Register(nameof(InnerBackground), typeof(Brush), typeof(ScrollTextBlock),
+            new PropertyMetadata(new SolidColorBrush(Colors.Transparent)));
 
     public double InnerFontSize
     {
-        get { return (double)GetValue(InnerFontSizeProperty); }
-        set { SetValue(InnerFontSizeProperty, value); }
+        get => (double)GetValue(InnerFontSizeProperty);
+        set => SetValue(InnerFontSizeProperty, value);
     }
-    public static readonly DependencyProperty InnerFontSizeProperty = DependencyProperty.Register("InnerFontSize", typeof(double), typeof(ScrollTextBlock), new PropertyMetadata(13d));
+    public static readonly DependencyProperty InnerFontSizeProperty =
+        DependencyProperty.Register(nameof(InnerFontSize), typeof(double), typeof(ScrollTextBlock),
+            new PropertyMetadata(13d, OnLayoutPropertyChanged));
 
     public FontFamily InnerFontFamily
     {
-        get { return (FontFamily)GetValue(InnerFontFamilyProperty); }
-        set { SetValue(InnerFontFamilyProperty, value); }
+        get => (FontFamily)GetValue(InnerFontFamilyProperty);
+        set => SetValue(InnerFontFamilyProperty, value);
     }
-    public static readonly DependencyProperty InnerFontFamilyProperty = DependencyProperty.Register("InnerFontFamily", typeof(FontFamily), typeof(ScrollTextBlock), new PropertyMetadata(new FontFamily()));
+    public static readonly DependencyProperty InnerFontFamilyProperty =
+        DependencyProperty.Register(nameof(InnerFontFamily), typeof(FontFamily), typeof(ScrollTextBlock),
+            new PropertyMetadata(SystemFonts.MessageFontFamily, OnLayoutPropertyChanged));
 
     public FontWeight InnerFontWeight
     {
-        get { return (FontWeight)GetValue(InnerFontWeightProperty); }
-        set { SetValue(InnerFontWeightProperty, value); }
+        get => (FontWeight)GetValue(InnerFontWeightProperty);
+        set => SetValue(InnerFontWeightProperty, value);
     }
-    public static readonly DependencyProperty InnerFontWeightProperty = DependencyProperty.Register("InnerFontWeight", typeof(FontWeight), typeof(ScrollTextBlock), new PropertyMetadata(new FontWeight()));
+    public static readonly DependencyProperty InnerFontWeightProperty =
+        DependencyProperty.Register(nameof(InnerFontWeight), typeof(FontWeight), typeof(ScrollTextBlock),
+            new PropertyMetadata(FontWeights.Normal, OnLayoutPropertyChanged));
 
+    // 保留这些属性以兼容既有 XAML 调用。
     public Thickness InnerTextMargin
     {
-        get { return (Thickness)GetValue(InnerTextMarginProperty); }
-        set { SetValue(InnerTextMarginProperty, value); }
+        get => (Thickness)GetValue(InnerTextMarginProperty);
+        set => SetValue(InnerTextMarginProperty, value);
     }
-    public static readonly DependencyProperty InnerTextMarginProperty = DependencyProperty.Register("InnerTextMargin", typeof(Thickness), typeof(ScrollTextBlock), new PropertyMetadata(new Thickness(10, 0, 0, 0)));
+    public static readonly DependencyProperty InnerTextMarginProperty =
+        DependencyProperty.Register(nameof(InnerTextMargin), typeof(Thickness), typeof(ScrollTextBlock), new PropertyMetadata(new Thickness()));
 
     public double InnerTextOpacity
     {
-        get { return (double)GetValue(InnerTextOpacityProperty); }
-        set { SetValue(InnerTextOpacityProperty, value); }
+        get => (double)GetValue(InnerTextOpacityProperty);
+        set => SetValue(InnerTextOpacityProperty, value);
     }
-    public static readonly DependencyProperty InnerTextOpacityProperty = DependencyProperty.Register("InnerTextOpacity", typeof(double), typeof(ScrollTextBlock), new PropertyMetadata(0.5d));
+    public static readonly DependencyProperty InnerTextOpacityProperty =
+        DependencyProperty.Register(nameof(InnerTextOpacity), typeof(double), typeof(ScrollTextBlock), new PropertyMetadata(1d));
 
     public VerticalAlignment InnerTextVerticalAlignment
     {
-        get { return (VerticalAlignment)GetValue(InnerTextVerticalAlignmentProperty); }
-        set { SetValue(InnerTextVerticalAlignmentProperty, value); }
+        get => (VerticalAlignment)GetValue(InnerTextVerticalAlignmentProperty);
+        set => SetValue(InnerTextVerticalAlignmentProperty, value);
     }
-    public static readonly DependencyProperty InnerTextVerticalAlignmentProperty = DependencyProperty.Register("InnerTextVerticalAlignment", typeof(VerticalAlignment), typeof(ScrollTextBlock), new PropertyMetadata(VerticalAlignment.Center));
+    public static readonly DependencyProperty InnerTextVerticalAlignmentProperty =
+        DependencyProperty.Register(nameof(InnerTextVerticalAlignment), typeof(VerticalAlignment), typeof(ScrollTextBlock),
+            new PropertyMetadata(VerticalAlignment.Center));
 
     public HorizontalAlignment InnerTextHorizontalAlignment
     {
-        get { return (HorizontalAlignment)GetValue(InnerTextHorizontalAlignmentProperty); }
-        set { SetValue(InnerTextHorizontalAlignmentProperty, value); }
+        get => (HorizontalAlignment)GetValue(InnerTextHorizontalAlignmentProperty);
+        set => SetValue(InnerTextHorizontalAlignmentProperty, value);
     }
-    public static readonly DependencyProperty InnerTextHorizontalAlignmentProperty = DependencyProperty.Register("InnerTextHorizontalAlignment", typeof(HorizontalAlignment), typeof(ScrollTextBlock), new PropertyMetadata(HorizontalAlignment.Center));
+    public static readonly DependencyProperty InnerTextHorizontalAlignmentProperty =
+        DependencyProperty.Register(nameof(InnerTextHorizontalAlignment), typeof(HorizontalAlignment), typeof(ScrollTextBlock),
+            new PropertyMetadata(HorizontalAlignment.Center));
 
     public TextAlignment InnerTextAlignment
     {
-        get { return (TextAlignment)GetValue(InnerTextAlignmentProperty); }
-        set { SetValue(InnerTextAlignmentProperty, value); }
+        get => (TextAlignment)GetValue(InnerTextAlignmentProperty);
+        set => SetValue(InnerTextAlignmentProperty, value);
     }
-    public static readonly DependencyProperty InnerTextAlignmentProperty = DependencyProperty.Register("InnerTextAlignment", typeof(TextAlignment), typeof(ScrollTextBlock), new PropertyMetadata(TextAlignment.Center));
+    public static readonly DependencyProperty InnerTextAlignmentProperty =
+        DependencyProperty.Register(nameof(InnerTextAlignment), typeof(TextAlignment), typeof(ScrollTextBlock),
+            new PropertyMetadata(TextAlignment.Center, OnLayoutPropertyChanged));
 
     public TextDecorationCollection InnerTextDecorations
     {
-        get { return (TextDecorationCollection)GetValue(InnerTextDecorationsProperty); }
-        set { SetValue(InnerTextDecorationsProperty, value); }
+        get => (TextDecorationCollection)GetValue(InnerTextDecorationsProperty);
+        set => SetValue(InnerTextDecorationsProperty, value);
     }
-    public static readonly DependencyProperty InnerTextDecorationsProperty = DependencyProperty.Register("InnerTextDecorations", typeof(TextDecorationCollection), typeof(ScrollTextBlock), new PropertyMetadata(null));
-    #endregion
+    public static readonly DependencyProperty InnerTextDecorationsProperty =
+        DependencyProperty.Register(nameof(InnerTextDecorations), typeof(TextDecorationCollection), typeof(ScrollTextBlock), new PropertyMetadata(null));
 
-    TextAlignment originalTextAlignment = TextAlignment.Center;
+    private bool _isLoaded;
+    private double _fullTextWidth;
 
-    public ScrollTextBlock()
-    {
-        InitializeComponent();
-        originalTextAlignment = InnerTextAlignment;
-    }
+    public ScrollTextBlock() => InitializeComponent();
 
     private void ScrollTextBlock_Loaded(object sender, RoutedEventArgs e)
     {
-        if (textBlock.ActualWidth > scrollViewer.ActualWidth)
-        {
-            if (AutoAlignment)
-            {
-                InnerTextAlignment = TextAlignment.Left;
-                originalTextAlignment = InnerTextAlignment;
-            }
-            NeedRolling = true;
-            if (AutoRolling || IsRolling)
-                StartRolling();
-        }
-        else
-        {
-            if (AutoAlignment)
-            {
-                InnerTextAlignment = TextAlignment.Center;
-                originalTextAlignment = InnerTextAlignment;
-            }
-        }
+        _isLoaded = true;
+        UpdateOverflowState();
+    }
+
+    private void ScrollTextBlock_Unloaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = false;
+        StopRollingAnimation();
+    }
+
+    private void ScrollTextBlock_SizeChanged(object sender, SizeChangedEventArgs e) => QueueOverflowUpdate();
+
+    private void ScrollTextBlock_MouseEnter(object sender, MouseEventArgs e)
+    {
+        UpdateOverflowState();
+        if (!BindingOperations.IsDataBound(this, IsRollingProperty))
+            SetCurrentValue(IsRollingProperty, NeedRolling);
+    }
+
+    private void ScrollTextBlock_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (!BindingOperations.IsDataBound(this, IsRollingProperty))
+            SetCurrentValue(IsRollingProperty, false);
     }
 
     public void StartRolling()
     {
-        SetValue(IsRollingProperty, true);
-        textBlock.TextAlignment = TextAlignment.Left;
-        if (!RollingBack)
-        {
-            textBlock.Width = textBlock.ActualWidth + scrollViewer.ActualWidth;
-            if (stackPanel.Children.Count > 1) stackPanel.Children.RemoveAt(1);
-            var copyOfTextBlock = textBlock.Clone();
-            stackPanel.Children.Add(copyOfTextBlock);
-        }
-        var animation = new DoubleAnimation()
-        {
-            From = 0,
-            To = RollingBack ? textBlock.ActualWidth - scrollViewer.ActualWidth : textBlock.ActualWidth + scrollViewer.ActualWidth,
-            Duration = TimeSpan.FromMilliseconds(RollingTimeMillisecond),
-            RepeatBehavior = RepeatBehavior.Forever,
-            AutoReverse = RollingBack
-        };
-        scrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, animation);
+        UpdateOverflowState();
+        if (!NeedRolling)
+            return;
+
+        if (IsRolling)
+            StartRollingAnimation();
+        else
+            SetCurrentValue(IsRollingProperty, true);
     }
 
     public void EndRolling()
     {
-        SetValue(IsRollingProperty, false);
-        InnerTextAlignment = originalTextAlignment;
+        if (IsRolling)
+            SetCurrentValue(IsRollingProperty, false);
+        else
+            StopRollingAnimation();
+    }
+
+    private static void OnIsRollingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (ScrollTextBlock)d;
+        if ((bool)e.NewValue && control.NeedRolling)
+            control.StartRollingAnimation();
+        else
+            control.StopRollingAnimation();
+    }
+
+    private static void OnLayoutPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+        ((ScrollTextBlock)d).QueueOverflowUpdate();
+
+    private void QueueOverflowUpdate()
+    {
+        if (!_isLoaded)
+            return;
+
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(UpdateOverflowState));
+    }
+
+    private void UpdateOverflowState()
+    {
+        if (!_isLoaded || ActualWidth <= 0)
+            return;
+
+        var text = InnerText ?? string.Empty;
+        var typeface = new Typeface(InnerFontFamily ?? SystemFonts.MessageFontFamily,
+            FontStyles.Normal, InnerFontWeight, FontStretches.Normal);
+        var formattedText = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection,
+            typeface, InnerFontSize, InnerForeground ?? Brushes.Black,
+            VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+        _fullTextWidth = Math.Ceiling(formattedText.WidthIncludingTrailingWhitespace);
+        NeedRolling = !string.IsNullOrEmpty(text) && _fullTextWidth > ActualWidth + 0.5;
+        ellipsisTextBlock.TextAlignment = NeedRolling && AutoAlignment ? TextAlignment.Left : InnerTextAlignment;
+
+        if (!NeedRolling)
+        {
+            SetCurrentValue(IsRollingProperty, false);
+            StopRollingAnimation();
+        }
+        else if (AutoRolling)
+        {
+            SetCurrentValue(IsRollingProperty, true);
+        }
+        else if (IsRolling)
+        {
+            StartRollingAnimation();
+        }
+    }
+
+    private void StartRollingAnimation()
+    {
+        if (!_isLoaded || !NeedRolling || ActualWidth <= 0)
+            return;
+
+        StopRollingAnimation(showEllipsis: false);
+        ellipsisTextBlock.Visibility = Visibility.Hidden;
+        scrollViewer.Visibility = Visibility.Visible;
+
+        var distance = Math.Max(0, _fullTextWidth - ActualWidth);
+        var autoReverse = RollingBack;
         if (!RollingBack)
         {
-            textBlock.Width = textBlock.ActualWidth;
-            if (stackPanel.Children.Count > 1) stackPanel.Children.RemoveAt(1);
+            var gap = new Border { Width = Math.Max(24, ActualWidth * 0.25) };
+            var copy = CreateTextCopy();
+            stackPanel.Children.Add(gap);
+            stackPanel.Children.Add(copy);
+            distance = _fullTextWidth + gap.Width;
         }
-        scrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, null);
+
+        if (distance <= 0)
+            return;
+
+        var animation = new DoubleAnimation
+        {
+            From = 0,
+            To = distance,
+            Duration = TimeSpan.FromMilliseconds(Math.Max(800, RollingTimeMillisecond)),
+            RepeatBehavior = RepeatBehavior.Forever,
+            AutoReverse = autoReverse
+        };
+        scrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, animation, HandoffBehavior.SnapshotAndReplace);
     }
+
+    private void StopRollingAnimation(bool showEllipsis = true)
+    {
+        scrollViewer.BeginAnimation(ScrollViewerBehavior.HorizontalOffsetProperty, null);
+        scrollViewer.ScrollToHorizontalOffset(0);
+        while (stackPanel.Children.Count > 1)
+            stackPanel.Children.RemoveAt(stackPanel.Children.Count - 1);
+
+        scrollViewer.Visibility = Visibility.Hidden;
+        ellipsisTextBlock.Visibility = showEllipsis ? Visibility.Visible : Visibility.Hidden;
+    }
+
+    private TextBlock CreateTextCopy() => new()
+    {
+        Text = InnerText,
+        Foreground = InnerForeground,
+        Background = InnerBackground,
+        FontSize = InnerFontSize,
+        FontFamily = InnerFontFamily,
+        FontWeight = InnerFontWeight,
+        TextAlignment = TextAlignment.Left,
+        TextDecorations = InnerTextDecorations,
+        VerticalAlignment = InnerTextVerticalAlignment,
+        TextWrapping = TextWrapping.NoWrap
+    };
 }

@@ -21,9 +21,7 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="RenderTransform">
-                <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                </Setter.Value>
+                <Setter.Value><ScaleTransform ScaleX="1" ScaleY="1"/></Setter.Value>
             </Setter>
             <Setter Property="Template">
                 <Setter.Value>
@@ -43,21 +41,15 @@
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="BorderBrush" Value="#D9FFFFFF"/>
                                 <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="1.08" ScaleY="1.08"/>
-                                    </Setter.Value>
+                                    <Setter.Value><ScaleTransform ScaleX="1.08" ScaleY="1.08"/></Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.94" ScaleY="0.94"/>
-                                    </Setter.Value>
+                                    <Setter.Value><ScaleTransform ScaleX="0.94" ScaleY="0.94"/></Setter.Value>
                                 </Setter>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.35"/>
-                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.35"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -89,14 +81,13 @@
                                 <Setter Property="Background" Value="{DynamicResource MainColor}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.78"/>
-                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.78"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
     </UserControl.Resources>
 
     <Grid Margin="3">
@@ -214,9 +205,10 @@
             </Border>
         </Border>
 
-        <Grid Grid.Row="1" Margin="0,7,0,0">
+        <!-- 分页指示器保留历史独立样式，不继承普通操作按钮模板。 -->
+        <Grid Grid.Row="1" Background="Transparent" Margin="0,8,0,0">
             <ItemsControl ItemsSource="{Binding ImageList, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                          HorizontalAlignment="Center" VerticalAlignment="Top"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
                           Visibility="{Binding HasMultipleItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -225,35 +217,46 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Width="22" Height="14" Padding="0" Background="Transparent" BorderThickness="0"
-                                Cursor="Hand" FocusVisualStyle="{x:Null}" Click="Indicator_Click"
-                                ToolTip="切换到此项">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Grid Background="Transparent">
-                                        <Border x:Name="Dot" Width="6" Height="6" CornerRadius="3"
-                                                Background="#A6FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Grid>
-                                    <ControlTemplate.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter TargetName="Dot" Property="Width" Value="18"/>
-                                            <Setter TargetName="Dot" Property="Background" Value="#FFFFFFFF"/>
-                                        </DataTrigger>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Dot" Property="Opacity" Value="0.75"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                        <Border Background="Transparent" Padding="6" Cursor="Hand"
+                                MouseLeftButtonUp="Indicator_MouseLeftButtonUp" ToolTip="切换到此项">
+                            <Grid>
+                                <Ellipse x:Name="Dot" Width="5" Height="5" Opacity="0.5" RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.Fill>
+                                        <SolidColorBrush Color="#FFFFFF"/>
+                                    </Ellipse.Fill>
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                            </Grid>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FF6A5ACD" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1.4" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1.4" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="(Shape.Fill).(SolidColorBrush.Color)" To="#FFFFFF" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="Opacity" To="0.5" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Dot" Storyboard.TargetProperty="RenderTransform.(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
-            <TextBlock HorizontalAlignment="Right" Margin="0,0,4,0" VerticalAlignment="Top"
-                       Text="{Binding CurrentPosition, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       Foreground="#D9FFFFFF" FontSize="10.5" FontWeight="SemiBold"
-                       Visibility="{Binding HasItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </Grid>
     </Grid>
 </UserControl>

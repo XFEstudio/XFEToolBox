@@ -71,21 +71,11 @@
                 </EventTrigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="AccountMenuButton" TargetType="Button">
-            <Setter Property="Height" Value="34"/>
-            <Setter Property="Margin" Value="0,3"/>
-            <Setter Property="Padding" Value="10,0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Background" Value="#F6F6FC"/>
-            <Setter Property="Foreground" Value="#45455B"/>
-            <Setter Property="BorderBrush" Value="#E5E5F0"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
     </Window.Resources>
 
-    <controls:RoundedClipBorder x:Name="MainSurface" CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5">
-        <Grid>
+    <Grid>
+        <controls:RoundedClipBorder x:Name="MainSurface" CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5">
+            <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="180"/>
                 <ColumnDefinition Width="*"/>
@@ -173,9 +163,15 @@
                 </Grid>
             </Border>
 
-            <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
-            <Image Grid.Column="1" Grid.Row="1" Source="/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"/>
-            <Border x:Name="cornerBorder" Grid.Column="1" Grid.Row="1" Style="{StaticResource CornerBorderStyle}" MouseDown="CornerBorder_MouseDown"/>
-        </Grid>
-    </controls:RoundedClipBorder>
+                <Frame x:Name="contentFrame" Style="{StaticResource NavigationFrame}" Content="{Binding CurrentPage}" Navigated="ContentFrame_Navigated"/>
+            </Grid>
+        </controls:RoundedClipBorder>
+
+        <!-- 拖拽角素材绘制到圆角裁剪层之外，避免其贴边像素被截断。 -->
+        <Image Source="/Resources/Image/corner.png" Width="25" Height="25" Margin="0,0,5,5"
+               HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"
+               IsHitTestVisible="False"/>
+        <Border x:Name="cornerBorder" Style="{StaticResource CornerBorderStyle}" Margin="0,0,5,5"
+                MouseDown="CornerBorder_MouseDown"/>
+    </Grid>
 </Window>

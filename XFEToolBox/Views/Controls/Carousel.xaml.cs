@@ -387,7 +387,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
     private void NextButton_Click(object sender, RoutedEventArgs e) => NavigateTo(currentIndex + 1);
 
-    private void Indicator_Click(object sender, RoutedEventArgs e)
+    private void Indicator_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: CarouselImageItem item })
         {
@@ -395,6 +395,8 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
             if (index >= 0)
                 NavigateTo(index);
         }
+
+        e.Handled = true;
     }
 
     private void Carousel_PreviewKeyDown(object sender, KeyEventArgs e)

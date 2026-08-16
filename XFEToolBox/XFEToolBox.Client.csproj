@@ -8,6 +8,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
     <Version>0.2.0</Version>
+    <AssemblyName>XFEToolBox</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

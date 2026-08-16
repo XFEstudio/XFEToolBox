@@ -82,9 +82,6 @@
                                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
                                                          Focusable="False"
                                                          ScrollChanged="ScrollViewer_ScrollChanged">
-                                <controls:SmoothScrollViewer.Resources>
-                                    <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
-                                </controls:SmoothScrollViewer.Resources>
                                 <ItemsPresenter/>
                             </controls:SmoothScrollViewer>
                         </ControlTemplate>

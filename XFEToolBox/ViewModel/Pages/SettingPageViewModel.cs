@@ -69,9 +69,9 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
                     break;
             }
         }
-        else if (child is PasswordHintTextBox passwordHintTextBox && passwordHintTextBox.Tag is string passwordTagPath)
+        else if (child is PasswordEditor passwordEditor && passwordEditor.Tag is string passwordTagPath)
         {
-            passwordHintTextBox.Password = ProfileHelper.GetProfileValue<string>(passwordTagPath) ?? string.Empty;
+            passwordEditor.Password = ProfileHelper.GetProfileValue<string>(passwordTagPath) ?? string.Empty;
         }
     }
 
@@ -101,7 +101,7 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
 
     public void TextChange(object sender, TextChangedEventArgs e)
     {
-        if (e.OriginalSource is TextBox textBox && textBox.Name == "mainTextBox" && sender is TextEditor textEditor && textEditor.Tag is string commandPath)
+        if (sender is TextEditor textEditor && textEditor.Tag is string commandPath)
         {
             switch (commandPath)
             {
@@ -115,15 +115,15 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
                     SetWithDefaultValue(textEditor, 9);
                     break;
                 default:
-                    ProfileHelper.SetProfileValue(commandPath, textBox.Text);
+                    ProfileHelper.SetProfileValue(commandPath, textEditor.Text);
                     break;
             }
         }
     }
 
-    public void PasswordChange(object sender, PasswordChangeEventArgs e)
+    public void PasswordChanged(object sender, PasswordChangedEventArgs e)
     {
-        if (sender is PasswordHintTextBox passwordHintTextBox && passwordHintTextBox.Tag is string commandPath)
+        if (sender is PasswordEditor passwordEditor && passwordEditor.Tag is string commandPath)
         {
             switch (commandPath)
             {

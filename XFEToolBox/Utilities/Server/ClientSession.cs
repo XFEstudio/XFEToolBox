@@ -10,7 +10,7 @@ namespace XFEToolBox.Client.Utilities.Server;
 
 public static class ClientSession
 {
-    public const string ApiAddress = "http://localhost:3000/api";
+    public const string ApiAddress = "http://toolbox.api.xfe.studio/api";
 
     private static ClientRequester _requester = CreateRequester();
 

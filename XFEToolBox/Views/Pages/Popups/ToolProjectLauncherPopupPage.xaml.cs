@@ -22,6 +22,7 @@ public partial class ToolProjectLauncherPopupPage : Page, IPopupPage
 
     public PopupWindow? PopupWindow { get; set; }
     public string? SelectedProjectPath { get; private set; }
+    public bool CreateProjectRequested { get; private set; }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await ReloadAsync();
 
@@ -78,6 +79,13 @@ public partial class ToolProjectLauncherPopupPage : Page, IPopupPage
 
         SelectedProjectPath = Path.GetFullPath(dialog.FolderName);
         await ToolProjectWorkspaceService.RememberProjectAsync(SelectedProjectPath);
+        if (PopupWindow is not null)
+            await PopupWindow.CloseWithResultAsync(MessageBoxResult.OK);
+    }
+
+    private async void CreateProjectButton_Click(object sender, RoutedEventArgs e)
+    {
+        CreateProjectRequested = true;
         if (PopupWindow is not null)
             await PopupWindow.CloseWithResultAsync(MessageBoxResult.OK);
     }

@@ -4,44 +4,43 @@
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       Background="Transparent" Title="" Loaded="Page_Loaded">
     <Page.Resources>
-        <Style x:Key="DownloadToolbarButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="38"/><Setter Property="Padding" Value="17,0"/><Setter Property="Margin" Value="8,0,0,0"/>
-            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#26FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#60FFFFFF"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="White"/><Setter Property="Opacity" Value="0.9"/></Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.75"/></Trigger>
-                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="DownloadPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource DownloadToolbarButtonStyle}">
-            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#6666C5"/><Setter Property="BorderBrush" Value="#E0E0FF"/>
-        </Style>
         <Style x:Key="CategoryComboBoxItemStyle" TargetType="ComboBoxItem">
-            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Padding" Value="9,7"/>
+            <Setter Property="Margin" Value="0,1"/>
             <Setter Property="Foreground" Value="#4F4F64"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="ItemSurface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter/>
+                        <Border x:Name="ItemSurface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent" BorderThickness="1" CornerRadius="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="SelectedMark" Width="3" Height="14" CornerRadius="2"
+                                        Background="Transparent" VerticalAlignment="Center"/>
+                                <ContentPresenter Grid.Column="1" Margin="8,0,2,0" VerticalAlignment="Center"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#EEEEFB"/></Trigger>
-                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#E2E2F7"/><Setter Property="Foreground" Value="#5E5EBA"/></Trigger>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemSurface" Property="Background" Value="#F4F4FC"/>
+                                <Setter TargetName="ItemSurface" Property="BorderBrush" Value="#E5E5F5"/>
+                                <Setter Property="Foreground" Value="#6262B9"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemSurface" Property="Background" Value="#ECECFB"/>
+                                <Setter TargetName="ItemSurface" Property="BorderBrush" Value="#D2D2F1"/>
+                                <Setter TargetName="SelectedMark" Property="Background" Value="{DynamicResource MainColor}"/>
+                                <Setter Property="Foreground" Value="#5555B5"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -49,42 +48,53 @@
         </Style>
         <Style x:Key="CategoryComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="2,0,6,0"/>
+            <Setter Property="Background" Value="#1EFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#A8FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,0,8,0"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="ItemContainerStyle" Value="{StaticResource CategoryComboBoxItemStyle}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
                         <Grid x:Name="ComboRoot" SnapsToDevicePixels="True">
-                            <ToggleButton x:Name="DropDownToggle" Focusable="False" ClickMode="Press"
+                            <Border x:Name="ComboSurface" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="11"/>
+                            <ToggleButton x:Name="DropDownToggle" Focusable="False" ClickMode="Press" Cursor="Hand"
                                           IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                          Background="Transparent" BorderThickness="0" Foreground="{TemplateBinding Foreground}" Padding="{TemplateBinding Padding}">
+                                          Background="Transparent" BorderThickness="0" Foreground="{TemplateBinding Foreground}"
+                                          Padding="{TemplateBinding Padding}">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border x:Name="ToggleSurface" Background="Transparent" CornerRadius="8">
+                                        <Grid Background="Transparent">
                                             <Grid>
                                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/></Grid.ColumnDefinitions>
                                                 <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="Left"
                                                                   Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                                                   TextElement.Foreground="{TemplateBinding Foreground}"/>
-                                                <Path Grid.Column="1" Width="8" Height="5" Stretch="Fill" Fill="#F0F0FF" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                      Data="M 0,0 L 4,4 L 8,0 Z"/>
+                                                <Path x:Name="Arrow" Grid.Column="1" Width="8" Height="5" Stretch="Fill" Fill="#F4F4FF"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"
+                                                      Data="M 0,0 L 4,4 L 8,0 Z">
+                                                    <Path.RenderTransform><RotateTransform Angle="0"/></Path.RenderTransform>
+                                                </Path>
                                             </Grid>
-                                        </Border>
+                                        </Grid>
                                         <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ToggleSurface" Property="Background" Value="#1FFFFFFF"/></Trigger>
-                                            <Trigger Property="IsChecked" Value="True"><Setter TargetName="ToggleSurface" Property="Background" Value="#2FFFFFFF"/></Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                                    <Setter.Value><RotateTransform Angle="180"/></Setter.Value>
+                                                </Setter>
+                                            </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </ToggleButton.Template>
                             </ToggleButton>
                             <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
                                    AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
-                                <Border MinWidth="{Binding ActualWidth, ElementName=ComboRoot}" Margin="0,6,0,0" Padding="5"
-                                        Background="White" BorderBrush="#DCDCEC" BorderThickness="1" CornerRadius="11">
-                                    <Border.Effect><DropShadowEffect Color="#3C365D" BlurRadius="18" ShadowDepth="4" Opacity="0.22"/></Border.Effect>
+                                <Border MinWidth="{Binding ActualWidth, ElementName=ComboRoot}" Margin="0,7,0,0" Padding="6"
+                                        Background="#FEFEFF" BorderBrush="#CECEE8" BorderThickness="1" CornerRadius="12">
+                                    <Border.Effect><DropShadowEffect Color="#3C365D" BlurRadius="20" ShadowDepth="4" Opacity="0.20"/></Border.Effect>
                                     <ScrollViewer MaxHeight="230" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                                         <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
                                     </ScrollViewer>
@@ -92,31 +102,66 @@
                             </Popup>
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ComboSurface" Property="Background" Value="#2AFFFFFF"/>
+                                <Setter TargetName="ComboSurface" Property="BorderBrush" Value="#DCFFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="ComboSurface" Property="Background" Value="#38FFFFFF"/>
+                                <Setter TargetName="ComboSurface" Property="BorderBrush" Value="White"/>
+                            </Trigger>
                             <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.58"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- 软件卡片是选项卡式入口，保留独立模板，不套用普通 Button 外观。 -->
         <Style x:Key="SoftwareCardStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="142"/><Setter Property="Margin" Value="5"/><Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Stretch"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinHeight" Value="142"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="CardBorder" Margin="2" Padding="15" Background="White" BorderBrush="#E7E7F1" BorderThickness="1" CornerRadius="16" RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
-                            <Border.Effect><DropShadowEffect Color="#7777C9" BlurRadius="14" ShadowDepth="3" Opacity="0.06"/></Border.Effect>
+                        <Border x:Name="CardBorder" Margin="2" Padding="15" Background="White"
+                                BorderBrush="#E7E7F1" BorderThickness="1" CornerRadius="16"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <Border.Effect>
+                                <DropShadowEffect Color="#7777C9" BlurRadius="14" ShadowDepth="3" Opacity="0.06"/>
+                            </Border.Effect>
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#FCFCFF"/><Setter TargetName="CardBorder" Property="BorderBrush" Value="#BEBEEE"/>
-                                <Setter TargetName="CardBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#7777C9" BlurRadius="18" ShadowDepth="4" Opacity="0.20"/></Setter.Value></Setter>
-                                <Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.016" ScaleY="1.016"/></Setter.Value></Setter>
+                                <Setter TargetName="CardBorder" Property="Background" Value="#FCFCFF"/>
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#BEBEEE"/>
+                                <Setter TargetName="CardBorder" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#7777C9" BlurRadius="18" ShadowDepth="4" Opacity="0.20"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter TargetName="CardBorder" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1.016" ScaleY="1.016"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.985" ScaleY="0.985"/></Setter.Value></Setter></Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CardBorder" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -128,27 +173,31 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid Margin="0,0,0,10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="128"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <controls:TextEditor x:Name="SearchTextBox" Height="38" Padding="11,0" Background="#26FFFFFF" Foreground="White" CaretBrush="White"
-                                 EditorCornerRadius="10" EditorBorderBrush="#60FFFFFF" EditorHoverBorderBrush="#B0FFFFFF" EditorFocusedBorderBrush="White"
-                                 HintText="搜索软件名称、介绍、发布者或标签" HintForeground="#E8E8FF" HintTextMargin="0" Icon="{StaticResource SearchIconGeometry}"
-                                 IconBrush="#E8E8FF" ToolTip="搜索软件名称、介绍、发布者或标签" KeyDown="SearchTextBox_KeyDown"/>
-            <Border Grid.Column="1" Height="38" Margin="8,0,0,0" Padding="10,0" Background="#26FFFFFF" BorderBrush="#60FFFFFF" BorderThickness="1" CornerRadius="10">
-                <ComboBox x:Name="CategoryFilter" Style="{StaticResource CategoryComboBoxStyle}" VerticalContentAlignment="Center"
-                          SelectionChanged="CategoryFilter_SelectionChanged"/>
-            </Border>
-            <Button x:Name="SearchButton" Grid.Column="2" Content="搜索" Style="{StaticResource DownloadPrimaryButtonStyle}" Click="SearchButton_Click"/>
-            <Button x:Name="RefreshButton" Grid.Column="3" Content="刷新" Style="{StaticResource DownloadToolbarButtonStyle}" Click="RefreshButton_Click"/>
+            <controls:TextEditor x:Name="SearchTextBox" Height="38" Padding="11,0" Background="#1EFFFFFF" Foreground="White" CaretBrush="White"
+                                 EditorCornerRadius="11" EditorBorderBrush="#A8FFFFFF" EditorHoverBorderBrush="#DCFFFFFF" EditorFocusedBorderBrush="White"
+                                 HintText="搜索软件名称、介绍、发布者或标签" HintForeground="#EEEEFF" HintTextMargin="0" Icon="{StaticResource SearchIconGeometry}"
+                                 IconBrush="#F4F4FF" ToolTip="搜索软件名称、介绍、发布者或标签" KeyDown="SearchTextBox_KeyDown"/>
+            <ComboBox x:Name="CategoryFilter" Grid.Column="1" Height="38" Margin="8,0,0,0"
+                      Style="{StaticResource CategoryComboBoxStyle}" VerticalContentAlignment="Center"
+                      SelectionChanged="CategoryFilter_SelectionChanged"/>
+            <Button x:Name="SearchButton" Grid.Column="2" Content="搜索" controls:ButtonAssist.IsPrimary="True" Height="38" Margin="8,0,0,0"
+                    Background="#2AFFFFFF" Foreground="White" BorderBrush="#B8FFFFFF" BorderThickness="1"
+                    controls:ButtonAssist.CornerRadius="11"
+                    controls:ButtonAssist.HoverBackground="#42FFFFFF" controls:ButtonAssist.HoverForeground="White" controls:ButtonAssist.HoverBorderBrush="White"
+                    controls:ButtonAssist.PressedBackground="#20FFFFFF" controls:ButtonAssist.PressedForeground="White" controls:ButtonAssist.PressedBorderBrush="#E8FFFFFF"
+                    Click="SearchButton_Click"/>
+            <Button x:Name="RefreshButton" Grid.Column="3" Content="刷新" Height="38" Margin="8,0,0,0" Click="RefreshButton_Click"/>
         </Grid>
 
         <Border Grid.Row="1" Background="White" CornerRadius="18" Padding="7">
         <Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/></ScrollViewer.Resources>
                 <ItemsControl x:Name="SoftwareCards">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Style="{StaticResource SoftwareCardStyle}" CommandParameter="{Binding}" Click="SoftwareCard_Click">
+                            <Button Style="{StaticResource SoftwareCardStyle}"
+                                    CommandParameter="{Binding}" Click="SoftwareCard_Click">
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <Border Width="48" Height="48" CornerRadius="14" Background="#EEEEFB" VerticalAlignment="Top" HorizontalAlignment="Left">
@@ -160,12 +209,20 @@
                                             <Border DockPanel.Dock="Right" Margin="7,0,0,0" Padding="7,3" Background="#EEEEFB" CornerRadius="7">
                                                 <TextBlock Text="{Binding DownloadModeText}" Foreground="#7777C8" FontSize="9"/>
                                             </Border>
-                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#3D3D52" TextTrimming="CharacterEllipsis"/>
+                                            <controls:ScrollTextBlock InnerText="{Binding Name}" Height="22"
+                                                                      InnerFontSize="14" InnerFontWeight="SemiBold" InnerForeground="#3D3D52"
+                                                                      InnerTextAlignment="Left" AutoAlignment="False" AutoRolling="False"
+                                                                      IsRolling="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}, Mode=OneWay}"
+                                                                      RollingBack="True" RollingTimeMillisecond="2800"/>
                                         </DockPanel>
                                         <TextBlock Grid.Row="1" Text="{Binding Summary}" Margin="0,8,0,8" Foreground="#7F7F91" FontSize="10.5"
                                                    TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="45"/>
                                         <Grid Grid.Row="2">
-                                            <TextBlock Text="{Binding Publisher}" Foreground="#A0A0B0" FontSize="9.5" TextTrimming="CharacterEllipsis" Margin="0,0,72,0"/>
+                                            <controls:ScrollTextBlock InnerText="{Binding Publisher}" Height="18" Margin="0,0,72,0"
+                                                                      InnerFontSize="9.5" InnerForeground="#A0A0B0"
+                                                                      InnerTextAlignment="Left" AutoAlignment="False" AutoRolling="False"
+                                                                      IsRolling="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}, Mode=OneWay}"
+                                                                      RollingBack="True" RollingTimeMillisecond="2600"/>
                                             <TextBlock Text="{Binding Version}" HorizontalAlignment="Right" Foreground="#8585D8" FontSize="9.5"/>
                                         </Grid>
                                     </Grid>

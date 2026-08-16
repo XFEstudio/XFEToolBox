@@ -26,20 +26,15 @@
         <TextBlock Grid.ColumnSpan="2" Text="{Binding Title,ElementName=agreementDialogPopupPage}" Foreground="{DynamicResource MainColor}" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center"/>
         <Border Grid.ColumnSpan="2" Grid.Row="1" CornerRadius="5" BorderThickness="0,2,0,2" BorderBrush="{DynamicResource MainColor}" Margin="0,5,0,0" Padding="5,5,0,5">
             <controls:SmoothScrollViewer AnimateMilliseconds="800" ScrollDistanceMultiplier="0.5" ScrollChanged="SmoothScrollViewer_ScrollChanged">
-                <controls:SmoothScrollViewer.Resources>
-                    <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
-                </controls:SmoothScrollViewer.Resources>
                 <TextBlock Text="{Binding AgreementContent}" TextWrapping="Wrap"/>
             </controls:SmoothScrollViewer>
         </Border>
         <controls:CheckButton Grid.ColumnSpan="2" Grid.Row="2" Command="{Binding ReadCheckCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" IsEnabled="{Binding ReadCheckButtonEnable}" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,5,0,0">
             <TextBlock Text="我已阅读并知晓以上内容" VerticalAlignment="Center" Margin="5,0,0,0"/>
         </controls:CheckButton>
-        <controls:RoundButton Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding AgreeCommand}">
-            <TextBlock Text="我同意" Foreground="#9898e7" Margin="16,8" IsEnabled="{Binding AcceptButtonEnable}"/>
-        </controls:RoundButton>
-        <controls:RoundButton Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding RefuseCommand}">
-            <TextBlock Text="我拒绝" Foreground="#9898e7" Margin="16,8"/>
-        </controls:RoundButton>
+        <Button Grid.Row="3" Content="我同意" controls:ButtonAssist.IsPrimary="True" MinWidth="96"
+                VerticalAlignment="Center" HorizontalAlignment="Center" IsEnabled="{Binding AcceptButtonEnable}" Command="{Binding AgreeCommand}"/>
+        <Button Grid.Row="3" Grid.Column="1" Content="我拒绝" MinWidth="96"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding RefuseCommand}"/>
     </Grid>
 </Page>

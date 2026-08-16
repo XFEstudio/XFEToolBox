@@ -3,9 +3,6 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       Background="Transparent" Title="" Loaded="Page_Loaded">
-    <Page.Resources>
-        <Style TargetType="ScrollBar" BasedOn="{StaticResource AdminVerticalScrollBar}"/>
-    </Page.Resources>
     <Grid Margin="14,9,14,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -37,7 +34,7 @@
                 <TextBlock Text="用户与权限" Style="{StaticResource AdminPageTitle}"/>
                 <TextBlock Text="管理服务器账号、角色与访问状态" Style="{StaticResource AdminPageSubtitle}"/>
             </StackPanel>
-            <Button Grid.Column="2" Content="刷新列表" Style="{StaticResource AdminGlassButton}"
+            <Button Grid.Column="2" Content="刷新列表"
                     VerticalAlignment="Center" Click="RefreshButton_Click"/>
         </Grid>
 
@@ -102,9 +99,9 @@
                                          Margin="0,0,8,0" HintText="账号" ToolTip="账号"/>
                     <controls:TextEditor x:Name="NewNickName" Grid.Column="1" Style="{StaticResource AdminTextEditor}"
                                          Margin="0,0,8,0" HintText="昵称" ToolTip="昵称"/>
-                    <controls:PasswordHintTextBox x:Name="NewPassword" Grid.Column="2" Style="{StaticResource AdminPasswordEditor}"
+                    <controls:PasswordEditor x:Name="NewPassword" Grid.Column="2" Style="{StaticResource AdminPasswordEditor}"
                                                   Margin="0,0,8,0" HintText="密码（至少 8 位）" ToolTip="密码（至少 8 位）"/>
-                    <Button Grid.Column="3" Content="创建用户" Style="{StaticResource AdminPrimaryButton}"
+                    <Button Grid.Column="3" Content="创建用户" controls:ButtonAssist.IsPrimary="True"
                             MinWidth="88" Click="CreateButton_Click"/>
                 </Grid>
 
@@ -112,14 +109,14 @@
 
                 <Grid Grid.Row="3">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <controls:PasswordHintTextBox x:Name="ResetPassword" Width="155"
+                        <controls:PasswordEditor x:Name="ResetPassword" Width="155"
                                                       Style="{StaticResource AdminPasswordEditor}" Margin="0,0,8,0"
                                                       HintText="设置新密码" ToolTip="为选中用户设置新密码"/>
-                        <Button Content="重置密码" Style="{StaticResource AdminButton}" Margin="0,0,7,0"
+                        <Button Content="重置密码" Margin="0,0,7,0"
                                 Click="ResetPasswordButton_Click"/>
-                        <Button Content="切换角色" Style="{StaticResource AdminButton}" Margin="0,0,7,0"
+                        <Button Content="切换角色" Margin="0,0,7,0"
                                 Click="ToggleRoleButton_Click"/>
-                        <Button Content="启用 / 禁用" Style="{StaticResource AdminButton}" MinWidth="88"
+                        <Button Content="启用 / 禁用" MinWidth="88"
                                 Click="ToggleStatusButton_Click"/>
                     </StackPanel>
                 </Grid>

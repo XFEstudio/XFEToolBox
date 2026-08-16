@@ -24,17 +24,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Frame Grid.ColumnSpan="4" Content="{Binding Content}" NavigationUIVisibility="Hidden"/>
-        <controls:RoundButton Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding ConfirmCommand}">
-            <TextBlock Text="{Binding ConfirmText}" Foreground="#9898e7" Margin="16,8"/>
-        </controls:RoundButton>
-        <controls:RoundButton Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding YesCommand}">
-            <TextBlock Text="{Binding YesText}" Foreground="#9898e7" Margin="16,8"/>
-        </controls:RoundButton>
-        <controls:RoundButton Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding NoCommand}">
-            <TextBlock Text="{Binding NoText}" Foreground="#9898e7" Margin="16,8"/>
-        </controls:RoundButton>
-        <controls:RoundButton Grid.Row="1" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding CancelCommand}">
-            <TextBlock Text="{Binding CancelText}" Foreground="#9898e7" Margin="16,8"/>
-        </controls:RoundButton>
+        <Button Grid.Row="1" Content="{Binding ConfirmText}" controls:ButtonAssist.IsPrimary="True" MinWidth="88"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding ConfirmCommand}"/>
+        <Button Grid.Row="1" Grid.Column="1" Content="{Binding YesText}" controls:ButtonAssist.IsPrimary="True" MinWidth="88"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding YesCommand}"/>
+        <Button Grid.Row="1" Grid.Column="2" Content="{Binding NoText}" MinWidth="88"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding NoCommand}"/>
+        <Button Grid.Row="1" Grid.Column="3" Content="{Binding CancelText}" MinWidth="88"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding CancelCommand}"/>
     </Grid>
 </Page>

@@ -61,17 +61,17 @@ internal static class ToolProjectWorkspaceService
                   "category": "开发工具",
                   "tags": [ "WPF" ],
                   "entry": {
-                    "viewXaml": "Code/Views/View.xaml",
-                    "viewClass": "{{toolNamespace}}.View",
-                    "viewCodeBehind": "Code/Views/View.xaml.cs",
-                    "viewModel": "Code/ViewModels/ViewModel.cs",
-                    "viewModelClass": "{{toolNamespace}}.ViewModel"
+                    "viewXaml": "Code/Views/MainPage.xaml",
+                    "viewClass": "{{toolNamespace}}.MainPage",
+                    "viewCodeBehind": "Code/Views/MainPage.xaml.cs",
+                    "viewModel": "Code/ViewModels/MainPageViewModel.cs",
+                    "viewModelClass": "{{toolNamespace}}.MainPageViewModel"
                   },
                   "requestedPermissions": []
                 }
                 """,
-            [Path.Combine("Code", "Views", "View.xaml")] = $$"""
-                <UserControl x:Class="{{toolNamespace}}.View"
+            [Path.Combine("Code", "Views", "MainPage.xaml")] = $$"""
+                <UserControl x:Class="{{toolNamespace}}.MainPage"
                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
                     <Grid Margin="24">
@@ -82,27 +82,27 @@ internal static class ToolProjectWorkspaceService
                     </Grid>
                 </UserControl>
                 """,
-            [Path.Combine("Code", "Views", "View.xaml.cs")] = $$"""
+            [Path.Combine("Code", "Views", "MainPage.xaml.cs")] = $$"""
                 using System.Windows.Controls;
 
                 namespace {{toolNamespace}};
 
-                public partial class View : UserControl
+                public partial class MainPage : UserControl
                 {
-                    public View()
+                    public MainPage()
                     {
                         InitializeComponent();
-                        DataContext = new ViewModel();
+                        DataContext = new MainPageViewModel();
                     }
                 }
                 """,
-            [Path.Combine("Code", "ViewModels", "ViewModel.cs")] = $$"""
+            [Path.Combine("Code", "ViewModels", "MainPageViewModel.cs")] = $$"""
                 using CommunityToolkit.Mvvm.ComponentModel;
                 using CommunityToolkit.Mvvm.Input;
 
                 namespace {{toolNamespace}};
 
-                public partial class ViewModel : ObservableObject
+                public partial class MainPageViewModel : ObservableObject
                 {
                     [ObservableProperty]
                     private string result = string.Empty;

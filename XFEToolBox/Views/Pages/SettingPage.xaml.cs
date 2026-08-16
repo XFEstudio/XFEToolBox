@@ -38,7 +38,7 @@ public partial class SettingPage : Page
 
     private void TextEditor_TextChanged(object sender, TextChangedEventArgs e) => ViewModel.TextChange(sender, e);
 
-    private void PasswordHintTextBox_PasswordChange(object sender, PasswordChangeEventArgs e) => ViewModel.PasswordChange(sender, e);
+    private void PasswordEditor_PasswordChanged(object sender, PasswordChangedEventArgs e) => ViewModel.PasswordChanged(sender, e);
 
     private void ScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e) => ViewModel.ScrollChanged(sender, e);
 }

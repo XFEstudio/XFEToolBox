@@ -132,7 +132,7 @@ public partial class LoginPopupPage : Page, IPopupPage
 
     private async Task HandleResultAsync(
         (bool Success, string Message) result,
-        params PasswordHintTextBox[] passwordBoxes)
+        params PasswordEditor[] passwordEditors)
     {
         StatusText.Text = result.Message;
         StatusText.Foreground = new SolidColorBrush(result.Success
@@ -141,8 +141,8 @@ public partial class LoginPopupPage : Page, IPopupPage
 
         if (result.Success)
         {
-            foreach (var passwordBox in passwordBoxes)
-                passwordBox.Clear();
+            foreach (var passwordEditor in passwordEditors)
+                passwordEditor.Clear();
             await Task.Delay(180);
             if (PopupWindow is not null)
                 await PopupWindow.CloseWithResultAsync(MessageBoxResult.OK);

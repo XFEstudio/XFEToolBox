@@ -6,6 +6,15 @@ namespace XFEToolBox.Client.Views.Controls;
 
 public class HintTextBox : TextBox
 {
+    static HintTextBox()
+    {
+        // TextBox 默认使用顶部内容对齐。输入控件未加载隐式样式或使用独立样式时，
+        // 仍应保持单行内容垂直居中；调用方可以通过本地属性覆盖此默认值。
+        VerticalContentAlignmentProperty.OverrideMetadata(
+            typeof(HintTextBox),
+            new FrameworkPropertyMetadata(VerticalAlignment.Center));
+    }
+
     public string HintText
     {
         get { return (string)GetValue(HintTextProperty); }

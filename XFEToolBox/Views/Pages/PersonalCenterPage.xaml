@@ -10,21 +10,9 @@
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#77778C"/><Setter Property="FontSize" Value="10.5"/><Setter Property="Margin" Value="2,0,0,5"/>
         </Style>
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Height" Value="37"/><Setter Property="Padding" Value="18,0"/><Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#8585DF"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-                <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" CornerRadius="10"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-                <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="#7474D3"/></Trigger><Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.78"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger></ControlTemplate.Triggers>
-            </ControlTemplate></Setter.Value></Setter>
-        </Style>
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Foreground" Value="#66667C"/><Setter Property="Background" Value="#F3F3FA"/>
-        </Style>
     </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/></ScrollViewer.Resources>
         <Grid Margin="14,10,14,12">
             <Border Background="White" BorderBrush="#E8E8F2" BorderThickness="1" CornerRadius="17" Padding="22">
                 <Grid>
@@ -64,10 +52,10 @@
                                 <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="OpenLoginButton" Content="登录" Style="{StaticResource PrimaryButton}"
+                            <Button x:Name="OpenLoginButton" Content="登录" controls:ButtonAssist.IsPrimary="True" Height="37"
                                     Click="OpenLoginButton_Click"/>
                             <Button x:Name="OpenRegisterButton" Grid.Column="2" Content="注册新账号"
-                                    Style="{StaticResource SecondaryButton}" Click="OpenRegisterButton_Click"/>
+                                    Height="37" Click="OpenRegisterButton_Click"/>
                         </Grid>
                         <TextBlock x:Name="LoggedOutStatusText" Margin="2,13,2,0" Foreground="#68687E"
                                    FontSize="10.5" TextWrapping="Wrap"/>
@@ -81,7 +69,7 @@
                                 <TextBlock x:Name="ProfileDisplayName" Foreground="#3A3A50" FontSize="17" FontWeight="Bold"/>
                                 <TextBlock x:Name="ProfileAccountRole" Foreground="#8D8DA0" FontSize="10" Margin="0,3,0,0"/>
                             </StackPanel>
-                            <Button Grid.Column="2" Content="退出登录" Style="{StaticResource SecondaryButton}" Foreground="#A45252" Click="LogoutButton_Click"/>
+                            <Button Grid.Column="2" Content="退出登录" Click="LogoutButton_Click"/>
                         </Grid>
 
                         <Grid>
@@ -97,7 +85,7 @@
                                                      EditorBorderBrush="#E1E1EC" EditorHoverBorderBrush="#BDBDE0" EditorFocusedBorderBrush="#8585DF"
                                                      EditorCornerRadius="11" HintText="介绍一下自己（最多 300 字）" HintForeground="#9999AA"
                                                      HintTextMargin="0,1,0,0" HintTextVerticalAlignment="Top"/>
-                                <Button x:Name="SaveProfileButton" Content="保存个人资料" Style="{StaticResource PrimaryButton}" Margin="0,15,0,0" Click="SaveProfileButton_Click"/>
+                                <Button x:Name="SaveProfileButton" Content="保存个人资料" controls:ButtonAssist.IsPrimary="True" Height="37" Margin="0,15,0,0" Click="SaveProfileButton_Click"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2">
@@ -120,7 +108,7 @@
                                         </StackPanel>
                                     </Grid>
                                 </Border>
-                                <Button x:Name="ChangePasswordButton" Content="修改密码" Style="{StaticResource SecondaryButton}"
+                                <Button x:Name="ChangePasswordButton" Content="修改密码" Height="37"
                                         Margin="0,14,0,0" Click="ChangePasswordButton_Click"/>
                                 <TextBlock Text="点击后将在独立窗口中验证当前密码。" Foreground="#9A9AAB"
                                            FontSize="9" Margin="2,9,2,0" TextWrapping="Wrap"/>

@@ -83,6 +83,7 @@ internal static class ToolProjectRunService
         var root = EscapeXml(Path.GetFullPath(workspaceRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var coreAssembly = EscapeXml(typeof(ToolPackageManifest).Assembly.Location);
         var clientCoreAssembly = EscapeXml(typeof(AppPath).Assembly.Location);
+        var clientAssembly = EscapeXml(typeof(ToolProjectRunService).Assembly.Location);
         return $$"""
                  <Project Sdk="Microsoft.NET.Sdk">
                    <PropertyGroup>
@@ -107,6 +108,7 @@ internal static class ToolProjectRunService
                      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
                      <Reference Include="XFEToolBox.Core"><HintPath>{{coreAssembly}}</HintPath><Private>true</Private></Reference>
                      <Reference Include="XFEToolBox.Client.Core"><HintPath>{{clientCoreAssembly}}</HintPath><Private>true</Private></Reference>
+                     <Reference Include="XFEToolBox.Client"><HintPath>{{clientAssembly}}</HintPath><Private>true</Private></Reference>
                    </ItemGroup>
                  </Project>
                  """;
@@ -129,6 +131,10 @@ internal static class ToolProjectRunService
                      public static void Main()
                      {
                          var application = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
+                         application.Resources.MergedDictionaries.Add(new ResourceDictionary
+                         {
+                             Source = new Uri("pack://application:,,,/XFEToolBox.Client;component/Resources/Style/ToolThemeResources.xaml", UriKind.Absolute)
+                         });
                          try
                          {
                              var viewType = Assembly.GetExecutingAssembly().GetType({{viewClass}}, throwOnError: true)!;
@@ -147,7 +153,7 @@ internal static class ToolProjectRunService
                              {
                                  Title = {{title}}, Width = 980, Height = 700, MinWidth = 560, MinHeight = 420,
                                  WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                                 Background = Brushes.White, Content = content
+                                 Background = (Brush)application.FindResource("ToolSurfaceBrush"), Content = content
                              };
                              application.Run(window);
                          }

@@ -22,6 +22,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
@@ -51,6 +52,18 @@ public partial class ToolCodeEditorWindow : Window
     {
         ".cs", ".xaml", ".json", ".xml", ".resx", ".txt", ".md", ".markdown", ".mdown", ".mkd", ".mkdn",
         ".yml", ".yaml", ".config", ".props", ".targets"
+    };
+
+    private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
+    {
+        "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class",
+        "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",
+        "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit",
+        "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null", "object",
+        "operator", "out", "override", "params", "private", "protected", "public", "readonly", "record", "ref",
+        "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch",
+        "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using",
+        "virtual", "void", "volatile", "while"
     };
 
     private static readonly HashSet<string> PreviewEventAttributes = new(StringComparer.OrdinalIgnoreCase)
@@ -88,6 +101,8 @@ public partial class ToolCodeEditorWindow : Window
     private bool _showingMarkdownPreview;
     private bool _previewDocumentTabOpen;
     private bool _previewDocumentActive;
+    private bool _newItemDialogActive;
+    private string? _newItemBaseDirectory;
 
     private const string ExplorerDragFormat = "XFEToolBox.EditorExplorerItem";
 
@@ -107,6 +122,7 @@ public partial class ToolCodeEditorWindow : Window
         EditorThemeButton.IsEnabled = false;
         PreviewButton.IsEnabled = false;
         RunButton.IsEnabled = false;
+        PublishPackageMenuItem.IsEnabled = false;
 
         _manifestSyncTimer.Tick += async (_, _) =>
         {
@@ -183,6 +199,7 @@ public partial class ToolCodeEditorWindow : Window
                     EditorThemeButton.IsEnabled = true;
                     PreviewButton.IsEnabled = true;
                     RunButton.IsEnabled = true;
+                    PublishPackageMenuItem.IsEnabled = true;
                     EditorLoading.Visibility = Visibility.Collapsed;
                     await SendWorkspaceAsync();
                     SetHostStatus("Monaco 0.55.1 · IntelliSense 已就绪");
@@ -262,12 +279,7 @@ public partial class ToolCodeEditorWindow : Window
                 .Select((path, index) => new { path, index })
                 .GroupBy(item => item.path, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First().index, StringComparer.OrdinalIgnoreCase);
-            foreach (var item in folderItems.Concat(_files)
-                         .OrderBy(item => orderLookup.ContainsKey(item.RelativePath) ? 0 : 1)
-                         .ThenBy(item => orderLookup.GetValueOrDefault(item.RelativePath, int.MaxValue))
-                         .ThenBy(item => item.RelativePath.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                         .ThenBy(item => item.RelativePath, StringComparer.OrdinalIgnoreCase)
-                         .ThenByDescending(item => item.IsFolder))
+            foreach (var item in BuildHierarchicalExplorerOrder(folderItems.Concat(_files), orderLookup))
                 _explorerItems.Add(item);
         }
 
@@ -278,6 +290,38 @@ public partial class ToolCodeEditorWindow : Window
             SelectExplorerItem(selectedPath);
         await Task.CompletedTask;
     }
+
+    private static IEnumerable<EditorExplorerItem> BuildHierarchicalExplorerOrder(
+        IEnumerable<EditorExplorerItem> source,
+        IReadOnlyDictionary<string, int> orderLookup)
+    {
+        var items = source.ToArray();
+
+        IEnumerable<EditorExplorerItem> Visit(string parentPath)
+        {
+            var children = items
+                .Where(item => GetParentPath(item.RelativePath).Equals(parentPath, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(item => item.RelativePath.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(item => orderLookup.ContainsKey(item.RelativePath) ? 0 : 1)
+                .ThenBy(item => orderLookup.GetValueOrDefault(item.RelativePath, int.MaxValue))
+                .ThenBy(item => item.IsFolder ? 0 : 1)
+                .ThenBy(item => item.DisplayName, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var child in children)
+            {
+                yield return child;
+                if (!child.IsFolder)
+                    continue;
+                foreach (var descendant in Visit(child.RelativePath))
+                    yield return descendant;
+            }
+        }
+
+        return Visit(string.Empty);
+    }
+
+    private static string GetParentPath(string relativePath) =>
+        Path.GetDirectoryName(relativePath)?.Replace('\\', '/') ?? string.Empty;
 
     private async Task SaveFilesAsync(IReadOnlyCollection<EditorFileContent> files)
     {
@@ -421,44 +465,74 @@ public partial class ToolCodeEditorWindow : Window
 
     private async void NewFileButton_Click(object sender, RoutedEventArgs e)
     {
-        var suggestedPath = FileList.SelectedItem is EditorExplorerItem { IsFolder: true } folder
-            ? $"{folder.RelativePath}/NewFile.cs"
-            : "Code/NewFile.cs";
-        var response = await ShowEditorDialogAsync(
-            "新建工程文件",
-            "输入相对于工程根目录的文件名。支持 C#、XAML、JSON、XML、Markdown 等文本文件。",
-            "创建文件",
-            input: suggestedPath,
-            validator: ValidateNewFilePath);
+        _newItemBaseDirectory = FileList.SelectedItem switch
+        {
+            EditorExplorerItem { IsFolder: true } folder => folder.RelativePath,
+            EditorExplorerItem file => GetParentPath(file.RelativePath),
+            _ => null
+        };
+        _newItemDialogActive = true;
+        var dialogTask = ShowEditorDialogAsync(
+            "新建项",
+            string.Empty,
+            "创建",
+            input: "NewClass",
+            validator: ValidateNewItemName);
+        EditorDialogTemplatePanel.Visibility = Visibility.Visible;
+        EditorItemTemplateBox.SelectedIndex = 0;
+        UpdateNewItemDialog(resetInput: true);
+        var response = await dialogTask;
+        _newItemDialogActive = false;
         if (response.Choice != EditorDialogChoice.Primary)
             return;
 
-        var relativePath = response.Input.Trim().Replace('\\', '/');
+        var itemTemplate = GetSelectedNewItemTemplate();
+        var className = response.Input.Trim();
+        var directory = GetNewItemDirectory(itemTemplate);
+        _newItemBaseDirectory = null;
         try
         {
-            var fullPath = GetSafeFullPath(relativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-            var content = DefaultContent(relativePath);
-            await File.WriteAllTextAsync(fullPath, content, new UTF8Encoding(false));
-            await ReloadFileListAsync(relativePath);
+            var generatedFiles = await CreateNewItemFilesAsync(itemTemplate, directory, className);
+            foreach (var file in generatedFiles)
+            {
+                var fullPath = GetSafeFullPath(file.Path);
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+                await File.WriteAllTextAsync(fullPath, file.Content, new UTF8Encoding(false));
+            }
+
+            var activePath = generatedFiles[0].Path;
+            await ReloadFileListAsync(activePath);
             if (_editorReady)
             {
-                var json = JsonSerializer.Serialize(new EditorFileContent(relativePath, content), JsonOptions);
-                await EditorWebView.ExecuteScriptAsync($"window.editorHost.upsertFile({json})");
+                foreach (var file in generatedFiles)
+                {
+                    var json = JsonSerializer.Serialize(file, JsonOptions);
+                    await EditorWebView.ExecuteScriptAsync($"window.editorHost.upsertFile({json})");
+                }
+                await EditorWebView.ExecuteScriptAsync(
+                    $"window.editorHost.activateFile({JsonSerializer.Serialize(activePath)})");
             }
-            SetHostStatus($"已创建 {relativePath}");
+            SetHostStatus(itemTemplate == EditorNewItemTemplate.WpfPage
+                ? $"已创建页面 {activePath} 及其代码后置文件"
+                : $"已创建 {activePath}");
         }
         catch (Exception exception)
         {
-            await ShowAlertAsync("无法新建文件", exception.Message);
+            await ShowAlertAsync("无法新建项", exception.Message);
         }
     }
 
     private async void NewFolderButton_Click(object sender, RoutedEventArgs e)
     {
-        var suggestedPath = FileList.SelectedItem is EditorExplorerItem { IsFolder: true } folder
-            ? $"{folder.RelativePath}/NewFolder"
-            : "Code/NewFolder";
+        var selectedDirectory = FileList.SelectedItem switch
+        {
+            EditorExplorerItem { IsFolder: true } folder => folder.RelativePath,
+            EditorExplorerItem item => GetParentPath(item.RelativePath),
+            _ => string.Empty
+        };
+        var suggestedPath = string.IsNullOrWhiteSpace(selectedDirectory)
+            ? "Code/NewFolder"
+            : $"{selectedDirectory}/NewFolder";
         var response = await ShowEditorDialogAsync(
             "新建工程文件夹",
             "输入相对于工程根目录的文件夹路径，可以一次创建多级目录。",
@@ -540,26 +614,13 @@ public partial class ToolCodeEditorWindow : Window
     {
         try
         {
-            if (!_editorReady)
-                throw new InvalidOperationException("编辑器尚未初始化完成。");
-
             SetHostStatus("正在验证工具包…");
-            var files = await GetEditorFilesAsync();
-            await SaveFilesAsync(files);
-            var manifestPath = Path.Combine(_workspaceRoot, "manifest.json");
-            if (!File.Exists(manifestPath))
-                throw new InvalidDataException("工程缺少 manifest.json。");
-
-            var manifest = JsonSerializer.Deserialize<ToolPackageManifest>(
-                               await File.ReadAllTextAsync(manifestPath), JsonOptions)
-                           ?? throw new InvalidDataException("manifest.json 内容为空。");
-            if (string.IsNullOrWhiteSpace(manifest.Id) || string.IsNullOrWhiteSpace(manifest.Version))
-                throw new InvalidDataException("manifest.json 缺少 id 或 version。");
+            var package = await BuildToolPackageAsync();
 
             var dialog = new SaveFileDialog
             {
                 Filter = "XFEToolBox 工具包 (*.xfetool)|*.xfetool",
-                FileName = $"{manifest.Id}-{manifest.Version}.xfetool",
+                FileName = $"{package.Manifest.Id}-{package.Manifest.Version}.xfetool",
                 AddExtension = true,
                 OverwritePrompt = true
             };
@@ -571,25 +632,91 @@ public partial class ToolCodeEditorWindow : Window
                                   + Path.DirectorySeparatorChar;
             if (output.StartsWith(workspacePrefix, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("请将工具包导出到工程目录之外。");
-            if (File.Exists(output))
-                File.Delete(output);
-
-            using var archive = ZipFile.Open(output, ZipArchiveMode.Create);
-            foreach (var source in Directory.EnumerateFiles(_workspaceRoot, "*", SearchOption.AllDirectories)
-                         .Where(path => !path.EndsWith(".xfetool", StringComparison.OrdinalIgnoreCase)))
-            {
-                var relative = Path.GetRelativePath(_workspaceRoot, source).Replace('\\', '/');
-                archive.CreateEntryFromFile(source, relative, CompressionLevel.Optimal);
-            }
+            await File.WriteAllBytesAsync(output, package.Bytes);
 
             SetHostStatus($"已导出 {Path.GetFileName(output)}");
-            await ShowAlertAsync("工具包导出成功", "工具包已经生成，可以前往“工具发布中心”上传。");
+            await ShowAlertAsync("工具包导出成功", "工具包已经保存到本地，也可以通过顶部“工具包”菜单直接发布。");
         }
         catch (Exception exception)
         {
             SetHostStatus("导出失败");
             await ShowAlertAsync("导出工具包失败", exception.Message);
         }
+    }
+
+    private async void PublishPackageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!ClientSession.IsAdministrator)
+        {
+            await ShowAlertAsync("无法发布工具包", ClientSession.IsLoggedIn
+                ? "当前账户没有工具发布权限，请切换为管理员账户。"
+                : "请先在工具箱个人中心登录管理员账户。");
+            return;
+        }
+
+        PublishPackageMenuItem.IsEnabled = false;
+        try
+        {
+            SetHostStatus("正在保存并验证工具包…");
+            var package = await BuildToolPackageAsync();
+            var response = await ShowEditorDialogAsync(
+                "发布工具包",
+                $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 发布到工具服务器。若服务器中已有相同版本，将使用当前内容覆盖。",
+                "立即发布");
+            if (response.Choice != EditorDialogChoice.Primary)
+            {
+                SetHostStatus("已取消发布");
+                return;
+            }
+
+            SetHostStatus($"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
+            var upload = await ClientSession.Requester.Request<ToolPackageUploadResult>(
+                "adminUploadTool", Convert.ToBase64String(package.Bytes), true, true);
+            if (upload.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Created)
+                || upload.Result is null)
+            {
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(upload.Message)
+                    ? "服务器没有返回工具包信息。"
+                    : upload.Message);
+            }
+
+            SetHostStatus($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            await ShowAlertAsync(
+                "工具包发布成功",
+                $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。");
+        }
+        catch (Exception exception)
+        {
+            SetHostStatus("发布失败");
+            await ShowAlertAsync("发布工具包失败", exception.Message);
+        }
+        finally
+        {
+            PublishPackageMenuItem.IsEnabled = _editorReady;
+        }
+    }
+
+    private async Task<(ToolPackageManifest Manifest, byte[] Bytes)> BuildToolPackageAsync()
+    {
+        if (!_editorReady)
+            throw new InvalidOperationException("编辑器尚未初始化完成。");
+
+        var manifest = await SaveAndReadManifestAsync();
+        if (string.IsNullOrWhiteSpace(manifest.Id) || string.IsNullOrWhiteSpace(manifest.Version))
+            throw new InvalidDataException("manifest.json 缺少 id 或 version。");
+
+        using var output = new MemoryStream();
+        using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var source in Directory.EnumerateFiles(_workspaceRoot, "*", SearchOption.AllDirectories)
+                         .Where(path => !path.EndsWith(".xfetool", StringComparison.OrdinalIgnoreCase)))
+            {
+                var relative = Path.GetRelativePath(_workspaceRoot, source).Replace('\\', '/');
+                archive.CreateEntryFromFile(source, relative, CompressionLevel.Optimal);
+            }
+        }
+
+        return (manifest, output.ToArray());
     }
 
     private async void PreviewButton_Click(object sender, RoutedEventArgs e)
@@ -1208,13 +1335,6 @@ public partial class ToolCodeEditorWindow : Window
     private async void ManifestViewToggleButton_Click(object sender, RoutedEventArgs e) =>
         await ToggleManifestSourceModeAsync();
 
-    private async void ManifestSourceButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_manifestSourceMode)
-            return;
-        await ToggleManifestSourceModeAsync();
-    }
-
     private async Task ToggleManifestSourceModeAsync()
     {
         if (_activePath?.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) != true)
@@ -1356,6 +1476,17 @@ public partial class ToolCodeEditorWindow : Window
         if (item is null)
             return;
 
+        var parentPath = GetParentPath(path);
+        while (!string.IsNullOrWhiteSpace(parentPath))
+        {
+            var parent = _explorerItems.FirstOrDefault(entry =>
+                entry.IsFolder && entry.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
+            if (parent is not null)
+                parent.IsExpanded = true;
+            parentPath = GetParentPath(parentPath);
+        }
+        _fileView?.Refresh();
+
         _ignoreSelection = true;
         FileList.SelectedItem = item;
         FileList.ScrollIntoView(item);
@@ -1387,13 +1518,34 @@ public partial class ToolCodeEditorWindow : Window
             FileList.SelectedItem = item;
     }
 
+    private void ExplorerItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2 || sender is not FrameworkElement { DataContext: EditorExplorerItem { IsFolder: true } folder })
+            return;
+
+        folder.IsExpanded = !folder.IsExpanded;
+        RefreshExplorerView();
+        e.Handled = true;
+    }
+
+    private void ExplorerExpander_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: EditorExplorerItem { IsFolder: true } folder })
+            return;
+
+        folder.IsExpanded = !folder.IsExpanded;
+        RefreshExplorerView();
+        e.Handled = true;
+    }
+
     private async void ExplorerOpenMenuItem_Click(object sender, RoutedEventArgs e)
     {
         if (GetContextItem(sender) is not { } item)
             return;
         if (item.IsFolder)
         {
-            RevealExplorerItem(item);
+            item.IsExpanded = !item.IsExpanded;
+            RefreshExplorerView();
             return;
         }
 
@@ -1875,14 +2027,63 @@ public partial class ToolCodeEditorWindow : Window
         RefreshExplorerView();
     }
 
+    private void EditorItemTemplateBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_newItemDialogActive)
+            UpdateNewItemDialog(resetInput: true);
+    }
+
+    private void UpdateNewItemDialog(bool resetInput)
+    {
+        var itemTemplate = GetSelectedNewItemTemplate();
+        var directory = GetNewItemDirectory(itemTemplate);
+        EditorDialogMessage.Text = itemTemplate == EditorNewItemTemplate.WpfPage
+            ? $"将在 {directory} 中创建 XAML 页面及对应的代码后置文件。"
+            : $"将在 {directory} 中创建带命名空间和基础类定义的 C# 文件。";
+        EditorDialogInput.HintText = itemTemplate == EditorNewItemTemplate.WpfPage ? "例如：SettingsPage" : "例如：ToolService";
+        if (!resetInput)
+            return;
+
+        EditorDialogInput.Text = itemTemplate == EditorNewItemTemplate.WpfPage ? "NewPage" : "NewClass";
+        EditorDialogInput.SelectAll();
+    }
+
+    private EditorNewItemTemplate GetSelectedNewItemTemplate() =>
+        EditorItemTemplateBox.SelectedItem is ComboBoxItem { Tag: "WpfPage" }
+            ? EditorNewItemTemplate.WpfPage
+            : EditorNewItemTemplate.CSharpClass;
+
+    private string GetNewItemDirectory(EditorNewItemTemplate itemTemplate)
+    {
+        if (!string.IsNullOrWhiteSpace(_newItemBaseDirectory))
+            return _newItemBaseDirectory.Trim('/');
+        return itemTemplate == EditorNewItemTemplate.WpfPage ? "Code/Views" : "Code";
+    }
+
     private bool FileMatchesFilter(object item)
     {
         if (item is not EditorExplorerItem file)
             return false;
 
         var query = FileSearchBox?.Text?.Trim();
-        return string.IsNullOrEmpty(query)
-               || file.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(query))
+        {
+            return file.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase)
+                   || file.IsFolder && _explorerItems.Any(candidate =>
+                       candidate.RelativePath.StartsWith(file.RelativePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)
+                       && candidate.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var parentPath = GetParentPath(file.RelativePath);
+        while (!string.IsNullOrWhiteSpace(parentPath))
+        {
+            var parent = _explorerItems.FirstOrDefault(candidate =>
+                candidate.IsFolder && candidate.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
+            if (parent is { IsExpanded: false })
+                return false;
+            parentPath = GetParentPath(parentPath);
+        }
+        return true;
     }
 
     private void RefreshExplorerView()
@@ -1917,19 +2118,23 @@ public partial class ToolCodeEditorWindow : Window
         await ShowAlertAsync(title, exception.Message);
     }
 
-    private string? ValidateNewFilePath(string value)
+    private string? ValidateNewItemName(string value)
     {
-        var path = value.Trim().Replace('\\', '/');
-        if (string.IsNullOrWhiteSpace(path))
-            return "请输入文件名。";
-        if (!EditableExtensions.Contains(Path.GetExtension(path)))
-            return "暂不支持该文件类型，请使用 C#、XAML、JSON、XML、Markdown 或常见配置文件。";
+        var className = value.Trim();
+        if (string.IsNullOrWhiteSpace(className))
+            return "请输入类名。";
+        if (!IsValidCSharpIdentifier(className))
+            return "类名必须是有效的 C# 标识符，且不要包含文件扩展名。";
 
+        var itemTemplate = GetSelectedNewItemTemplate();
+        var directory = GetNewItemDirectory(itemTemplate);
+        var paths = itemTemplate == EditorNewItemTemplate.WpfPage
+            ? new[] { $"{directory}/{className}.xaml", $"{directory}/{className}.xaml.cs" }
+            : new[] { $"{directory}/{className}.cs" };
         try
         {
-            var fullPath = GetSafeFullPath(path);
-            if (File.Exists(fullPath))
-                return "该文件已经存在，请换一个名称。";
+            if (paths.Any(path => File.Exists(GetSafeFullPath(path)) || Directory.Exists(GetSafeFullPath(path))))
+                return "目标目录中已经存在同名项。";
         }
         catch (Exception exception)
         {
@@ -1937,6 +2142,97 @@ public partial class ToolCodeEditorWindow : Window
         }
 
         return null;
+    }
+
+    private static bool IsValidCSharpIdentifier(string value) =>
+        !CSharpKeywords.Contains(value)
+        && value.Length > 0
+        && (char.IsLetter(value[0]) || value[0] == '_')
+        && value.Skip(1).All(character => char.IsLetterOrDigit(character) || character == '_');
+
+    private async Task<EditorFileContent[]> CreateNewItemFilesAsync(
+        EditorNewItemTemplate itemTemplate,
+        string directory,
+        string className)
+    {
+        var itemNamespace = await GetNewItemNamespaceAsync(directory);
+        if (itemTemplate == EditorNewItemTemplate.CSharpClass)
+        {
+            var path = $"{directory}/{className}.cs";
+            var content = $$"""
+                namespace {{itemNamespace}};
+
+                public class {{className}}
+                {
+                }
+                """ + Environment.NewLine;
+            return [new EditorFileContent(path, content)];
+        }
+
+        var xamlPath = $"{directory}/{className}.xaml";
+        var codeBehindPath = $"{xamlPath}.cs";
+        var fullClassName = $"{itemNamespace}.{className}";
+        var xaml = $$"""
+            <Page x:Class="{{fullClassName}}"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  Title="{{className}}">
+                <Grid>
+                </Grid>
+            </Page>
+            """ + Environment.NewLine;
+        var codeBehind = $$"""
+            using System.Windows.Controls;
+
+            namespace {{itemNamespace}};
+
+            public partial class {{className}} : Page
+            {
+                public {{className}}()
+                {
+                    InitializeComponent();
+                }
+            }
+            """ + Environment.NewLine;
+        return
+        [
+            new EditorFileContent(xamlPath, xaml),
+            new EditorFileContent(codeBehindPath, codeBehind)
+        ];
+    }
+
+    private async Task<string> GetNewItemNamespaceAsync(string directory)
+    {
+        var projectNamespace = $"XFEToolBox.Tools.{ToNamespaceSegment(Path.GetFileName(_workspaceRoot))}";
+        try
+        {
+            var manifestText = await ReadEditorOrDiskFileAsync("manifest.json");
+            var viewClass = JsonNode.Parse(manifestText)?["entry"]?["viewClass"]?.GetValue<string>();
+            var lastDot = viewClass?.LastIndexOf('.') ?? -1;
+            if (lastDot > 0)
+                projectNamespace = viewClass![..lastDot];
+        }
+        catch
+        {
+            // 清单暂不可读时使用由工程目录推导出的稳定命名空间。
+        }
+
+        var namespaceSegments = directory.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (namespaceSegments.Count > 0 && namespaceSegments[0].Equals("Code", StringComparison.OrdinalIgnoreCase))
+            namespaceSegments.RemoveAt(0);
+        return namespaceSegments.Count == 0
+            ? projectNamespace
+            : $"{projectNamespace}.{string.Join('.', namespaceSegments.Select(ToNamespaceSegment))}";
+    }
+
+    private static string ToNamespaceSegment(string value)
+    {
+        var segment = new string(value.Where(character => char.IsLetterOrDigit(character) || character == '_').ToArray());
+        if (string.IsNullOrWhiteSpace(segment))
+            return "Items";
+        if (char.IsDigit(segment[0]) || CSharpKeywords.Contains(segment))
+            segment = $"_{segment}";
+        return segment;
     }
 
     private string? ValidateNewFolderPath(string value)
@@ -2060,6 +2356,7 @@ public partial class ToolCodeEditorWindow : Window
         EditorDialogTitle.Text = title;
         EditorDialogMessage.Text = message;
         EditorDialogError.Text = string.Empty;
+        EditorDialogTemplatePanel.Visibility = Visibility.Collapsed;
         DialogPrimaryButton.Content = primaryText;
         DialogSecondaryButton.Content = secondaryText ?? string.Empty;
         DialogSecondaryButton.Visibility = secondaryText is null ? Visibility.Collapsed : Visibility.Visible;
@@ -2136,16 +2433,6 @@ public partial class ToolCodeEditorWindow : Window
     private void DialogCancelButton_Click(object sender, RoutedEventArgs e) =>
         CompleteEditorDialog(EditorDialogChoice.Cancel);
 
-    private static string DefaultContent(string path) => Path.GetExtension(path).ToLowerInvariant() switch
-    {
-        ".cs" => "namespace XFEToolBox.Tools;\n\npublic class NewFile\n{\n}\n",
-        ".xaml" => "<Grid xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"\n      xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">\n</Grid>\n",
-        ".json" => "{\n}\n",
-        ".xml" or ".config" or ".props" or ".targets" => "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Root>\n</Root>\n",
-        ".md" or ".markdown" or ".mdown" or ".mkd" or ".mkdn" => "# 新文档\n",
-        _ => string.Empty
-    };
-
     private static EditorExplorerItem CreateFileItem(string path) =>
         Path.GetExtension(path).ToLowerInvariant() switch
         {
@@ -2163,25 +2450,41 @@ public partial class ToolCodeEditorWindow : Window
     private static EditorExplorerItem CreateFolderItem(string path) =>
         new(path, true, "▰", "#ECEBFC", "#7474C6");
 
-    private sealed record EditorExplorerItem(
-        string RelativePath,
-        bool IsFolder,
-        string Icon,
-        string IconBackground,
-        string IconForeground)
+    private sealed class EditorExplorerItem(
+        string relativePath,
+        bool isFolder,
+        string icon,
+        string iconBackground,
+        string iconForeground) : INotifyPropertyChanged
     {
+        private bool _isExpanded;
+
+        public string RelativePath { get; } = relativePath;
+        public bool IsFolder { get; } = isFolder;
+        public string Icon { get; } = icon;
+        public string IconBackground { get; } = iconBackground;
+        public string IconForeground { get; } = iconForeground;
         public string DisplayName => System.IO.Path.GetFileName(RelativePath);
-        public Thickness Indent => new(Math.Min(RelativePath.Count(character => character == '/'), 4) * 10, 0, 0, 0);
-        public string Description
+        public Thickness Indent => new(RelativePath.Count(character => character == '/') * 14, 0, 0, 0);
+        public bool IsExpanded
         {
-            get
+            get => _isExpanded;
+            set
             {
-                var directory = System.IO.Path.GetDirectoryName(RelativePath)?.Replace('\\', '/');
-                if (IsFolder)
-                    return string.IsNullOrWhiteSpace(directory) ? "工程根目录中的文件夹" : $"{directory} 中的文件夹";
-                return string.IsNullOrWhiteSpace(directory) ? "工程根目录" : directory;
+                if (_isExpanded == value)
+                    return;
+                _isExpanded = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)));
             }
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+    }
+
+    private enum EditorNewItemTemplate
+    {
+        CSharpClass,
+        WpfPage
     }
 
     private sealed record EditorFileContent(string Path, string Content);

@@ -3,76 +3,33 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       Background="Transparent" Title="" Loaded="Page_Loaded">
-    <Page.Resources>
-        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="38"/><Setter Property="Padding" Value="17,0"/><Setter Property="Margin" Value="8,0,0,0"/>
-            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#26FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#60FFFFFF"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ButtonBorder" Property="BorderBrush" Value="White"/><Setter Property="Opacity" Value="0.9"/></Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter Property="Opacity" Value="0.75"/></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="PrimaryToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolbarButtonStyle}">
-            <Setter Property="Foreground" Value="White"/><Setter Property="Background" Value="#6666C5"/><Setter Property="BorderBrush" Value="#E0E0FF"/>
-        </Style>
-        <Style x:Key="ToolCardStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="132"/><Setter Property="Margin" Value="5"/><Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Stretch"/><Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CardBorder" Margin="2" Padding="15" Background="White" BorderBrush="#E7E7F1" BorderThickness="1" CornerRadius="16" RenderTransformOrigin="0.5,0.5">
-                            <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
-                            <Border.Effect><DropShadowEffect Color="#7777C9" BlurRadius="14" ShadowDepth="3" Opacity="0.06"/></Border.Effect>
-                            <ContentPresenter/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#FCFCFF"/><Setter TargetName="CardBorder" Property="BorderBrush" Value="#BEBEEE"/>
-                                <Setter TargetName="CardBorder" Property="Effect"><Setter.Value><DropShadowEffect Color="#7777C9" BlurRadius="18" ShadowDepth="4" Opacity="0.22"/></Setter.Value></Setter>
-                                <Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.018" ScaleY="1.018"/></Setter.Value></Setter>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="CardBorder" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.985" ScaleY="0.985"/></Setter.Value></Setter></Trigger>
-                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.62"/></Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Page.Resources>
-
     <Grid Margin="14,10,14,12">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
         <Grid Margin="0,0,0,10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <controls:TextEditor x:Name="SearchTextBox" Height="38" Padding="11,0" Background="#26FFFFFF" Foreground="White" CaretBrush="White"
-                                 EditorCornerRadius="10" EditorBorderBrush="#60FFFFFF" EditorHoverBorderBrush="#B0FFFFFF" EditorFocusedBorderBrush="White"
-                                 HintText="搜索工具名称、介绍或标签" HintForeground="#E8E8FF" HintTextMargin="0" Icon="{StaticResource SearchIconGeometry}"
-                                 IconBrush="#E8E8FF" ToolTip="搜索工具名称、介绍或标签" KeyDown="SearchTextBox_KeyDown"/>
-            <Button Grid.Column="1" Content="搜索" Style="{StaticResource PrimaryToolbarButtonStyle}" Click="SearchButton_Click"/>
-            <Button Grid.Column="2" Content="刷新" Style="{StaticResource ToolbarButtonStyle}" Click="RefreshButton_Click"/>
+            <controls:TextEditor x:Name="SearchTextBox" Height="38" Padding="11,0" Background="#1EFFFFFF" Foreground="White" CaretBrush="White"
+                                 EditorCornerRadius="11" EditorBorderBrush="#A8FFFFFF" EditorHoverBorderBrush="#DCFFFFFF" EditorFocusedBorderBrush="White"
+                                 HintText="搜索工具名称、介绍或标签" HintForeground="#EEEEFF" HintTextMargin="0" Icon="{StaticResource SearchIconGeometry}"
+                                 IconBrush="#F4F4FF" ToolTip="搜索工具名称、介绍或标签" KeyDown="SearchTextBox_KeyDown"/>
+            <Button Grid.Column="1" Content="搜索" controls:ButtonAssist.IsPrimary="True" Height="38" Margin="8,0,0,0"
+                    Background="#2AFFFFFF" Foreground="White" BorderBrush="#B8FFFFFF" BorderThickness="1"
+                    controls:ButtonAssist.CornerRadius="11"
+                    controls:ButtonAssist.HoverBackground="#42FFFFFF" controls:ButtonAssist.HoverForeground="White" controls:ButtonAssist.HoverBorderBrush="White"
+                    controls:ButtonAssist.PressedBackground="#20FFFFFF" controls:ButtonAssist.PressedForeground="White" controls:ButtonAssist.PressedBorderBrush="#E8FFFFFF"
+                    Click="SearchButton_Click"/>
+            <Button Grid.Column="2" Content="刷新" Height="38" Margin="8,0,0,0" Click="RefreshButton_Click"/>
         </Grid>
 
         <Border Grid.Row="1" Background="White" CornerRadius="18" Padding="7">
         <Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/></ScrollViewer.Resources>
                 <ItemsControl x:Name="ToolCards">
                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Style="{StaticResource ToolCardStyle}" CommandParameter="{Binding}" IsEnabled="{Binding IsEnabled}" Click="ToolCard_Click">
+                            <Button Height="Auto" MinHeight="132" Margin="5" Padding="15"
+                                    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    CommandParameter="{Binding}" IsEnabled="{Binding IsEnabled}" Click="ToolCard_Click">
                                 <Grid>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="58"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <Border Width="48" Height="48" CornerRadius="15" Background="#EFEFFD" HorizontalAlignment="Left" VerticalAlignment="Top">
@@ -81,7 +38,11 @@
                                     <Grid Grid.Column="1">
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                         <Grid>
-                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="#414156" TextTrimming="CharacterEllipsis" Margin="0,0,62,0"/>
+                                            <controls:ScrollTextBlock InnerText="{Binding Name}" Height="22" Margin="0,0,62,0"
+                                                                      InnerFontSize="14" InnerFontWeight="SemiBold" InnerForeground="#414156"
+                                                                      InnerTextAlignment="Left" AutoAlignment="False" AutoRolling="False"
+                                                                      IsRolling="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}, Mode=OneWay}"
+                                                                      RollingBack="True" RollingTimeMillisecond="2800"/>
                                             <TextBlock Text="{Binding CacheState}" HorizontalAlignment="Right" Foreground="#7777CF" FontSize="10" VerticalAlignment="Center"/>
                                         </Grid>
                                         <TextBlock Grid.Row="1" Text="{Binding Description}" Foreground="#858599" FontSize="10.5" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,7,0,7"/>
@@ -90,7 +51,11 @@
                                                 <Border Padding="7,2" Background="#F0F0FA" CornerRadius="8"><TextBlock Text="{Binding Category}" Foreground="#77778D" FontSize="9"/></Border>
                                                 <Border Padding="7,2" Background="#F7F7FB" CornerRadius="8" Margin="5,0,0,0"><TextBlock Text="{Binding LatestVersion, StringFormat=v{0}}" Foreground="#9999AA" FontSize="9"/></Border>
                                             </StackPanel>
-                                            <TextBlock Text="{Binding Author}" HorizontalAlignment="Right" Foreground="#A0A0AF" FontSize="9" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="80"/>
+                                            <controls:ScrollTextBlock InnerText="{Binding Author}" Width="80" Height="18" HorizontalAlignment="Right"
+                                                                      InnerFontSize="9" InnerForeground="#A0A0AF"
+                                                                      InnerTextAlignment="Left" AutoAlignment="False" AutoRolling="False"
+                                                                      IsRolling="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}, Mode=OneWay}"
+                                                                      RollingBack="True" RollingTimeMillisecond="2600"/>
                                         </Grid>
                                     </Grid>
                                 </Grid>

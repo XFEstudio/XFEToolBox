@@ -20,7 +20,7 @@ public partial class ToolManagementPage : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync();
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
-    private void OpenEditorButton_Click(object sender, RoutedEventArgs e)
+    private void OpenProjectsButton_Click(object sender, RoutedEventArgs e)
     {
         var launcher = new ToolProjectLauncherPopupPage();
         var result = PopupHelper.ShowDialog(launcher, new PopupWindowOptions
@@ -31,11 +31,16 @@ public partial class ToolManagementPage : Page
             Height = 520,
             ContentMargin = new Thickness(0)
         });
+        if (launcher.CreateProjectRequested)
+        {
+            ShowNewToolDialog();
+            return;
+        }
         if (result == MessageBoxResult.OK && launcher.SelectedProjectPath is not null)
             OpenEditor(launcher.SelectedProjectPath);
     }
 
-    private void NewToolButton_Click(object sender, RoutedEventArgs e)
+    private static void ShowNewToolDialog()
     {
         var creator = new NewToolProjectPopupPage();
         var result = PopupHelper.ShowDialog(creator, new PopupWindowOptions

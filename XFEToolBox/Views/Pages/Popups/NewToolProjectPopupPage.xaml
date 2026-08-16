@@ -20,13 +20,13 @@
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <controls:TextEditor x:Name="ProjectPathBox" Height="40" Padding="12,0" Background="#FAFAFD" Foreground="#46465B"
                                      HintText="选择项目位置" HintForeground="#77778C" HintTextMargin="0" TextChanged="ProjectPathBox_TextChanged"/>
-                <Button Grid.Column="1" Content="浏览" Style="{StaticResource AdminGlassButton}" MinWidth="72" Margin="8,0,0,0" Click="BrowseButton_Click"/>
+                <Button Grid.Column="1" Content="浏览" MinWidth="72" Margin="8,0,0,0" Click="BrowseButton_Click"/>
             </Grid>
         </StackPanel>
         <TextBlock x:Name="ErrorText" Grid.Row="3" Foreground="#B85A66" FontSize="9.5" TextWrapping="Wrap" Margin="2,10,2,0"/>
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="取消" Style="{StaticResource AdminGlassButton}" MinWidth="76" Margin="0,0,8,0" Click="CancelButton_Click"/>
-            <Button x:Name="CreateButton" Content="创建并进入编辑器" Style="{StaticResource AdminPrimaryButton}" MinWidth="142" Click="CreateButton_Click"/>
+            <Button Content="取消" MinWidth="76" Margin="0,0,8,0" Click="CancelButton_Click"/>
+            <Button x:Name="CreateButton" Content="创建并进入编辑器" controls:ButtonAssist.IsPrimary="True" MinWidth="142" Click="CreateButton_Click"/>
         </StackPanel>
     </Grid>
 </Page>

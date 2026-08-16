@@ -9,10 +9,6 @@
       Title="MainPage">
     <Grid>
         <controls:SmoothScrollViewer Padding="14,5,12,12">
-            <ScrollViewer.Resources>
-                <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
-            </ScrollViewer.Resources>
-
             <StackPanel Orientation="Vertical">
                 <controls:Carousel x:Name="mainCarousel"
                                    Height="326"

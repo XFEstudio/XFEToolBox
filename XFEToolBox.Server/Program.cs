@@ -14,6 +14,8 @@ EnsureInitialSoftwareCatalog();
 
 AppDomain.CurrentDomain.ProcessExit += (_, _) => SaveProfiles();
 
+SaveProfiles();
+
 var validationOptions = new ToolPackageValidationOptions
 {
     MaxPackageBytes = ServerProfile.MaxPackageBytes,

@@ -91,9 +91,9 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="控制台端口：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <controls:TextEditor Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="3280" HintTextHorizontalAlignment="Center" Width="88" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort" VerticalAlignment="Center"/>
+                                    <controls:TextEditor Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="3280" Width="88" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="2" Text="连接密码：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <controls:PasswordHintTextBox Grid.Row="2" Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="12,0,4,0" HintText="默认为空" Width="132" HorizontalAlignment="Left" PasswordChange="PasswordHintTextBox_PasswordChange" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePassword" VerticalAlignment="Center"/>
+                                    <controls:PasswordEditor Grid.Row="2" Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="12,0,4,0" HintText="默认为空" Width="132" HorizontalAlignment="Left" PasswordChanged="PasswordEditor_PasswordChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePassword" VerticalAlignment="Center"/>
                                 </Grid>
                                 <controls:SwitchButton Margin="0,14,0,10" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.LocalHostOnly">
                                     <TextBlock Text="只对本地回环开放（localhost）"/>
@@ -104,7 +104,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="控制台最大显示行数 (-1为不设上限)：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <controls:TextEditor Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="8000" HintTextHorizontalAlignment="Center" Width="88" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine" VerticalAlignment="Center"/>
+                                    <controls:TextEditor Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="8000" Width="88" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine" VerticalAlignment="Center"/>
                                 </Grid>
                             </StackPanel>
                         </Grid>
@@ -126,12 +126,12 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding DownloadDirectory}" VerticalAlignment="Center" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"/>
-                                    <controls:RoundButton Grid.Column="1" Command="{Binding OpenDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
+                                    <Button Grid.Column="1" Command="{Binding OpenDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
                                         <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="打开目录" Margin="4" Foreground="{DynamicResource MainColor}"/>
-                                    </controls:RoundButton>
-                                    <controls:RoundButton Grid.Column="2" Command="{Binding ChoiceDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
+                                    </Button>
+                                    <Button Grid.Column="2" Command="{Binding ChoiceDownloadDirectoryCommand}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0">
                                         <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="更改目录" Margin="4" Foreground="{DynamicResource MainColor}"/>
-                                    </controls:RoundButton>
+                                    </Button>
                                 </Grid>
                                 <Grid Margin="0,10">
                                     <Grid.ColumnDefinitions>
@@ -139,7 +139,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="加速下载线程数量：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <controls:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="9" HintTextHorizontalAlignment="Center" MinWidth="30" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
+                                    <controls:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="9" MinWidth="30" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
                                 </Grid>
                                 <controls:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.AutoRunWhenComplete">
                                     <TextBlock Text="下载完成后自动运行下载的文件（仅限exe）"/>
@@ -163,9 +163,9 @@
                                         <TextBlock Text="缓存配置文件：" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding CacheProfileSize}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                            <controls:RoundButton Margin="10,0,0,0" Command="{Binding ClearCacheCommand}">
+                                            <Button Margin="10,0,0,0" Command="{Binding ClearCacheCommand}">
                                                 <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" Text="清理缓存" Margin="5,0" Foreground="{DynamicResource MainColor}"/>
-                                            </controls:RoundButton>
+                                            </Button>
                                         </StackPanel>
                                         <TextBlock Text="跨版本配置文件：" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                         <TextBlock Text="{Binding CrossVersionProfileSize}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
