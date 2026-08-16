@@ -12,7 +12,7 @@
       d:DesignHeight="450" d:DesignWidth="800"
       Title="SettingPage" d:DataContext="{d:DesignInstance Type=pages:SettingPageViewModel}" Loaded="Page_Loaded">
 
-    <Border Background="{DynamicResource BackgroundColor}" CornerRadius="15" Margin="15,5,15,15">
+    <controls:RoundedClipBorder Background="{DynamicResource BackgroundColor}" CornerRadius="15" Margin="15,5,15,15">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -183,5 +183,5 @@
                 </Grid>
             </controls:SmoothScrollViewer>
         </Grid>
-    </Border>
+    </controls:RoundedClipBorder>
 </Page>

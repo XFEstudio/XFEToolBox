@@ -67,6 +67,16 @@ internal static class ToolProjectWorkspaceService
                     "viewModel": "Code/ViewModels/MainPageViewModel.cs",
                     "viewModelClass": "{{toolNamespace}}.MainPageViewModel"
                   },
+                  "window": {
+                    "width": 980,
+                    "height": 700,
+                    "minWidth": 560,
+                    "minHeight": 420,
+                    "allowResize": true,
+                    "allowMaximize": true,
+                    "showMinimizeButton": true,
+                    "showCloseButton": true
+                  },
                   "requestedPermissions": []
                 }
                 """,

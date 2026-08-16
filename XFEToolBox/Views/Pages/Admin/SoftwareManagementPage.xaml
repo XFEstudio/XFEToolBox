@@ -47,7 +47,7 @@
             </StackPanel>
         </Grid>
 
-        <Border Grid.Row="1" Style="{StaticResource AdminCard}" Margin="0,10,0,9" Padding="0" ClipToBounds="True">
+        <controls:RoundedClipBorder Grid.Row="1" Style="{StaticResource AdminCard}" Margin="0,10,0,9" Padding="0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="180"/>
@@ -208,7 +208,7 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <Border Background="White" BorderBrush="#E2E2ED" BorderThickness="1" CornerRadius="11" ClipToBounds="True">
+                        <controls:RoundedClipBorder Background="White" BorderBrush="#E2E2ED" BorderThickness="1" CornerRadius="11">
                             <DataGrid x:Name="ChannelGrid" Height="138" Style="{StaticResource AdminDataGrid}" IsReadOnly="False">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="标识" Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}" Width="88"/>
@@ -226,7 +226,7 @@
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
-                        </Border>
+                        </controls:RoundedClipBorder>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -256,7 +256,7 @@
                     </Border>
                 </Grid>
             </Grid>
-        </Border>
+        </controls:RoundedClipBorder>
 
         <Border Grid.Row="2" Background="#26FFFFFF" BorderBrush="#50FFFFFF" BorderThickness="1"
                 CornerRadius="12" Padding="11,7">

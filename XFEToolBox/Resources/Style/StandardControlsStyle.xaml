@@ -71,6 +71,21 @@
                                                 ScaleY="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:ButtonAssist.PressedScale)}"/>
                             </Setter.Value></Setter>
                         </Trigger>
+                        <!-- Primary buttons keep their light label during interaction even when a tool supplies no local style. -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="controls:ButtonAssist.IsPrimary" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Foreground" Value="White"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="controls:ButtonAssist.IsPrimary" Value="True"/>
+                                <Condition Property="IsPressed" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Foreground" Value="White"/>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ButtonSurface" Property="Background" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:ButtonAssist.DisabledBackground)}"/>
                             <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:ButtonAssist.DisabledBorderBrush)}"/>
@@ -367,10 +382,10 @@
         <Setter Property="Height" Value="7"/><Setter Property="Foreground" Value="{DynamicResource MainColor}"/>
         <Setter Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ProgressBar">
-            <Border Background="{TemplateBinding Background}" CornerRadius="4" ClipToBounds="True">
+            <controls:RoundedClipBorder Background="{TemplateBinding Background}" CornerRadius="4">
                 <Grid><Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" CornerRadius="4"/>
                     <Border x:Name="IndeterminateIndicator" Background="{TemplateBinding Foreground}" CornerRadius="4" Opacity="0.65" Visibility="Collapsed"/></Grid>
-            </Border>
+            </controls:RoundedClipBorder>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsIndeterminate" Value="True"><Setter TargetName="PART_Indicator" Property="Visibility" Value="Collapsed"/><Setter TargetName="IndeterminateIndicator" Property="Visibility" Value="Visible"/></Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>

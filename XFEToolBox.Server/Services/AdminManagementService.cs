@@ -28,14 +28,8 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
             ? []
             : await ToolPackageRepository.ListAsync(publishedOnly: false);
         using var process = Process.GetCurrentProcess();
-        var cpuBefore = process.TotalProcessorTime;
-        var sampleStarted = Stopwatch.GetTimestamp();
-        await Task.Delay(120);
+        var cpuUsage = await SystemCpuUsageSampler.SampleAsync();
         process.Refresh();
-        var sampleSeconds = Stopwatch.GetElapsedTime(sampleStarted).TotalSeconds;
-        var cpuUsage = sampleSeconds <= 0
-            ? 0
-            : (process.TotalProcessorTime - cpuBefore).TotalSeconds / sampleSeconds / Environment.ProcessorCount * 100;
         var softwareStorageBytes = GetDirectorySize(SoftwareStorageRoot);
         var memory = GetSystemMemoryInfo();
         await Close(new

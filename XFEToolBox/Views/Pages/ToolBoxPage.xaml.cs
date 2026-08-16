@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.Core.Model;
@@ -60,7 +61,7 @@ public partial class ToolBoxPage : Page
 
             EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             ToolCountText.Text = $"{_tools.Count} 个工具";
-            StatusText.Text = _tools.Count == 0 ? "没有符合条件的工具。" : "点击工具卡片即可获取并缓存。";
+            StatusText.Text = _tools.Count == 0 ? "没有符合条件的工具。" : "点击工具卡片即可打开；未缓存的工具会先自动获取。";
         }
         catch (Exception exception)
         {
@@ -79,15 +80,16 @@ public partial class ToolBoxPage : Page
     private async void ToolCard_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { CommandParameter: ToolCardViewModel card })
-            await CacheToolAsync(card);
+            await OpenToolAsync(card);
     }
 
-    private async Task CacheToolAsync(ToolCardViewModel card)
+    private async Task OpenToolAsync(ToolCardViewModel card)
     {
         string? temporaryPath = null;
+        string? cachePath = null;
         card.IsEnabled = false;
-        card.CacheState = "正在获取…";
-        StatusText.Text = $"正在获取 {card.Name}…";
+        card.CacheState = "正在校验…";
+        StatusText.Text = $"正在准备 {card.Name}…";
 
         try
         {
@@ -96,9 +98,11 @@ public partial class ToolBoxPage : Page
             if (detailsResponse.StatusCode != HttpStatusCode.OK || package is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(detailsResponse.Message) ? "服务器没有返回对应版本。" : detailsResponse.Message);
 
-            var cachePath = GetCachePath(card.Package);
+            cachePath = GetCachePath(card.Package);
             if (!await IsCachedPackageValidAsync(cachePath, package.Sha256))
             {
+                card.CacheState = "正在获取…";
+                StatusText.Text = $"正在获取 {card.Name} {card.LatestVersion}…";
                 var cacheDirectory = Path.GetDirectoryName(cachePath)!;
                 Directory.CreateDirectory(cacheDirectory);
                 temporaryPath = Path.Combine(cacheDirectory, $".{Guid.NewGuid():N}.download");
@@ -120,13 +124,23 @@ public partial class ToolBoxPage : Page
                 temporaryPath = null;
             }
 
-            card.CacheState = "已缓存";
-            StatusText.Text = $"{card.Name} {card.LatestVersion} 已缓存。";
+            card.CacheState = "正在打开…";
+            StatusText.Text = $"正在编译并打开 {card.Name}…";
+            var runResult = await ToolProjectRunService.BuildPackageAndRunAsync(
+                cachePath,
+                card.Id,
+                package.Version,
+                package.Sha256);
+            if (!runResult.Success)
+                throw new InvalidOperationException(runResult.Message);
+
+            card.CacheState = "已打开";
+            StatusText.Text = $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
         }
         catch (Exception exception)
         {
-            card.CacheState = "重试";
-            StatusText.Text = $"获取失败：{exception.Message}";
+            card.CacheState = cachePath is not null && File.Exists(cachePath) ? "重试打开" : "重试获取";
+            StatusText.Text = $"打开失败：{exception.Message}";
         }
         finally
         {
@@ -179,7 +193,10 @@ public partial class ToolBoxPage : Page
 
     private static ImageSource CreateDefaultIcon()
     {
-        var image = new BitmapImage(new Uri("pack://application:,,,/Resources/Image/wrench_tool.png", UriKind.Absolute));
+        var assemblyName = typeof(ToolBoxPage).Assembly.GetName().Name;
+        var image = new BitmapImage(new Uri(
+            $"pack://application:,,,/{assemblyName};component/Resources/Image/wrench_tool.png",
+            UriKind.Absolute));
         image.Freeze();
         return image;
     }

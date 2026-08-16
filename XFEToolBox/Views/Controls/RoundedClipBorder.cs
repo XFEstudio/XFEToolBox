@@ -10,11 +10,26 @@ namespace XFEToolBox.Client.Views.Controls;
 /// </summary>
 public sealed class RoundedClipBorder : Border
 {
-    public RoundedClipBorder() => SizeChanged += (_, _) => UpdateClip();
+    protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+    {
+        base.OnRenderSizeChanged(sizeInfo);
+        UpdateClip();
+    }
+
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == CornerRadiusProperty)
+            UpdateClip();
+    }
 
     private void UpdateClip()
     {
-        if (ActualWidth <= 0 || ActualHeight <= 0) return;
+        if (ActualWidth <= 0 || ActualHeight <= 0)
+        {
+            Clip = null;
+            return;
+        }
 
         var maximumRadius = Math.Min(ActualWidth, ActualHeight) / 2;
         var topLeft = Math.Min(CornerRadius.TopLeft, maximumRadius);

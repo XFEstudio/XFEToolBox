@@ -11,15 +11,15 @@
                 Visibility="{Binding DragHandleVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 MouseLeftButtonDown="DragSurface_MouseLeftButtonDown"
                 MouseMove="DragSurface_MouseMove">
-            <Image Source="/XFEToolBox.Client;component/Resources/Image/tabline.png" HorizontalAlignment="Center"
+            <Image Source="/XFEToolBox;component/Resources/Image/tabline.png" HorizontalAlignment="Center"
                    VerticalAlignment="Center" Margin="4" IsHitTestVisible="False"/>
         </Border>
         <StackPanel Grid.Column="1" Orientation="Horizontal">
-            <Image Width="37" Style="{StaticResource RotorImage}" Source="/XFEToolBox.Client;component/Resources/Image/min.png"
+            <Image Width="37" Style="{StaticResource RotorImage}" Source="/XFEToolBox;component/Resources/Image/min.png"
                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"
                    Cursor="Hand" Visibility="{Binding MinimizeButtonVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                    MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
-            <Image Width="37" Style="{StaticResource HalfRotorImage}" Source="/XFEToolBox.Client;component/Resources/Image/close.png"
+            <Image Width="37" Style="{StaticResource HalfRotorImage}" Source="/XFEToolBox;component/Resources/Image/close.png"
                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"
                    Cursor="Hand" Visibility="{Binding CloseButtonVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                    MouseLeftButtonUp="CloseImage_MouseLeftButtonUp"/>

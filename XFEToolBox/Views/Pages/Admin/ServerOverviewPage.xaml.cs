@@ -35,21 +35,18 @@ public partial class ServerOverviewPage : Page
 
     private async void RefreshTimer_Tick(object? sender, EventArgs e) => await RefreshAsync();
 
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
-
     private async Task RefreshAsync()
     {
         if (isRefreshing || !ClientSession.IsAdministrator) return;
         isRefreshing = true;
         ErrorText.Text = string.Empty;
-        if (!hasSnapshot) StatusValue.Text = "正在读取…";
         try
         {
             var response = await ClientSession.Requester.Request<AdminOverview>("adminOverview");
             if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
             {
                 ErrorText.Text = response.Message;
-                StatusValue.Text = "不可用";
+                if (!hasSnapshot) StatusValue.Text = "不可用";
                 LiveIndicator.Fill = new SolidColorBrush(Color.FromRgb(239, 112, 112));
                 return;
             }
@@ -65,20 +62,20 @@ public partial class ServerOverviewPage : Page
             StorageDetailValue.Text = $"软件文件 {FormatBytes(overview.SoftwareStorageBytes)} · 其余为工具包";
             CpuValue.Text = $"{overview.CpuUsagePercent:F1}%";
             CpuUsageBar.Value = overview.CpuUsagePercent;
-            CpuDetailValue.Text = $"{overview.ProcessorCount} 个逻辑核心 · 当前进程实时采样";
+            CpuDetailValue.Text = $"{overview.ProcessorCount} 个逻辑核心 · 操作系统整体实时采样";
             MemoryValue.Text = $"{overview.MemoryUsagePercent:F1}%";
             MemoryUsageBar.Value = overview.MemoryUsagePercent;
             MemoryDetailValue.Text = $"已用 {FormatBytes(overview.UsedMemoryBytes)} / {FormatBytes(overview.TotalMemoryBytes)}\n可用 {FormatBytes(overview.AvailableMemoryBytes)}";
             ProcessMemoryValue.Text = $"服务器进程：{FormatBytes(overview.WorkingSetBytes)}";
             ServerNameValue.Text = overview.ServerName;
-            UpdatedValue.Text = $"最后更新：{overview.Utc.ToLocalTime():yyyy-MM-dd HH:mm:ss} · 自动刷新中";
+            UpdatedValue.Text = $"最后更新：{overview.Utc.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
             LiveIndicator.Fill = new SolidColorBrush(Color.FromRgb(113, 238, 162));
             hasSnapshot = true;
         }
         catch (Exception exception)
         {
             ErrorText.Text = $"读取服务器状态失败：{exception.Message}";
-            StatusValue.Text = "不可用";
+            if (!hasSnapshot) StatusValue.Text = "不可用";
             LiveIndicator.Fill = new SolidColorBrush(Color.FromRgb(239, 112, 112));
         }
         finally { isRefreshing = false; }

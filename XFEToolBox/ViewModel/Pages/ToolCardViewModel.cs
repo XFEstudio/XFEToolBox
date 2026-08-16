@@ -7,7 +7,7 @@ namespace XFEToolBox.Client.ViewModel.Pages;
 public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource iconSource, bool isCached) : ObservableObject
 {
     private bool _isEnabled = true;
-    private string _cacheState = isCached ? "已缓存" : "点击获取";
+    private string _cacheState = isCached ? "点击打开" : "获取并打开";
 
     public ToolPackageSummary Package { get; } = package;
     public string Id => Package.Id;

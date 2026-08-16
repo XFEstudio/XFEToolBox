@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -1242,6 +1243,15 @@ public partial class ToolCodeEditorWindow : Window
             ManifestViewCodeBehindBox.Text = entry.ViewCodeBehind;
             ManifestViewModelBox.Text = entry.ViewModel ?? string.Empty;
             ManifestViewModelClassBox.Text = entry.ViewModelClass ?? string.Empty;
+            var window = manifest.Window ?? new ToolWindowManifest();
+            ManifestWindowWidthBox.Text = FormatManifestWindowDimension(window.Width, ToolWindowManifest.DefaultWidth);
+            ManifestWindowHeightBox.Text = FormatManifestWindowDimension(window.Height, ToolWindowManifest.DefaultHeight);
+            ManifestWindowMinWidthBox.Text = FormatManifestWindowDimension(window.MinWidth, ToolWindowManifest.DefaultMinWidth);
+            ManifestWindowMinHeightBox.Text = FormatManifestWindowDimension(window.MinHeight, ToolWindowManifest.DefaultMinHeight);
+            ManifestAllowResizeCheckBox.IsChecked = window.AllowResize;
+            ManifestAllowMaximizeCheckBox.IsChecked = window.AllowMaximize;
+            ManifestShowMinimizeButtonCheckBox.IsChecked = window.ShowMinimizeButton;
+            ManifestShowCloseButtonCheckBox.IsChecked = window.ShowCloseButton;
             LoadManifestPermissions(manifest.RequestedPermissions ?? []);
             _manifestDesignerPending = false;
 
@@ -1316,6 +1326,17 @@ public partial class ToolCodeEditorWindow : Window
                 ViewCodeBehind = ManifestViewCodeBehindBox.Text.Trim().Replace('\\', '/'),
                 ViewModel = NormalizeOptionalPath(ManifestViewModelBox.Text),
                 ViewModelClass = NullIfWhiteSpace(ManifestViewModelClassBox.Text)
+            },
+            Window = new ToolWindowManifest
+            {
+                Width = ParseManifestWindowDimension(ManifestWindowWidthBox.Text, ToolWindowManifest.DefaultWidth),
+                Height = ParseManifestWindowDimension(ManifestWindowHeightBox.Text, ToolWindowManifest.DefaultHeight),
+                MinWidth = ParseManifestWindowDimension(ManifestWindowMinWidthBox.Text, ToolWindowManifest.DefaultMinWidth),
+                MinHeight = ParseManifestWindowDimension(ManifestWindowMinHeightBox.Text, ToolWindowManifest.DefaultMinHeight),
+                AllowResize = ManifestAllowResizeCheckBox.IsChecked == true,
+                AllowMaximize = ManifestAllowMaximizeCheckBox.IsChecked == true,
+                ShowMinimizeButton = ManifestShowMinimizeButtonCheckBox.IsChecked == true,
+                ShowCloseButton = ManifestShowCloseButtonCheckBox.IsChecked == true
             },
             RequestedPermissions = ManifestPermissionsPanel.Children
                 .OfType<CheckBox>()
@@ -1457,6 +1478,9 @@ public partial class ToolCodeEditorWindow : Window
     private void ManifestPermissionCheckBox_Changed(object sender, RoutedEventArgs e) =>
         MarkManifestDesignerChanged();
 
+    private void ManifestWindowOptionCheckBox_Changed(object sender, RoutedEventArgs e) =>
+        MarkManifestDesignerChanged();
+
     private static readonly string[] CommonManifestPermissionNames =
     [
         "FileSystem", "Network", "Clipboard", "Process", "Shell", "Registry", "Notifications", "Environment",
@@ -1468,6 +1492,15 @@ public partial class ToolCodeEditorWindow : Window
 
     private static string? NormalizeOptionalPath(string value) =>
         NullIfWhiteSpace(value)?.Replace('\\', '/');
+
+    private static string FormatManifestWindowDimension(double value, double fallback) =>
+        (double.IsFinite(value) && value > 0 ? value : fallback).ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static double ParseManifestWindowDimension(string value, double fallback) =>
+        double.TryParse(value.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var result)
+        && double.IsFinite(result) && result > 0
+            ? result
+            : fallback;
 
     private void SelectExplorerItem(string path)
     {

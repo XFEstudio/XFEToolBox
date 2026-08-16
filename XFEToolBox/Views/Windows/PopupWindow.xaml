@@ -11,8 +11,7 @@
         Title="{Binding PopupTitle}" ShowInTaskbar="False" Width="320" Height="230" ResizeMode="NoResize"
         Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterOwner"
         Opacity="0" Loaded="Window_Loaded" PreviewKeyDown="Window_PreviewKeyDown">
-    <Border x:Name="PopupSurface" CornerRadius="19" Background="{Binding PopupBackground}" Margin="12"
-            RenderTransformOrigin="0.5,0.5" ClipToBounds="True">
+    <Border x:Name="PopupSurface" Margin="12" RenderTransformOrigin="0.5,0.5">
         <Border.Effect>
             <DropShadowEffect Color="#353552" BlurRadius="24" ShadowDepth="6" Opacity="0.3"/>
         </Border.Effect>
@@ -22,6 +21,7 @@
                 <TranslateTransform Y="12"/>
             </TransformGroup>
         </Border.RenderTransform>
+        <controls:RoundedClipBorder CornerRadius="19" Background="{Binding PopupBackground}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="25"/>
@@ -47,5 +47,6 @@
                        Background="Transparent" Margin="{Binding ContentMargin}"/>
             </controls:RoundedClipBorder>
         </Grid>
+        </controls:RoundedClipBorder>
     </Border>
 </Window>

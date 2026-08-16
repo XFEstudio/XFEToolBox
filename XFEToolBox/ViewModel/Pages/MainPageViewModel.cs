@@ -20,6 +20,7 @@ public partial class MainPageViewModel : ObservableObject
     private Task? loadingTask;
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
+    private bool hasAdminOverviewSnapshot;
 
     public MainPage MainPage { get; }
 
@@ -37,7 +38,7 @@ public partial class MainPageViewModel : ObservableObject
     }
 
     [ObservableProperty] private Visibility adminServerPanelVisibility = Visibility.Collapsed;
-    [ObservableProperty] private string adminServerStatus = "正在读取…";
+    [ObservableProperty] private string adminServerStatus = "XFEToolBoxServer";
     [ObservableProperty] private string adminCpuText = "--";
     [ObservableProperty] private string adminCpuDetail = "--";
     [ObservableProperty] private string adminMemoryText = "--";
@@ -77,13 +78,13 @@ public partial class MainPageViewModel : ObservableObject
         if (!ClientSession.IsAdministrator || isAdminOverviewLoading) return;
 
         isAdminOverviewLoading = true;
-        AdminServerStatus = "正在读取服务器状态…";
         try
         {
             var response = await ClientSession.Requester.Request<AdminOverview>("adminOverview");
             if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
             {
-                AdminServerStatus = string.IsNullOrWhiteSpace(response.Message) ? "服务器状态不可用" : response.Message;
+                if (!hasAdminOverviewSnapshot)
+                    AdminServerStatus = string.IsNullOrWhiteSpace(response.Message) ? "服务器状态不可用" : response.Message;
                 return;
             }
 
@@ -102,8 +103,12 @@ public partial class MainPageViewModel : ObservableObject
             AdminUptimeText = FormatDuration(overview.UptimeSeconds);
             AdminUptimeDetail = $"服务器时间 {overview.Utc.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
             AdminUpdatedText = $"运行 {FormatDuration(overview.UptimeSeconds)} · {overview.Utc.ToLocalTime():HH:mm:ss} 更新";
+            hasAdminOverviewSnapshot = true;
         }
-        catch (Exception exception) { AdminServerStatus = $"读取失败：{exception.Message}"; }
+        catch (Exception exception)
+        {
+            if (!hasAdminOverviewSnapshot) AdminServerStatus = $"读取失败：{exception.Message}";
+        }
         finally { isAdminOverviewLoading = false; }
     }
 

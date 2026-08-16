@@ -35,10 +35,43 @@ public sealed class ToolPackageManifest
     public required ToolEntryManifest Entry { get; init; }
 
     /// <summary>
+    /// Controls the standalone host window used when the tool is launched.
+    /// Older packages that do not contain this section automatically use these defaults.
+    /// </summary>
+    public ToolWindowManifest Window { get; init; } = new();
+
+    /// <summary>
     /// Optional host capabilities requested by the tool, such as clipboard or network.
     /// The host must still ask the user or enforce its own policy before granting them.
     /// </summary>
     public string[] RequestedPermissions { get; init; } = [];
+}
+
+public sealed class ToolWindowManifest
+{
+    public const double DefaultWidth = 980;
+    public const double DefaultHeight = 700;
+    public const double DefaultMinWidth = 560;
+    public const double DefaultMinHeight = 420;
+
+    public double Width { get; init; } = DefaultWidth;
+
+    public double Height { get; init; } = DefaultHeight;
+
+    public double MinWidth { get; init; } = DefaultMinWidth;
+
+    public double MinHeight { get; init; } = DefaultMinHeight;
+
+    public bool AllowResize { get; init; } = true;
+
+    /// <summary>
+    /// Allows maximizing by double-clicking the shared drag handle. The title bar never adds a separate maximize button.
+    /// </summary>
+    public bool AllowMaximize { get; init; } = true;
+
+    public bool ShowMinimizeButton { get; init; } = true;
+
+    public bool ShowCloseButton { get; init; } = true;
 }
 
 public sealed class ToolEntryManifest

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.Json;
 using XFEToolBox.Core.Tools;
@@ -11,7 +12,8 @@ var tests = new (string Name, Action Run)[]
     ("有效源码包可通过校验", ValidPackagePasses),
     ("路径穿越会被拒绝", PathTraversalIsRejected),
     ("语义化版本按预期排序", SemanticVersionsAreOrdered),
-    ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage)
+    ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage),
+    ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad)
 };
 
 var failed = 0;
@@ -93,6 +95,30 @@ static void RepositoryRoundTripsPackage()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void SystemCpuUsageIsMeasuredUnderLoad()
+{
+    using var loadStarted = new ManualResetEventSlim();
+    var loadTask = Task.Factory.StartNew(() =>
+    {
+        loadStarted.Set();
+        var end = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.2);
+        var value = 1d;
+        while (Stopwatch.GetTimestamp() < end)
+            value = Math.Sqrt(value + 1.000001);
+        GC.KeepAlive(value);
+    }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+
+    loadStarted.Wait();
+    var usage = SystemCpuUsageSampler.SampleAsync(TimeSpan.FromMilliseconds(700))
+        .GetAwaiter().GetResult();
+    loadTask.GetAwaiter().GetResult();
+
+    Assert(double.IsFinite(usage), "CPU 使用率不是有效数值。");
+    Assert(usage is >= 0 and <= 100, $"CPU 使用率超出范围：{usage:F2}%");
+    Assert(usage > 0.05, $"制造 CPU 负载后采样结果仍为 {usage:F2}%。");
+    Console.WriteLine($"       负载采样结果：{usage:F2}%");
 }
 
 static ToolPackageValidator CreateValidator() => new(new ToolPackageValidationOptions());

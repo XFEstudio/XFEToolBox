@@ -37,16 +37,12 @@
                     </StackPanel>
                     <TextBlock x:Name="UpdatedValue" Text="正在连接服务器…" Foreground="#D0FFFFFF" FontSize="9.5" Margin="17,4,0,0"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Padding="9,4" Background="#24FFFFFF" BorderBrush="#55FFFFFF" BorderThickness="1" CornerRadius="10" Margin="0,0,8,0"><StackPanel Orientation="Horizontal"><Ellipse Width="6" Height="6" Fill="#72EFA3" Margin="0,0,6,0"/><TextBlock Text="每 2 秒实时更新" Foreground="#ECFFFFFF" FontSize="9"/></StackPanel></Border>
-                    <Button Content="立即刷新" Height="34" Click="RefreshButton_Click"/>
-                </StackPanel>
             </Grid>
 
             <UniformGrid Columns="3">
                 <Border Style="{StaticResource MetricCard}" BorderBrush="#80A8F0C3">
                     <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6042C883"/><GradientStop Color="#3275AF91" Offset="1"/></LinearGradientBrush></Border.Background>
-                    <StackPanel><TextBlock Text="运行状态" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="StatusValue" Text="正在读取…" Style="{StaticResource MetricValue}"/><TextBlock x:Name="UptimeValue" Text="等待服务器响应" Style="{StaticResource MetricDetail}"/></StackPanel>
+                    <StackPanel><TextBlock Text="运行状态" Style="{StaticResource MetricLabel}"/><TextBlock x:Name="StatusValue" Text="--" Style="{StaticResource MetricValue}"/><TextBlock x:Name="UptimeValue" Text="等待服务器响应" Style="{StaticResource MetricDetail}"/></StackPanel>
                 </Border>
                 <Border Style="{StaticResource MetricCard}" BorderBrush="#809EC1FF">
                     <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#604D7BFA"/><GradientStop Color="#325B70D0" Offset="1"/></LinearGradientBrush></Border.Background>
@@ -76,7 +72,7 @@
                     <Border Width="42" Height="42" CornerRadius="13" Background="#E9E9FA"><TextBlock Text="☁" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#6969CE"/></Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="运行指标来自当前工具服务器" Foreground="#3F3F55" FontSize="13" FontWeight="SemiBold"/>
-                        <TextBlock Text="CPU 为进程实时采样；内存为操作系统物理内存总量、已用量与可用量。" Foreground="#8B8B9E" FontSize="9.5" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="CPU 为操作系统整体实时采样；内存为操作系统物理内存总量、已用量与可用量。" Foreground="#8B8B9E" FontSize="9.5" Margin="0,4,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                     <TextBlock x:Name="ProcessMemoryValue" Grid.Column="2" Foreground="#68687D" FontSize="10" VerticalAlignment="Center" Margin="15,0,0,0"/>
                 </Grid>

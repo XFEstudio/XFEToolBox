@@ -19,13 +19,13 @@
             <Image Source="{Binding IconSource,ElementName=toolButton,FallbackValue=/Resources/Image/wrench_tool.png}"
                    Stretch="UniformToFill"/>
         </Button>
-        <Border Grid.Row="1" Width="40" Height="5" VerticalAlignment="Center" HorizontalAlignment="Center" BorderThickness="1" BorderBrush="{Binding ProgressBorderBrush,ElementName=toolButton}" Margin="0,2,0,2" CornerRadius="3" Visibility="{Binding ProgressVisibility,ElementName=toolButton}">
-            <ProgressBar Value="{Binding ProgressValue,ElementName=toolButton}" Foreground="{Binding ProgressForeground,ElementName=toolButton}" Background="{Binding ProgressBackground,ElementName=toolButton}" BorderThickness="0" LargeChange="{Binding ProgressLargeChange,ElementName=toolButton}" SmallChange="{Binding ProgressSmallChange,ElementName=toolButton}">
-                <ProgressBar.Clip>
-                    <RectangleGeometry RadiusX="3" RadiusY="3" Rect="0,0,38,3"/>
-                </ProgressBar.Clip>
-            </ProgressBar>
-        </Border>
+        <controls:RoundedClipBorder Grid.Row="1" Width="40" Height="5" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    BorderThickness="1" BorderBrush="{Binding ProgressBorderBrush,ElementName=toolButton}"
+                                    Margin="0,2,0,2" CornerRadius="3" Visibility="{Binding ProgressVisibility,ElementName=toolButton}">
+            <ProgressBar Value="{Binding ProgressValue,ElementName=toolButton}" Foreground="{Binding ProgressForeground,ElementName=toolButton}"
+                         Background="{Binding ProgressBackground,ElementName=toolButton}" BorderThickness="0"
+                         LargeChange="{Binding ProgressLargeChange,ElementName=toolButton}" SmallChange="{Binding ProgressSmallChange,ElementName=toolButton}"/>
+        </controls:RoundedClipBorder>
         <controls:ScrollTextBlock x:Name="scrollTextBlock" AutoRolling="False" Grid.Row="2" InnerText="{Binding ToolName,ElementName=toolButton}" InnerForeground="{Binding TextColor,ElementName=toolButton}" MaxWidth="50" RollingBack="True" RollingTimeMillisecond="3000"/>
     </Grid>
 </UserControl>

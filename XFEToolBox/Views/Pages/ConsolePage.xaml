@@ -9,7 +9,7 @@
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="ConsolePage" d:DataContext="{d:DesignInstance Type=viewmodel:ConsolePageViewModel}">
-    <Border CornerRadius="0,0,15,0" Background="#1e1e1e">
+    <controls:RoundedClipBorder CornerRadius="0,0,15,0" Background="#1e1e1e">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -109,5 +109,5 @@
                 </ListBox>
             </Border>
         </Grid>
-    </Border>
+    </controls:RoundedClipBorder>
 </Page>

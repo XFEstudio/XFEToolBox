@@ -519,7 +519,7 @@
                 </GridSplitter.Template>
             </GridSplitter>
 
-            <!-- 编辑器卡片。WebView2 保持非透明窗口，避免 WPF 分层窗口的渲染问题。 -->
+            <!-- 合成版 WebView2 参与 WPF 几何裁切，避免代码区越过圆角边界。 -->
             <Border Grid.Column="2" Padding="6" Background="White" CornerRadius="18" Effect="{StaticResource EditorCardShadow}">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition Height="*"/></Grid.RowDefinitions>
@@ -549,14 +549,14 @@
                                     Padding="10,0" FontSize="9.5" Click="RevealFolderButton_Click"/>
                         </StackPanel>
                     </Grid>
-                    <Border Grid.Row="1" Background="#FBFBFE" BorderBrush="#E8E8F1" BorderThickness="1" CornerRadius="13">
+                    <controls:RoundedClipBorder Grid.Row="1" Background="#FBFBFE" BorderBrush="#E8E8F1" BorderThickness="1" CornerRadius="13">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition x:Name="EditorSurfaceColumn" Width="*" MinWidth="360"/>
                                 <ColumnDefinition x:Name="PreviewSplitterColumn" Width="0"/>
-                                <ColumnDefinition x:Name="PreviewColumn" Width="0"/>
+                                <ColumnDefinition x:Name="PreviewColumn" Width="0" MinWidth="0"/>
                             </Grid.ColumnDefinitions>
-                            <wv2:WebView2 x:Name="EditorWebView" DefaultBackgroundColor="#FBFBFE"/>
+                            <wv2:WebView2CompositionControl x:Name="EditorWebView" DefaultBackgroundColor="#FBFBFE"/>
                             <Border x:Name="EditorLoading" Background="#FBFBFE">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Border Width="58" Height="58" CornerRadius="18" Background="#EFEEFC" HorizontalAlignment="Center">
@@ -632,6 +632,30 @@
 
                                             <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
                                                 <StackPanel>
+                                                    <TextBlock Text="窗口外观与行为" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="工具启动时由工具箱统一创建窗口。顶部始终复用工具箱拖动条，右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="980" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="700" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="窗口行为" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,7"/>
+                                                    <Border Padding="10,10,2,2" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                        <WrapPanel>
+                                                            <CheckBox x:Name="ManifestAllowResizeCheckBox" Content="允许调整大小" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestAllowMaximizeCheckBox" Content="允许双击拖动条最大化" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestShowMinimizeButtonCheckBox" Content="显示最小化按钮" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestShowCloseButtonCheckBox" Content="显示关闭按钮" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                        </WrapPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
                                                     <TextBlock Text="展示与发布" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
                                                     <TextBlock Text="图标支持工程内相对路径；留空的可选项不会写入清单。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
                                                     <Grid>
@@ -695,14 +719,28 @@
                                 </Grid>
                             </Border>
                             <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" Width="13" HorizontalAlignment="Stretch" Background="Transparent"
-                                          Cursor="SizeWE" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="True"
+                                          Cursor="SizeWE" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="False"
+                                          DragIncrement="1" KeyboardIncrement="8" Panel.ZIndex="100"
                                           ToolTip="拖动以调整代码与预览的宽度" Visibility="Collapsed">
                                 <GridSplitter.Template>
                                     <ControlTemplate TargetType="GridSplitter">
-                                        <Grid Background="#F1F0F9">
-                                            <Border Width="5" Height="46" CornerRadius="3" Background="#B8B7E8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Grid x:Name="SplitterSurface" Background="#F1F0F9">
+                                            <Border x:Name="SplitterHandle" Width="5" Height="46" CornerRadius="3" Background="#B8B7E8"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Border Width="1" Background="#D9D8EB" HorizontalAlignment="Left"/>
                                             <Border Width="1" Background="#D9D8EB" HorizontalAlignment="Right"/>
                                         </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SplitterSurface" Property="Background" Value="#E9E8FA"/>
+                                                <Setter TargetName="SplitterHandle" Property="Background" Value="{DynamicResource MainColor}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsDragging" Value="True">
+                                                <Setter TargetName="SplitterSurface" Property="Background" Value="#DDDDF7"/>
+                                                <Setter TargetName="SplitterHandle" Property="Background" Value="{DynamicResource MainColor}"/>
+                                                <Setter TargetName="SplitterHandle" Property="Height" Value="72"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </GridSplitter.Template>
                             </GridSplitter>
@@ -730,7 +768,7 @@
                                                 <ContentControl x:Name="PreviewContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                                             </Border>
                                         </ScrollViewer>
-                                        <wv2:WebView2 x:Name="MarkdownPreviewWebView" DefaultBackgroundColor="#FFFFFF" Visibility="Collapsed"/>
+                                        <wv2:WebView2CompositionControl x:Name="MarkdownPreviewWebView" DefaultBackgroundColor="#FFFFFF" Visibility="Collapsed"/>
                                         <StackPanel x:Name="PreviewErrorPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" Visibility="Collapsed">
                                             <Border Width="48" Height="48" CornerRadius="15" Background="#FFF0F2" HorizontalAlignment="Center">
                                                 <TextBlock Text="!" Foreground="#C85E69" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -742,7 +780,7 @@
                                 </Grid>
                             </Border>
                         </Grid>
-                    </Border>
+                    </controls:RoundedClipBorder>
                 </Grid>
             </Border>
         </Grid>
