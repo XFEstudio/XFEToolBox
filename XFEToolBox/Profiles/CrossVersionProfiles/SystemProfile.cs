@@ -1,10 +1,9 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
-using XFEToolBox.Views.Windows;
 
-namespace XFEToolBox.Profiles.CrossVersionProfiles;
+namespace XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
-public partial class SystemProfile
+public partial class SystemProfile : XFEProfile
 {
     /// <summary>
     /// 当前窗口DPI缩放
@@ -31,6 +30,16 @@ public partial class SystemProfile
     /// </summary>
     [ProfileProperty]
     private bool startWithMaximize = false;
+    /// <summary>
+    /// 最近登录的账号。
+    /// </summary>
+    [ProfileProperty]
+    private string lastLoginAccount = string.Empty;
+    /// <summary>
+    /// 可用于自动重登的会话令牌。
+    /// </summary>
+    [ProfileProperty]
+    private string loginSession = string.Empty;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

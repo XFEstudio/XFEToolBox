@@ -1,9 +1,9 @@
 ﻿using XFEExtension.NetCore.AutoConfig;
 using XFEToolBox.Core.Model;
 
-namespace XFEToolBox.Profiles.CrossVersionProfiles;
+namespace XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
-public partial class DownloadProfile
+public partial class DownloadProfile : XFEProfile
 {
     /// <summary>
     /// 是否使用一般的下载方式

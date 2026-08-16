@@ -1,0 +1,101 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls">
+    <!-- 管理页面共享的视觉语言：与首页的白色圆角卡片、淡紫层次和轻量交互保持一致。 -->
+    <SolidColorBrush x:Key="AdminCardBackground" Color="#FAFAFE"/>
+    <SolidColorBrush x:Key="AdminCardBorderBrush" Color="#8CFFFFFF"/>
+    <SolidColorBrush x:Key="AdminTextBrush" Color="#4D4D64"/>
+    <SolidColorBrush x:Key="AdminMutedTextBrush" Color="#9292A6"/>
+    <SolidColorBrush x:Key="AdminFieldBackground" Color="#F5F5FB"/>
+    <SolidColorBrush x:Key="AdminFieldBorderBrush" Color="#DFDFED"/>
+
+    <Style x:Key="AdminPageHeaderIcon" TargetType="Border">
+        <Setter Property="Width" Value="42"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="Background" Value="#26FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#32FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="AdminPageTitle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="AdminPageSubtitle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#CBFFFFFF"/>
+        <Setter Property="FontSize" Value="9.5"/>
+        <Setter Property="Margin" Value="0,3,0,0"/>
+    </Style>
+
+    <Style x:Key="AdminCard" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource AdminCardBackground}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AdminCardBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="17"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="AdminSectionTitle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource AdminTextBrush}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style x:Key="AdminSectionSubtitle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource AdminMutedTextBrush}"/>
+        <Setter Property="FontSize" Value="9.5"/>
+        <Setter Property="Margin" Value="0,3,0,0"/>
+    </Style>
+
+    <Style x:Key="AdminFormLabel" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="#77778C"/>
+        <Setter Property="FontSize" Value="9.5"/>
+        <Setter Property="Margin" Value="2,0,0,5"/>
+    </Style>
+
+    <Style x:Key="AdminTextEditor" TargetType="{x:Type controls:TextEditor}"
+           BasedOn="{StaticResource {x:Type controls:TextEditor}}">
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="11,0"/>
+        <Setter Property="Background" Value="{StaticResource AdminFieldBackground}"/>
+        <Setter Property="Foreground" Value="{StaticResource AdminTextBrush}"/>
+        <Setter Property="EditorBorderBrush" Value="{StaticResource AdminFieldBorderBrush}"/>
+        <Setter Property="EditorHoverBorderBrush" Value="#B8B8DF"/>
+        <Setter Property="EditorFocusedBorderBrush" Value="{DynamicResource MainColor}"/>
+        <Setter Property="EditorCornerRadius" Value="10"/>
+        <Setter Property="HintForeground" Value="#89899C"/>
+        <Setter Property="HintTextMargin" Value="0"/>
+        <Setter Property="HintFontSize" Value="11"/>
+        <Setter Property="FontSize" Value="11"/>
+    </Style>
+
+    <Style x:Key="AdminPasswordEditor" TargetType="{x:Type controls:PasswordEditor}"
+           BasedOn="{StaticResource {x:Type controls:PasswordEditor}}">
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="11,0,5,0"/>
+        <Setter Property="Background" Value="{StaticResource AdminFieldBackground}"/>
+        <Setter Property="Foreground" Value="{StaticResource AdminTextBrush}"/>
+        <Setter Property="EditorBorderBrush" Value="{StaticResource AdminFieldBorderBrush}"/>
+        <Setter Property="EditorCornerRadius" Value="10"/>
+        <Setter Property="HintForeground" Value="#89899C"/>
+        <Setter Property="HintTextMargin" Value="0"/>
+        <Setter Property="HintFontSize" Value="11"/>
+        <Setter Property="FontSize" Value="11"/>
+    </Style>
+
+    <Style x:Key="AdminCheckBox" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxCheckBoxStyle}"/>
+
+    <Style x:Key="AdminDataGridColumnHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridColumnHeaderStyle}"/>
+    <Style x:Key="AdminDataGridCell" TargetType="DataGridCell" BasedOn="{StaticResource ToolBoxDataGridCellStyle}"/>
+    <Style x:Key="AdminDataGridRow" TargetType="DataGridRow" BasedOn="{StaticResource ToolBoxDataGridRowStyle}"/>
+    <Style x:Key="AdminDataGrid" TargetType="DataGrid" BasedOn="{StaticResource ToolBoxDataGridStyle}">
+        <!-- 管理页已有外层卡片边框；保留共享圆角裁剪，避免重复描边。 -->
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <Style x:Key="AdminListBoxItem" TargetType="ListBoxItem" BasedOn="{StaticResource ToolBoxCardListBoxItemStyle}"/>
+</ResourceDictionary>

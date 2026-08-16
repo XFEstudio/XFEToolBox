@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public class DecTextSpan(string text, Color color, Color backgroundColor)
 {

@@ -1,9 +1,10 @@
 ﻿using System.Windows.Controls;
-using XFEToolBox.Model;
-using XFEToolBox.ViewModel.Pages.Popups;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.ViewModel.Pages.Popups;
+using AgreementDialogPopupPageViewModel = XFEToolBox.Client.ViewModel.Pages.Popups.AgreementDialogPopupPageViewModel;
 
-namespace XFEToolBox.Views.Pages.Popups;
+namespace XFEToolBox.Client.Views.Pages.Popups;
 
 /// <summary>
 /// AgreementDialogPopupPage.xaml 的交互逻辑
@@ -21,7 +22,7 @@ public partial class AgreementDialogPopupPage : Page, IPopupPage
 
     private void SmoothScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        if (e.VerticalOffset + e.ViewportHeight == e.ExtentHeight)
+        if (e.VerticalOffset + e.ViewportHeight >= e.ExtentHeight - 1)
             ViewModel.ReadCheckButtonEnable = true;
     }
 }

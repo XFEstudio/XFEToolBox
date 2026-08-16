@@ -1,4 +1,4 @@
-﻿namespace XFEToolBox.Utilities;
+﻿namespace XFEToolBox.Client.Utilities;
 
 public static class TaskManager
 {

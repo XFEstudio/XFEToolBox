@@ -1,15 +1,17 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using XFEExtension.NetCore.InputSimulator;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Pages;
-using XFEToolBox.Views.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages;
+using XFEToolBox.Client.Views.Pages.Admin;
+using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Utilities.Server;
 
-namespace XFEToolBox.ViewModel.Windows;
+namespace XFEToolBox.Client.ViewModel.Windows;
 
 public partial class MainWindowViewModel : ObservableObject
 {
@@ -22,10 +24,30 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private Page? currentPage = MainPage.Current;
 
+    public string CurrentUserName => ClientSession.CurrentUser?.NickName ?? "尚未登录";
+
+    public string CurrentUserRole => ClientSession.IsAdministrator ? "管理员" : ClientSession.IsLoggedIn ? "普通用户" : "连接工具服务器";
+
+    public Visibility AdministratorVisibility => ClientSession.IsAdministrator ? Visibility.Visible : Visibility.Collapsed;
+
     public MainWindowViewModel(MainWindow viewPage)
     {
         ViewPage = viewPage;
         ViewPage.Closing += ViewPage_Closing;
+        ClientSession.SessionChanged += ClientSession_SessionChanged;
+        _ = RestoreSessionAsync();
+    }
+
+    private static async Task RestoreSessionAsync() => await ClientSession.TryRestoreAsync();
+
+    private void ClientSession_SessionChanged(object? sender, EventArgs e)
+    {
+        ViewPage.Dispatcher.Invoke(() =>
+        {
+            OnPropertyChanged(nameof(CurrentUserName));
+            OnPropertyChanged(nameof(CurrentUserRole));
+            OnPropertyChanged(nameof(AdministratorVisibility));
+        });
     }
 
     private void ViewPage_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -146,9 +168,30 @@ public partial class MainWindowViewModel : ObservableObject
             case "setting":
                 CurrentPage = SettingPage.Current;
                 break;
+            case "profile":
+                CurrentPage = PersonalCenterPage.Current;
+                break;
+            case "serverManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = ServerManagementPage.Current;
+                break;
+            case "serverOverview":
+                if (ClientSession.IsAdministrator) CurrentPage = ServerOverviewPage.Current;
+                break;
+            case "userManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = UserManagementPage.Current;
+                break;
+            case "toolManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = ToolManagementPage.Current;
+                break;
+            case "softwareManagement":
+                if (ClientSession.IsAdministrator) CurrentPage = SoftwareManagementPage.Current;
+                break;
             default:
                 break;
         }
     }
+
+    [RelayCommand]
+    private void Logout() => ClientSession.Logout();
     #endregion
 }

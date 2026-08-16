@@ -1,0 +1,838 @@
+<Window x:Class="XFEToolBox.Client.Views.Windows.ToolCodeEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="XFEToolBox Code Studio"
+        Width="1380" Height="860" MinWidth="1040" MinHeight="680"
+        WindowStartupLocation="CenterOwner" WindowState="Normal"
+        WindowStyle="None" ResizeMode="CanResize"
+        Background="{DynamicResource MainColor}" Foreground="#424258"
+        Icon="/Resources/Icon/XFEToolBoxIcon.ico"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            CornerRadius="18"
+                            GlassFrameThickness="0"
+                            ResizeBorderThickness="6"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <DropShadowEffect x:Key="EditorCardShadow" Color="#53539A" BlurRadius="18" ShadowDepth="4" Opacity="0.16"/>
+        <Geometry x:Key="EditorFilePlusIcon">M4,2 H12 L16,6 V18 H4 Z M12,2 V6 H16 M10,10 V16 M7,13 H13</Geometry>
+        <Geometry x:Key="EditorFolderPlusIcon">M2,5 H8 L10,7 H19 V18 H2 Z M13,10 V16 M10,13 H16</Geometry>
+        <Geometry x:Key="EditorRefreshIcon">M17,7 A7,7 0 1 0 18,13 M17,3 V8 H12</Geometry>
+
+        <Style x:Key="ManifestFieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#55556B"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="2,0,0,6"/>
+        </Style>
+        <Style x:Key="ManifestTextEditor" TargetType="{x:Type controls:TextEditor}" BasedOn="{StaticResource {x:Type controls:TextEditor}}">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="11,0"/>
+            <Setter Property="Background" Value="#FBFBFE"/>
+            <Setter Property="Foreground" Value="#45455B"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource MainColor}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource MainColor}"/>
+            <Setter Property="EditorBorderBrush" Value="#DDDDEC"/>
+            <Setter Property="EditorHoverBorderBrush" Value="#BDBDE8"/>
+            <Setter Property="EditorFocusedBorderBrush" Value="{DynamicResource MainColor}"/>
+            <Setter Property="EditorCornerRadius" Value="10"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+
+        <Style x:Key="ManifestPermissionCheckBox" TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Foreground" Value="#5B5B70"/>
+            <Setter Property="Background" Value="#FBFBFE"/>
+            <Setter Property="BorderBrush" Value="#DFDFEC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9">
+                            <StackPanel Orientation="Horizontal">
+                                <Border x:Name="Box" Width="16" Height="16" Margin="0,0,7,0" Background="White"
+                                        BorderBrush="#BCBCD1" BorderThickness="1" CornerRadius="4">
+                                    <Path x:Name="CheckMark" Data="M 3,8 L 6.5,11.5 L 13,4" Stroke="White" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#F3F3FC"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#C5C5EB"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#F0F0FC"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#B4B4EA"/>
+                                <Setter TargetName="Box" Property="Background" Value="{DynamicResource MainColor}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                <Setter Property="Foreground" Value="#4E4E76"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.48"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditorContextMenu" TargetType="ContextMenu">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="White" BorderBrush="#D9D8E8" BorderThickness="1" CornerRadius="12" Padding="6">
+                            <Border.Effect><DropShadowEffect Color="#49496C" BlurRadius="20" ShadowDepth="5" Opacity="0.22"/></Border.Effect>
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditorMenuItem" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#4A4A60"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                            <ContentPresenter ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Surface" Property="Background" Value="#ECEBFA"/><Setter Property="Foreground" Value="#5555AF"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditorMenuSeparator" TargetType="Separator">
+            <Setter Property="Height" Value="1"/><Setter Property="Margin" Value="8,4"/><Setter Property="Background" Value="#E7E6EF"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Separator"><Border Background="{TemplateBinding Background}" Height="1"/></ControlTemplate></Setter.Value></Setter>
+        </Style>
+
+        <Style x:Key="EditorTopMenu" TargetType="Menu">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" IsItemsHost="True"/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Menu">
+                        <ItemsPresenter KeyboardNavigation.TabNavigation="Cycle"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditorTopMenuItem" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#55556E"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Grid>
+                            <Border x:Name="Surface" Padding="12,8" Background="Transparent" CornerRadius="9">
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentPresenter ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                    <Path Width="7" Height="4" Margin="7,1,0,0" VerticalAlignment="Center"
+                                          Data="M 0,0 L 3.5,3.5 L 7,0" Stretch="Fill" Stroke="#8B8BA2"
+                                          StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                </StackPanel>
+                            </Border>
+                            <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False"
+                                   PopupAnimation="Fade" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border MinWidth="218" Margin="0,5,0,0" Padding="6" Background="White"
+                                        BorderBrush="#D9D8E8" BorderThickness="1" CornerRadius="12">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#49496C" BlurRadius="20" ShadowDepth="5" Opacity="0.22"/>
+                                    </Border.Effect>
+                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#F1F1FB"/>
+                            </Trigger>
+                            <Trigger Property="IsSubmenuOpen" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#E9E9F8"/>
+                                <Setter Property="Foreground" Value="#5555AE"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EditorTopMenuSubItem" TargetType="MenuItem">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="11,0"/>
+            <Setter Property="Foreground" Value="#4A4A60"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="Surface" Margin="0,1" Padding="{TemplateBinding Padding}"
+                                Background="Transparent" CornerRadius="8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                <TextBlock Grid.Column="1" Margin="20,0,0,0" Text="{TemplateBinding InputGestureText}"
+                                           Foreground="#9999AA" FontSize="9.5" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#ECEBFA"/>
+                                <Setter Property="Foreground" Value="#5555AF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="ItemSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="8,6">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemSurface" Property="Background" Value="#F4F3FD"/></Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemSurface" Property="Background" Value="#ECEBFC"/>
+                                <Setter TargetName="ItemSurface" Property="BorderBrush" Value="#C7C6F3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource MainColor}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="42"/>
+            <RowDefinition Height="72"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="32"/>
+        </Grid.RowDefinitions>
+
+        <!-- 与主界面一致的紫色自绘标题栏。 -->
+        <Grid x:Name="EditorTitleBar" Margin="10,0,0,3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="285"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="29" Height="29" CornerRadius="9" Background="White" Margin="2,0,10,0">
+                    <TextBlock Text="&lt;/&gt;" Foreground="{DynamicResource MainColor}" FontSize="10" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="XFE·代码工坊" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock x:Name="WorkspaceTitleText" Text="正在准备工作区" Foreground="#DEDEFF" FontSize="9.5"/>
+                </StackPanel>
+                <Border x:Name="DirtyIndicator" Margin="12,0,0,0" Padding="8,3" CornerRadius="8"
+                        Background="#28FFFFFF" Visibility="Collapsed">
+                    <TextBlock Text="● 未保存" Foreground="White" FontSize="9.5"/>
+                </Border>
+            </StackPanel>
+            <controls:WindowCaptionBar Grid.Column="1" MinWidth="120" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                       MinimizeButtonVisibility="Visible" CloseButtonVisibility="Visible"
+                                       shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </Grid>
+
+        <!-- 命令工具栏。 -->
+        <Border Grid.Row="1" Margin="14,2,14,10" Padding="12,9" Background="White" CornerRadius="16" Effect="{StaticResource EditorCardShadow}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Menu Style="{StaticResource EditorTopMenu}" VerticalAlignment="Center">
+                    <MenuItem Header="文件" Style="{StaticResource EditorTopMenuItem}"
+                              ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
+                        <MenuItem Header="新建工程" InputGestureText="Ctrl+Shift+N" Click="NewProjectButton_Click"/>
+                        <MenuItem Header="打开工程" InputGestureText="Ctrl+O" Click="OpenFolderButton_Click"/>
+                        <MenuItem Header="新建项" InputGestureText="Ctrl+N" Click="NewFileButton_Click"/>
+                        <Separator Style="{StaticResource EditorMenuSeparator}"/>
+                        <MenuItem x:Name="SaveButton" Header="保存全部" InputGestureText="Ctrl+S" Click="SaveButton_Click"/>
+                    </MenuItem>
+                    <MenuItem Header="代码" Style="{StaticResource EditorTopMenuItem}"
+                              ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
+                        <MenuItem Header="格式化当前文件" InputGestureText="Shift+Alt+F" Click="FormatButton_Click"/>
+                    </MenuItem>
+                    <MenuItem Header="工具包" Style="{StaticResource EditorTopMenuItem}"
+                              ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
+                        <MenuItem Header="导出工具包…" InputGestureText="Ctrl+Shift+E" Click="PackageButton_Click"/>
+                        <MenuItem x:Name="PublishPackageMenuItem" Header="发布工具包" Click="PublishPackageButton_Click"/>
+                    </MenuItem>
+                </Menu>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+F5）">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="◫" FontSize="15" Margin="0,0,6,0"/><TextBlock Text="预览" VerticalAlignment="Center"/></StackPanel>
+                    </Button>
+                    <Button x:Name="RunButton" controls:ButtonAssist.IsPrimary="True" Margin="0,0,8,0" Click="RunButton_Click" ToolTip="完整编译并运行工具（F5）">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="▶" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="运行" VerticalAlignment="Center"/></StackPanel>
+                    </Button>
+                    <Button x:Name="EditorThemeButton" Content="◐" Width="38" MinWidth="38" Padding="0" Margin="0,0,8,0" ToolTip="切换代码区明暗主题" Click="ToggleThemeButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="14,0,14,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" MinWidth="225" MaxWidth="430"/>
+                <ColumnDefinition Width="9"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 工程资源管理器。 -->
+            <Border Background="White" BorderBrush="#DEDEEA" BorderThickness="1" CornerRadius="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="56"/>
+                        <RowDefinition Height="44"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="50"/>
+                    </Grid.RowDefinitions>
+                    <Border Margin="12,7,12,3" Padding="3,0" Background="Transparent">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <TextBlock x:Name="ProjectNameText" Text="UntitledTool" Foreground="#414156" FontSize="12.5"
+                                       FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FileCountText" Grid.Column="1" Text="0 项" Foreground="#89899B"
+                                       FontSize="9.5" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <controls:TextEditor x:Name="FileSearchBox" Grid.Row="1" Height="34" Margin="10,5,10,7" Padding="10,0"
+                                         Background="#FAFAFD" Foreground="#55556B" CaretBrush="{DynamicResource MainColor}"
+                                         EditorBorderBrush="#E1E1ED" HintText="筛选工程文件" HintForeground="#8F8FA3" HintTextMargin="0"
+                                         Icon="{StaticResource SearchIconGeometry}" IconBrush="{DynamicResource MainColor}" IconSize="14"
+                                         TextChanged="FileSearchBox_TextChanged"/>
+
+                    <Grid Grid.Row="2" Margin="7,0">
+                        <ListBox x:Name="FileList" Background="Transparent" BorderThickness="0" Foreground="#4D4D63" AllowDrop="True"
+                                 SelectionChanged="FileList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 PreviewMouseLeftButtonDown="FileList_PreviewMouseLeftButtonDown" PreviewMouseMove="FileList_PreviewMouseMove"
+                                 DragOver="FileList_DragOver" Drop="FileList_Drop">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin" Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="RowSurface" Background="Transparent" BorderBrush="Transparent"
+                                                        BorderThickness="1" CornerRadius="5" Padding="2,0">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="RowSurface" Property="Background" Value="#F5F5FA"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="RowSurface" Property="Background" Value="#EAEAF9"/>
+                                                        <Setter TargetName="RowSurface" Property="BorderBrush" Value="#D4D4F0"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ContextMenu>
+                                <ContextMenu Style="{StaticResource EditorContextMenu}">
+                                    <MenuItem Header="＋  新建项" Style="{StaticResource EditorMenuItem}" Click="BlankNewFileMenuItem_Click"/>
+                                    <MenuItem Header="▱  新建文件夹" Style="{StaticResource EditorMenuItem}" Click="BlankNewFolderMenuItem_Click"/>
+                                    <Separator Style="{StaticResource EditorMenuSeparator}"/>
+                                    <MenuItem Header="↻  刷新资源管理器" Style="{StaticResource EditorMenuItem}" Click="RefreshFilesButton_Click"/>
+                                    <MenuItem Header="⌂  在资源管理器中打开" Style="{StaticResource EditorMenuItem}" Click="RevealFolderButton_Click"/>
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MinHeight="27" Margin="{Binding Indent}" PreviewMouseRightButtonDown="ExplorerItem_PreviewMouseRightButtonDown"
+                                          MouseLeftButtonDown="ExplorerItem_MouseLeftButtonDown">
+                                        <Grid.ContextMenu>
+                                            <ContextMenu Style="{StaticResource EditorContextMenu}"
+                                                         DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                <MenuItem Header="打开" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerOpenMenuItem_Click"/>
+                                                <MenuItem Header="＋  在此处新建项" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerNewFileMenuItem_Click"/>
+                                                <MenuItem Header="▱  在此处新建文件夹" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerNewFolderMenuItem_Click"/>
+                                                <Separator Style="{StaticResource EditorMenuSeparator}"/>
+                                                <MenuItem Header="⇧  移动到工程根目录" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerMoveToRootMenuItem_Click"/>
+                                                <MenuItem Header="✎  重命名" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerRenameMenuItem_Click"/>
+                                                <MenuItem Header="⌂  在资源管理器中显示" Tag="{Binding}" Style="{StaticResource EditorMenuItem}" Click="ExplorerRevealMenuItem_Click"/>
+                                                <Separator Style="{StaticResource EditorMenuSeparator}"/>
+                                                <MenuItem Header="删除" Tag="{Binding}" Foreground="#B85C67" Style="{StaticResource EditorMenuItem}" Click="ExplorerDeleteMenuItem_Click"/>
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="16"/>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="16" Height="24" Background="Transparent" Cursor="Hand"
+                                                MouseLeftButtonUp="ExplorerExpander_MouseLeftButtonUp">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Path Width="6" Height="10" Data="M1,1 L5,5 L1,9" Stretch="Fill"
+                                                  Stroke="#6D6D80" StrokeThickness="1.4" StrokeStartLineCap="Round"
+                                                  StrokeEndLineCap="Round" RenderTransformOrigin="0.5,0.5">
+                                                <Path.Style>
+                                                    <Style TargetType="Path">
+                                                        <Setter Property="RenderTransform"><Setter.Value><RotateTransform Angle="0"/></Setter.Value></Setter>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                                <Setter Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Path.Style>
+                                            </Path>
+                                        </Border>
+                                        <Grid Grid.Column="1" Width="19" Height="19" VerticalAlignment="Center">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Icon}" Foreground="{Binding IconForeground}" FontSize="10" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Path Width="17" Height="14" Stretch="Uniform" Fill="Transparent" Stroke="{Binding IconForeground}"
+                                                      StrokeThickness="1.55" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                      Data="M2.5,5.5 H7.4 L9.2,7.2 H17.5 V16.5 H2.5 Z M2.5,8.5 H17.5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path.Style>
+                                                        <Style TargetType="Path">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Path.Style>
+                                                </Path>
+                                            </Grid>
+                                        </Grid>
+                                        <TextBlock Grid.Column="2" Text="{Binding DisplayName}" Foreground="#47475C" FontSize="10.8"
+                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding RelativePath}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <StackPanel x:Name="EmptyExplorer" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                            <TextBlock Text="暂无可编辑文件" Foreground="#88889A" FontSize="10.5" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="3" Margin="10,6,10,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <Button Height="34" Margin="0,0,7,0" Click="NewFileButton_Click" ToolTip="从模板新建项">
+                            <StackPanel Orientation="Horizontal"><Path Data="{StaticResource EditorFilePlusIcon}" Width="14" Height="14" Stretch="Uniform" Stroke="#68687D" StrokeThickness="1.5" Margin="0,0,7,0"/><TextBlock Text="新建项" VerticalAlignment="Center"/></StackPanel>
+                        </Button>
+                        <Button Grid.Column="1" Height="34" Width="38" MinWidth="38" Padding="0" ToolTip="新建文件夹" Click="NewFolderButton_Click">
+                            <Path Data="{StaticResource EditorFolderPlusIcon}" Width="17" Height="17" Stretch="Uniform" Stroke="#68687D" StrokeThickness="1.45" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Button>
+                        <Button Grid.Column="2" Height="34" Width="34" MinWidth="34" Padding="0" Margin="7,0,0,0" ToolTip="刷新文件列表" Click="RefreshFilesButton_Click">
+                            <Path Data="{StaticResource EditorRefreshIcon}" Width="16" Height="16" Stretch="Uniform" Stroke="#68687D" StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="1" Width="9" HorizontalAlignment="Stretch" Background="Transparent" ResizeBehavior="PreviousAndNext">
+                <GridSplitter.Template>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Width="3" Height="42" Background="#70FFFFFF" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </ControlTemplate>
+                </GridSplitter.Template>
+            </GridSplitter>
+
+            <!-- 合成版 WebView2 参与 WPF 几何裁切，避免代码区越过圆角边界。 -->
+            <Border Grid.Column="2" Padding="6" Background="White" CornerRadius="18" Effect="{StaticResource EditorCardShadow}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="42"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="8,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="27" Height="27" CornerRadius="8" Background="#F0EFFC">
+                                <TextBlock Text="&lt;/&gt;" Foreground="{DynamicResource MainColor}" FontSize="9" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Margin="8,0,0,0" VerticalAlignment="Center">
+                                <TextBlock x:Name="ActiveFileText" Text="代码编辑器" Foreground="#444459" FontSize="11.5" FontWeight="SemiBold"/>
+                                <TextBlock Text="Monaco Editor · 本地资源" Foreground="#9A9AAA" FontSize="8.8"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel x:Name="PreviewDocumentTabStrip" Orientation="Horizontal" Margin="0,0,7,0" Visibility="Collapsed">
+                                <Button x:Name="EditorSurfaceTabButton" Content="代码" Height="30" MinWidth="0"
+                                        Margin="0,0,4,0" Padding="10,0" FontSize="9.5" Click="EditorSurfaceTabButton_Click"/>
+                                <Button x:Name="PreviewDocumentTabButton" Content="预览" Height="30" MinWidth="0"
+                                        Margin="0" Padding="10,0" FontSize="9.5" Click="PreviewDocumentTabButton_Click"/>
+                                <Button x:Name="ClosePreviewDocumentTabButton" Content="×" Width="28" Height="28" MinWidth="28" Padding="0"
+                                        Margin="4,0,0,0" FontSize="13" ToolTip="关闭预览选项卡" Click="ClosePreviewDocumentTabButton_Click"/>
+                            </StackPanel>
+                            <Button x:Name="ManifestViewToggleButton" Content="编辑 JSON 源码" Height="30" MinWidth="0"
+                                    Margin="0,0,7,0" Padding="10,0" FontSize="9.5" Visibility="Collapsed" Click="ManifestViewToggleButton_Click"/>
+                            <Button Content="在资源管理器中显示" Height="30" MinWidth="0" Margin="0"
+                                    Padding="10,0" FontSize="9.5" Click="RevealFolderButton_Click"/>
+                        </StackPanel>
+                    </Grid>
+                    <controls:RoundedClipBorder Grid.Row="1" Background="#FBFBFE" BorderBrush="#E8E8F1" BorderThickness="1" CornerRadius="13">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition x:Name="EditorSurfaceColumn" Width="*" MinWidth="360"/>
+                                <ColumnDefinition x:Name="PreviewSplitterColumn" Width="0"/>
+                                <ColumnDefinition x:Name="PreviewColumn" Width="0" MinWidth="0"/>
+                            </Grid.ColumnDefinitions>
+                            <wv2:WebView2CompositionControl x:Name="EditorWebView" DefaultBackgroundColor="#FBFBFE"/>
+                            <Border x:Name="EditorLoading" Background="#FBFBFE">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Border Width="58" Height="58" CornerRadius="18" Background="#EFEEFC" HorizontalAlignment="Center">
+                                        <TextBlock Text="&lt;/&gt;" Foreground="{DynamicResource MainColor}" FontSize="17" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="正在启动代码编辑器" FontSize="15" FontWeight="SemiBold" Foreground="#55556A" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                                    <TextBlock x:Name="EditorLoadingDetail" Text="加载本地 Monaco 与语言服务…" Foreground="#9696A7" FontSize="10.5" Margin="0,6,0,0"/>
+                                    <ProgressBar Width="190" Height="3" Margin="0,16,0,0" IsIndeterminate="True" Foreground="{DynamicResource MainColor}" Background="#E7E6F5"/>
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="ManifestDesignerPanel" Grid.Column="0" Background="#F8F8FC" Visibility="Collapsed" Panel.ZIndex="20">
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                    <Border Margin="16,14,16,0" Padding="16" Background="#F0EFFC" BorderBrush="#DFDDF2" BorderThickness="1" CornerRadius="14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Width="42" Height="42" CornerRadius="13" Background="White">
+                                                <TextBlock Text="{}{}" Foreground="{DynamicResource MainColor}" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                                <TextBlock Text="工具清单配置" Foreground="#414157" FontSize="15" FontWeight="SemiBold"/>
+                                                <TextBlock Text="表单修改会实时同步到 manifest.json，保存、运行和发布均使用这里的内容。" Foreground="#77778D" FontSize="9.5" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <ScrollViewer Grid.Row="1" Margin="16,12,16,14" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <StackPanel>
+                                            <Border Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="基本信息" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="用于工具箱识别、展示与版本管理。带 * 的项目为必填项。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                        <StackPanel><TextBlock Text="工具 ID *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestIdBox" Style="{StaticResource ManifestTextEditor}" HintText="例如 xfestudio.sample-tool" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="显示名称 *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestNameBox" Style="{StaticResource ManifestTextEditor}" HintText="工具名称" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="版本号 *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestVersionBox" Style="{StaticResource ManifestTextEditor}" HintText="1.0.0" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="作者 *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestAuthorBox" Style="{StaticResource ManifestTextEditor}" HintText="作者或组织" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="4"><TextBlock Text="分类" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestCategoryBox" Style="{StaticResource ManifestTextEditor}" HintText="例如 开发工具" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="4" Grid.Column="2">
+                                                            <TextBlock Text="标签" Style="{StaticResource ManifestFieldLabel}"/>
+                                                            <Border MinHeight="38" Padding="6,4" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                                    <ItemsControl x:Name="ManifestTagsItems" VerticalAlignment="Center">
+                                                                        <ItemsControl.ItemsPanel>
+                                                                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                                        </ItemsControl.ItemsPanel>
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <Border Margin="0,0,5,2" Padding="8,4,4,4" Background="#EEEEFC" BorderBrush="#D5D5F2" BorderThickness="1" CornerRadius="9">
+                                                                                    <StackPanel Orientation="Horizontal">
+                                                                                        <TextBlock Text="{Binding}" Foreground="#5A5A80" FontSize="10" VerticalAlignment="Center"/>
+                                                                                        <Button Content="×" Tag="{Binding}" Width="18" Height="18" MinWidth="18" Margin="5,0,0,0" Padding="0" BorderThickness="0"
+                                                                                                ToolTip="删除此标签" Click="RemoveManifestTagButton_Click"/>
+                                                                                    </StackPanel>
+                                                                                </Border>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <Button Grid.Column="1" Width="28" MinWidth="28" Height="28" Margin="5,0,0,0" Padding="0" Content="＋"
+                                                                            FontSize="15" ToolTip="添加标签"
+                                                                            Click="AddManifestTagButton_Click"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="工具说明 *" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,6"/>
+                                                    <controls:TextEditor x:Name="ManifestDescriptionBox" Style="{StaticResource ManifestTextEditor}" Height="72" Padding="11,8" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" HintText="简要说明工具用途" TextChanged="ManifestDesignerField_TextChanged"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="窗口外观与行为" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="工具启动时由工具箱统一创建窗口。顶部始终复用工具箱拖动条，右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="980" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="700" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="窗口行为" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,7"/>
+                                                    <Border Padding="10,10,2,2" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                        <WrapPanel>
+                                                            <CheckBox x:Name="ManifestAllowResizeCheckBox" Content="允许调整大小" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestAllowMaximizeCheckBox" Content="允许双击拖动条最大化" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestShowMinimizeButtonCheckBox" Content="显示最小化按钮" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                            <CheckBox x:Name="ManifestShowCloseButtonCheckBox" Content="显示关闭按钮" IsChecked="True" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                        </WrapPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="展示与发布" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="图标支持工程内相对路径；留空的可选项不会写入清单。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <StackPanel><TextBlock Text="图标路径" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestIconBox" Style="{StaticResource ManifestTextEditor}" HintText="Assets/icon.png（可选）" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="最低宿主版本" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestMinimumHostVersionBox" Style="{StaticResource ManifestTextEditor}" HintText="例如 1.2.0（可选）" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="更新说明" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,6"/>
+                                                    <controls:TextEditor x:Name="ManifestReleaseNotesBox" Style="{StaticResource ManifestTextEditor}" Height="72" Padding="11,8" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" HintText="本版本的主要变化（可选）" TextChanged="ManifestDesignerField_TextChanged"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="入口配置" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="指定工具界面、代码后置和 ViewModel。路径均相对于工程根目录。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                        <StackPanel><TextBlock Text="视图 XAML *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestViewXamlBox" Style="{StaticResource ManifestTextEditor}" HintText="Code/Views/MainPage.xaml" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="视图类 *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestViewClassBox" Style="{StaticResource ManifestTextEditor}" HintText="完整命名空间与类名" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="代码后置 *" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestViewCodeBehindBox" Style="{StaticResource ManifestTextEditor}" HintText="Code/Views/MainPage.xaml.cs" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="ViewModel 文件" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestViewModelBox" Style="{StaticResource ManifestTextEditor}" HintText="Code/ViewModels/MainPageViewModel.cs（可选）" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="4" Grid.ColumnSpan="3"><TextBlock Text="ViewModel 类" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestViewModelClassBox" Style="{StaticResource ManifestTextEditor}" HintText="完整命名空间与类名（可选）" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
+                                                    <TextBlock Text="权限与格式" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="勾选工具运行所需的宿主能力；包格式版本由当前编辑器维护。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="请求的权限" Style="{StaticResource ManifestFieldLabel}"/>
+                                                            <Border MinHeight="84" Padding="10,10,2,2" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                                <WrapPanel x:Name="ManifestPermissionsPanel">
+                                                                    <CheckBox Content="文件系统" Tag="FileSystem" ToolTip="读取、创建或修改文件与目录" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="网络访问" Tag="Network" ToolTip="访问互联网或局域网服务" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="剪贴板" Tag="Clipboard" ToolTip="读取或写入系统剪贴板" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="进程" Tag="Process" ToolTip="启动或管理外部进程" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="系统 Shell" Tag="Shell" ToolTip="通过系统 Shell 打开外部资源" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="注册表" Tag="Registry" ToolTip="读取或修改 Windows 注册表" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="系统通知" Tag="Notifications" ToolTip="发送系统通知" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="环境信息" Tag="Environment" ToolTip="读取环境变量与系统信息" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="输入模拟" Tag="InputSimulation" ToolTip="模拟键盘或鼠标输入" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="摄像头" Tag="Camera" ToolTip="访问摄像头设备" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="麦克风" Tag="Microphone" ToolTip="访问麦克风设备" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                    <CheckBox Content="位置信息" Tag="Location" ToolTip="访问设备位置信息" Style="{StaticResource ManifestPermissionCheckBox}" Checked="ManifestPermissionCheckBox_Changed" Unchecked="ManifestPermissionCheckBox_Changed"/>
+                                                                </WrapPanel>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="包格式版本" Style="{StaticResource ManifestFieldLabel}"/><Border Height="38" Background="#F2F2F7" BorderBrush="#E0E0EA" BorderThickness="1" CornerRadius="10"><TextBlock x:Name="ManifestPackageFormatText" Text="1" Foreground="#77778C" FontSize="11" VerticalAlignment="Center" Margin="12,0"/></Border></StackPanel>
+                                                    </Grid>
+                                                    <TextBlock x:Name="ManifestDesignerStateText" Text="已与 manifest.json 同步" Foreground="#7A7A90" FontSize="9.5" Margin="2,13,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                            <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" Width="13" HorizontalAlignment="Stretch" Background="Transparent"
+                                          Cursor="SizeWE" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" ShowsPreview="False"
+                                          DragIncrement="1" KeyboardIncrement="8" Panel.ZIndex="100"
+                                          ToolTip="拖动以调整代码与预览的宽度" Visibility="Collapsed">
+                                <GridSplitter.Template>
+                                    <ControlTemplate TargetType="GridSplitter">
+                                        <Grid x:Name="SplitterSurface" Background="#F1F0F9">
+                                            <Border x:Name="SplitterHandle" Width="5" Height="46" CornerRadius="3" Background="#B8B7E8"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Border Width="1" Background="#D9D8EB" HorizontalAlignment="Left"/>
+                                            <Border Width="1" Background="#D9D8EB" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SplitterSurface" Property="Background" Value="#E9E8FA"/>
+                                                <Setter TargetName="SplitterHandle" Property="Background" Value="{DynamicResource MainColor}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsDragging" Value="True">
+                                                <Setter TargetName="SplitterSurface" Property="Background" Value="#DDDDF7"/>
+                                                <Setter TargetName="SplitterHandle" Property="Background" Value="{DynamicResource MainColor}"/>
+                                                <Setter TargetName="SplitterHandle" Property="Height" Value="72"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </GridSplitter.Template>
+                            </GridSplitter>
+                            <Border x:Name="PreviewPanel" Grid.Column="2" Background="White" BorderBrush="#E3E2EF" BorderThickness="1,0,0,0" Visibility="Collapsed">
+                                <Grid>
+                                    <Grid.RowDefinitions><RowDefinition Height="48"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                    <Border Background="#F6F5FC" BorderBrush="#E8E7F1" BorderThickness="0,0,0,1" Padding="12,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock x:Name="PreviewTitleText" Text="XAML 快速预览" Foreground="#444459" FontSize="11.5" FontWeight="SemiBold"/>
+                                                <TextBlock x:Name="PreviewSubtitleText" Text="支持 XAML、Markdown 与常用文本格式" Foreground="#858598" FontSize="8.8"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="↗" Width="30" Height="30" MinWidth="30" Padding="0" Margin="0,0,6,0"
+                                                    FontSize="12" ToolTip="在独立预览选项卡中打开" Click="OpenPreviewDocumentTabButton_Click"/>
+                                            <Button Grid.Column="2" Content="↻" Width="30" Height="30" MinWidth="30" Padding="0" Margin="0,0,6,0"
+                                                    FontSize="13" ToolTip="刷新预览" Click="PreviewButton_Click"/>
+                                            <Button Grid.Column="3" Content="×" Width="30" Height="30" MinWidth="30" Padding="0" Margin="0"
+                                                    FontSize="14" ToolTip="关闭预览" Click="ClosePreviewButton_Click"/>
+                                        </Grid>
+                                    </Border>
+                                    <Grid Grid.Row="1" Background="#FAFAFD">
+                                        <ScrollViewer x:Name="PreviewWpfScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="18">
+                                            <Border Background="White" BorderBrush="#E2E1ED" BorderThickness="1" CornerRadius="10" Padding="12" MinWidth="260" MinHeight="180">
+                                                <ContentControl x:Name="PreviewContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                                            </Border>
+                                        </ScrollViewer>
+                                        <wv2:WebView2CompositionControl x:Name="MarkdownPreviewWebView" DefaultBackgroundColor="#FFFFFF" Visibility="Collapsed"/>
+                                        <StackPanel x:Name="PreviewErrorPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" Visibility="Collapsed">
+                                            <Border Width="48" Height="48" CornerRadius="15" Background="#FFF0F2" HorizontalAlignment="Center">
+                                                <TextBlock Text="!" Foreground="#C85E69" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="预览生成失败" Foreground="#55556B" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                            <TextBlock x:Name="PreviewErrorText" Foreground="#8A5960" FontSize="9.5" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="330" Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </controls:RoundedClipBorder>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 轻量状态栏。 -->
+        <Grid Grid.Row="3" Margin="16,0,16,4">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="▱" Foreground="White" FontSize="12" Margin="0,0,7,0"/>
+                <TextBlock x:Name="WorkspacePathText" Foreground="White" FontSize="9.5" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse Width="6" Height="6" Fill="#D9F7DF" Margin="0,0,7,0"/>
+                <TextBlock x:Name="HostStatusText" Text="正在初始化" Foreground="White" FontSize="9.5"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 统一风格的内嵌输入/确认对话框，替代 InputBox。 -->
+        <Grid x:Name="EditorDialogOverlay" Grid.RowSpan="4" Background="#6B353552" Visibility="Collapsed" Panel.ZIndex="100">
+            <Border Width="450" MaxHeight="390" Padding="25" Background="White" CornerRadius="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect><DropShadowEffect Color="#30304F" BlurRadius="28" ShadowDepth="7" Opacity="0.28"/></Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel>
+                        <TextBlock x:Name="EditorDialogTitle" Text="新建文件" Foreground="#3F3F54" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock x:Name="EditorDialogMessage" Text="输入相对于工程目录的文件名。" Foreground="#818195"
+                                   FontSize="11" TextWrapping="Wrap" Margin="0,7,0,0"/>
+                    </StackPanel>
+                    <StackPanel x:Name="EditorDialogTemplatePanel" Grid.Row="1" Margin="0,18,0,0" Visibility="Collapsed">
+                        <TextBlock Text="项模板" Foreground="#55556A" FontSize="10.5" FontWeight="SemiBold" Margin="2,0,0,6"/>
+                        <ComboBox x:Name="EditorItemTemplateBox" Height="38" Padding="11,0" SelectionChanged="EditorItemTemplateBox_SelectionChanged">
+                            <ComboBoxItem Content="C# 类文件" Tag="CSharpClass"/>
+                            <ComboBoxItem Content="WPF 页面（.xaml + .xaml.cs）" Tag="WpfPage"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <controls:TextEditor x:Name="EditorDialogInput" Grid.Row="2" Height="40" Margin="0,18,0,0" Padding="12,0"
+                                         Background="#FAFAFD" Foreground="#4A4A60" CaretBrush="{DynamicResource MainColor}"
+                                         EditorBorderBrush="#DEDEEB" HintText="输入名称" HintForeground="#9292A4" HintTextMargin="0"/>
+                    <TextBlock x:Name="EditorDialogError" Grid.Row="3" Foreground="#C65361" FontSize="10" Margin="2,7,0,0" TextWrapping="Wrap"/>
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button x:Name="DialogCancelButton" Content="取消" Margin="0,0,8,0" Click="DialogCancelButton_Click"/>
+                        <Button x:Name="DialogSecondaryButton" Content="不保存" Margin="0,0,8,0" Visibility="Collapsed" Click="DialogSecondaryButton_Click"/>
+                        <Button x:Name="DialogPrimaryButton" Content="创建" controls:ButtonAssist.IsPrimary="True" Margin="0" Click="DialogPrimaryButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

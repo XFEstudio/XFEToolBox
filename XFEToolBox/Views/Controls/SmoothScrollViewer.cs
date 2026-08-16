@@ -1,9 +1,9 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using XFEToolBox.Views.Behavior;
+using XFEToolBox.Client.Views.Behavior;
 
-namespace XFEToolBox.Views.Controls;
+namespace XFEToolBox.Client.Views.Controls;
 
 public class SmoothScrollViewer : ScrollViewer
 {
@@ -13,8 +13,8 @@ public class SmoothScrollViewer : ScrollViewer
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         double wheelChange = e.Delta;
+        lastLocation = VerticalOffset;
         double newOffset = lastLocation - wheelChange * ScrollDistanceMultiplier;
-        ScrollToVerticalOffset(lastLocation);
         if (newOffset < 0)
             newOffset = 0;
         if (newOffset > ScrollableHeight)

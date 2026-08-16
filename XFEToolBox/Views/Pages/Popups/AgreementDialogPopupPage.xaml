@@ -1,14 +1,15 @@
-﻿<Page x:Class="XFEToolBox.Views.Pages.Popups.AgreementDialogPopupPage"
+﻿<Page x:Class="XFEToolBox.Client.Views.Pages.Popups.AgreementDialogPopupPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:XFEToolBox.Views.Pages.Popups"
-      xmlns:viewmodel="clr-namespace:XFEToolBox.ViewModel.Pages.Popups"
-      xmlns:ctr="clr-namespace:XFEToolBox.Views.Controls"
+      xmlns:local="clr-namespace:XFEToolBox.Client.Views.Pages.Popups"
+      xmlns:viewmodel="clr-namespace:XFEToolBox.Client.ViewModel.Pages.Popups"
+      xmlns:popups="clr-namespace:XFEToolBox.Client.ViewModel.Pages.Popups"
+      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
-      d:DataContext="{d:DesignInstance Type=viewmodel:AgreementDialogPopupPageViewModel}"
+      d:DataContext="{d:DesignInstance Type=popups:AgreementDialogPopupPageViewModel}"
       Title="协议同意书" Name="agreementDialogPopupPage">
 
     <Grid>
@@ -24,21 +25,16 @@
         </Grid.RowDefinitions>
         <TextBlock Grid.ColumnSpan="2" Text="{Binding Title,ElementName=agreementDialogPopupPage}" Foreground="{DynamicResource MainColor}" FontSize="25" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,5,0,0" TextAlignment="Center"/>
         <Border Grid.ColumnSpan="2" Grid.Row="1" CornerRadius="5" BorderThickness="0,2,0,2" BorderBrush="{DynamicResource MainColor}" Margin="0,5,0,0" Padding="5,5,0,5">
-            <ctr:SmoothScrollViewer AnimateMilliseconds="800" ScrollDistanceMultiplier="0.5" ScrollChanged="SmoothScrollViewer_ScrollChanged">
-                <ctr:SmoothScrollViewer.Resources>
-                    <Style TargetType="ScrollBar" BasedOn="{StaticResource ConsoleScrollBar}"/>
-                </ctr:SmoothScrollViewer.Resources>
+            <controls:SmoothScrollViewer AnimateMilliseconds="800" ScrollDistanceMultiplier="0.5" ScrollChanged="SmoothScrollViewer_ScrollChanged">
                 <TextBlock Text="{Binding AgreementContent}" TextWrapping="Wrap"/>
-            </ctr:SmoothScrollViewer>
+            </controls:SmoothScrollViewer>
         </Border>
-        <ctr:CheckButton Grid.ColumnSpan="2" Grid.Row="2" Command="{Binding ReadCheckCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" IsEnabled="{Binding ReadCheckButtonEnable}" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,5,0,0">
+        <controls:CheckButton Grid.ColumnSpan="2" Grid.Row="2" Command="{Binding ReadCheckCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" IsEnabled="{Binding ReadCheckButtonEnable}" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,5,0,0">
             <TextBlock Text="我已阅读并知晓以上内容" VerticalAlignment="Center" Margin="5,0,0,0"/>
-        </ctr:CheckButton>
-        <ctr:RoundButton Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding AgreeCommand}">
-            <TextBlock Text="我同意" Foreground="#9898e7" Margin="16,8" IsEnabled="{Binding AcceptButtonEnable}"/>
-        </ctr:RoundButton>
-        <ctr:RoundButton Grid.Row="3" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding RefuseCommand}">
-            <TextBlock Text="我拒绝" Foreground="#9898e7" Margin="16,8"/>
-        </ctr:RoundButton>
+        </controls:CheckButton>
+        <Button Grid.Row="3" Content="我同意" controls:ButtonAssist.IsPrimary="True" MinWidth="96"
+                VerticalAlignment="Center" HorizontalAlignment="Center" IsEnabled="{Binding AcceptButtonEnable}" Command="{Binding AgreeCommand}"/>
+        <Button Grid.Row="3" Grid.Column="1" Content="我拒绝" MinWidth="96"
+                VerticalAlignment="Center" HorizontalAlignment="Center" Command="{Binding RefuseCommand}"/>
     </Grid>
 </Page>

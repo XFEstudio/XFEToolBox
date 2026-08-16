@@ -1,26 +1,36 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
-using XFEToolBox.Views.Windows;
+using CommunityToolkit.Mvvm.ComponentModel;
+using XFEToolBox.Client.Views.Windows;
 
-namespace XFEToolBox.ViewModel.Windows;
+namespace XFEToolBox.Client.ViewModel.Windows;
 
 public partial class PopupWindowViewModel(PopupWindow viewPage) : ObservableObject
 {
     [ObservableProperty]
     object? content;
     [ObservableProperty]
+    string popupTitle = string.Empty;
+    [ObservableProperty]
+    string popupSubtitle = string.Empty;
+    [ObservableProperty]
+    Thickness contentMargin = new(0, 0, 0, 15);
+    [ObservableProperty]
     Brush popupBackground = new SolidColorBrush(Color.FromRgb(152, 152, 231));
     [ObservableProperty]
-    Brush popupBorder = new SolidColorBrush(Color.FromRgb(80, 80, 183));
-    [ObservableProperty]
     Brush popupContentBackground = new SolidColorBrush(Colors.White);
-    [ObservableProperty]
-    Thickness popupThickness = new(2);
     [ObservableProperty]
     Visibility closeButtonVisibility = Visibility.Visible;
     [ObservableProperty]
     Visibility moveButtonVisibility = Visibility.Visible;
 
     public PopupWindow ViewPage { get; set; } = viewPage;
+
+    public GridLength HeaderGridLength => string.IsNullOrWhiteSpace(PopupTitle) && string.IsNullOrWhiteSpace(PopupSubtitle)
+        ? new GridLength(0)
+        : new GridLength(42);
+
+    partial void OnPopupTitleChanged(string value) => OnPropertyChanged(nameof(HeaderGridLength));
+
+    partial void OnPopupSubtitleChanged(string value) => OnPropertyChanged(nameof(HeaderGridLength));
 }

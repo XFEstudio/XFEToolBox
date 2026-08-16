@@ -1,19 +1,19 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using XFEExtension.NetCore.FileExtension;
+using XFEToolBox.Client.Views.Controls;
 using XFEToolBox.Core.Model;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.Views.Controls;
-using XFEToolBox.Views.Pages;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Pages;
 
-namespace XFEToolBox.ViewModel.Pages;
+namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObject
 {
@@ -55,13 +55,13 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
         {
             switch (textEditorTagPath)
             {
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
                     ReadWithDefaultValue(textBox, 3280);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
                     ReadWithDefaultValue(textBox, 8000);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
                     ReadWithDefaultValue(textBox, 9);
                     break;
                 default:
@@ -69,9 +69,9 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
                     break;
             }
         }
-        else if (child is PasswordHintTextBox passwordHintTextBox && passwordHintTextBox.Tag is string passwordTagPath)
+        else if (child is PasswordEditor passwordEditor && passwordEditor.Tag is string passwordTagPath)
         {
-            passwordHintTextBox.Password = ProfileHelper.GetProfileValue<string>(passwordTagPath) ?? string.Empty;
+            passwordEditor.Password = ProfileHelper.GetProfileValue<string>(passwordTagPath) ?? string.Empty;
         }
     }
 
@@ -101,29 +101,29 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
 
     public void TextChange(object sender, TextChangedEventArgs e)
     {
-        if (e.OriginalSource is TextBox textBox && textBox.Name == "mainTextBox" && sender is TextEditor textEditor && textEditor.Tag is string commandPath)
+        if (sender is TextEditor textEditor && textEditor.Tag is string commandPath)
         {
             switch (commandPath)
             {
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConsolePort":
                     SetWithDefaultValue(textEditor, 3280);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.MaxLine":
                     SetWithDefaultValue(textEditor, 8000);
                     break;
-                case "XFEToolBox.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread":
                     SetWithDefaultValue(textEditor, 9);
                     break;
                 default:
-                    ProfileHelper.SetProfileValue(commandPath, textBox.Text);
+                    ProfileHelper.SetProfileValue(commandPath, textEditor.Text);
                     break;
             }
         }
     }
 
-    public void PasswordChange(object sender, PasswordChangeEventArgs e)
+    public void PasswordChanged(object sender, PasswordChangedEventArgs e)
     {
-        if (sender is PasswordHintTextBox passwordHintTextBox && passwordHintTextBox.Tag is string commandPath)
+        if (sender is PasswordEditor passwordEditor && passwordEditor.Tag is string commandPath)
         {
             switch (commandPath)
             {

@@ -1,79 +1,64 @@
 ﻿using System.Windows;
 using System.Windows.Media.Animation;
-using XFEExtension.NetCore.InputSimulator;
-using XFEToolBox.Profiles.CrossVersionProfiles;
-using XFEToolBox.Utilities;
-using XFEToolBox.ViewModel.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Utilities.Server;
+using MainWindowViewModel = XFEToolBox.Client.ViewModel.Windows.MainWindowViewModel;
 
-namespace XFEToolBox.Views.Windows
+namespace XFEToolBox.Client.Views.Windows;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public static MainWindow? Current { get; private set; }
+    public MainWindowViewModel ViewModel { get; private set; }
+    public MainWindow()
     {
-        public static MainWindow? Current { get; private set; }
-        public MainWindowViewModel ViewModel { get; private set; }
-        public MainWindow()
+        InitializeComponent();
+        ViewModel = new MainWindowViewModel(this);
+        DataContext = ViewModel;
+        Current = this;
+        Width = SystemProfile.MainWindowWidth;
+        Height = SystemProfile.MainWindowHeight;
+        WindowState = SystemProfile.StartWithMaximize ? WindowState.Maximized : WindowState.Normal;
+    }
+
+    private void CaptionBar_CloseRequested(object? sender, EventArgs e) => MainWindowViewModel.CloseWindow();
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        mainButton.IsChecked = true;
+        ViewModel.GetDPIScale();
+    }
+
+    private void ContentFrame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
+    {
+        var storyboard = new Storyboard();
+        var fadeIn = new DoubleAnimation
         {
-            InitializeComponent();
-            ViewModel = new MainWindowViewModel(this);
-            DataContext = ViewModel;
-            Current = this;
-            Width = SystemProfile.MainWindowWidth;
-            Height = SystemProfile.MainWindowHeight;
-            WindowState = SystemProfile.StartWithMaximize ? WindowState.Maximized : WindowState.Normal;
-        }
+            From = 0,
+            To = 1,
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(fadeIn, contentFrame);
+        Storyboard.SetTargetProperty(fadeIn, new PropertyPath("Opacity"));
+        storyboard.Children.Add(fadeIn);
+        storyboard.Begin();
+    }
 
-        private void MinimizeImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.Minimize();
+    private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
 
-        private void CloseWindowImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => MainWindowViewModel.CloseWindow();
+    private void BackTabBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => NavigationCenter.GoBack();
 
-        private void DragTabBorder_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
-            {
-                if (WindowState == WindowState.Maximized)
-                {
-                    WindowState = WindowState.Normal;
-                    var mousePosition = InputSimulator.GetMousePosition();
-                    Left = mousePosition.X / SystemProfile.CurrentWindowDPIScale - Width / 2;
-                    Top = mousePosition.Y / SystemProfile.CurrentWindowDPIScale - 10;
-                }
-                DragMove();
-            }
-        }
-
-        private void DragTabBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (ViewModel.CheckDoubleClick(500))
-                _ = WindowState == WindowState.Maximized ? WindowState = WindowState.Normal : WindowState = WindowState.Maximized;
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            mainButton.IsChecked = true;
-            ViewModel.GetDPIScale();
-        }
-
-        private void ContentFrame_Navigated(object sender, System.Windows.Navigation.NavigationEventArgs e)
-        {
-            var storyboard = new Storyboard();
-            var fadeIn = new DoubleAnimation
-            {
-                From = 0,
-                To = 1,
-                Duration = new Duration(TimeSpan.FromMilliseconds(300)),
-                EasingFunction = new CubicEase() { EasingMode = EasingMode.EaseOut }
-            };
-            Storyboard.SetTarget(fadeIn, contentFrame);
-            Storyboard.SetTargetProperty(fadeIn, new PropertyPath("Opacity"));
-            storyboard.Children.Add(fadeIn);
-            storyboard.Begin();
-        }
-
-        private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
-
-        private void BackTabBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => NavigationCenter.GoBack();
+    private void AccountEntry_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ViewModel.NavigateToPageCommand.Execute("profile");
     }
 }

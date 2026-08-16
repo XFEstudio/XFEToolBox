@@ -4,7 +4,7 @@ using System.IO;
 using System.Xml;
 using System.Windows.Markup;
 
-namespace XFEToolBox.Utilities;
+namespace XFEToolBox.Client.Utilities;
 
 public static class ControlHelper
 {

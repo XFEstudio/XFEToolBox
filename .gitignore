@@ -353,6 +353,9 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
+# XFEToolBox server runtime package storage
+XFEToolBox.Server/Data/
+
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
