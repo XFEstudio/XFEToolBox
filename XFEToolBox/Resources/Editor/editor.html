@@ -26,8 +26,10 @@
             display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; overflow-y: hidden;
             padding: 5px 7px 0; background: var(--surface-subtle); border-bottom: 1px solid var(--border);
         }
-        #tabs::-webkit-scrollbar { height: 3px; }
-        #tabs::-webkit-scrollbar-thumb { background: #c8c7e9; border-radius: 3px; }
+        #tabs::-webkit-scrollbar { height: 8px; }
+        #tabs::-webkit-scrollbar-track { background: #ececfa; border-radius: 5px; }
+        #tabs::-webkit-scrollbar-thumb { background: #aaa9e9; border: 2px solid #ececfa; border-radius: 5px; }
+        #tabs::-webkit-scrollbar-thumb:hover { background: #9292df; }
         .tab {
             min-width: 126px; max-width: 220px; height: 36px; display: flex; align-items: center;
             padding: 0 10px; gap: 7px; border: 1px solid transparent; border-bottom: 0;
@@ -76,6 +78,9 @@
             --border: #34344a; --text: #deddec; --muted: #85859b;
         }
         body.dark #tabs { background: #1b1b2b; }
+        body.dark #tabs::-webkit-scrollbar-track { background: #2d2d45; }
+        body.dark #tabs::-webkit-scrollbar-thumb { background: #7777c9; border-color: #2d2d45; }
+        body.dark #tabs::-webkit-scrollbar-thumb:hover { background: #9898e7; }
         body.dark .tab:hover { background: #29293e; color: #d3d3e4; }
         body.dark .tab.drag-over { background: #353550; }
         body.dark .tab.active { background: #202033; color: white; }
@@ -114,70 +119,184 @@
         require.config({ paths: { vs: './monaco/vs' } });
         require(['vs/editor/editor.main'], function () {
             monaco.editor.defineTheme('xfe-light', {
-                base: 'vs', inherit: true,
+                base: 'vs', inherit: true, semanticHighlighting: true,
                 rules: [
-                    { token: 'keyword', foreground: '7777C9', fontStyle: 'bold' },
-                    { token: 'string', foreground: '3F8A68' },
-                    { token: 'number', foreground: 'C46D38' },
-                    { token: 'comment', foreground: '9898A8', fontStyle: 'italic' },
-                    { token: 'type', foreground: '5C75B8' },
-                    { token: 'tag', foreground: '715DB5' },
-                    { token: 'attribute.name', foreground: 'A05E78' }
+                    { token: 'keyword', foreground: '7553B5', fontStyle: 'bold' },
+                    { token: 'keyword.control', foreground: '8A3FA0', fontStyle: 'bold' },
+                    { token: 'keyword.json', foreground: '9A496D', fontStyle: 'bold' },
+                    { token: 'namespace', foreground: '7061B4' },
+                    { token: 'namespace.cpp', foreground: 'A45178', fontStyle: 'bold' },
+                    { token: 'type', foreground: '2F6FA3' },
+                    { token: 'class', foreground: '2F6FA3', fontStyle: 'bold' },
+                    { token: 'interface', foreground: '087B83', fontStyle: 'bold' },
+                    { token: 'struct', foreground: 'A75C36', fontStyle: 'bold' },
+                    { token: 'enum', foreground: '99671F', fontStyle: 'bold' },
+                    { token: 'attribute', foreground: '9D4D78' },
+                    { token: 'method', foreground: '7250A5' },
+                    { token: 'property', foreground: 'A14970' },
+                    { token: 'field', foreground: '956025' },
+                    { token: 'event', foreground: 'B04C69' },
+                    { token: 'parameter', foreground: '855E42' },
+                    { token: 'variable', foreground: '4D6578' },
+                    { token: 'constant', foreground: 'B04D61', fontStyle: 'bold' },
+                    { token: 'operator', foreground: '6B6682' },
+                    { token: 'delimiter', foreground: '77728B' },
+                    { token: 'number', foreground: 'B45B32' },
+                    { token: 'number.hex', foreground: 'A35467' },
+                    { token: 'string', foreground: '2E7D5B' },
+                    { token: 'string.key.json', foreground: '2F6FA3' },
+                    { token: 'string.value.json', foreground: '2E7D5B' },
+                    { token: 'string.escape', foreground: 'B45B32', fontStyle: 'bold' },
+                    { token: 'string.escape.invalid', foreground: 'D13F57', fontStyle: 'bold underline' },
+                    { token: 'comment', foreground: '7F8998', fontStyle: 'italic' },
+                    { token: 'tag', foreground: '6652B5', fontStyle: 'bold' },
+                    { token: 'attribute.name', foreground: 'A04D70' },
+                    { token: 'attribute.value', foreground: '2E7D5B' },
+                    { token: 'metatag', foreground: '8C5B2F' },
+                    { token: 'strong', foreground: 'A14970', fontStyle: 'bold' },
+                    { token: 'emphasis', foreground: '2F6FA3', fontStyle: 'italic' },
+                    { token: 'link', foreground: '6262C2', fontStyle: 'underline' },
+                    { token: 'variable.source', foreground: '985B2F' }
                 ],
                 colors: {
                     'editor.background': '#FBFBFE', 'editor.foreground': '#444459',
                     'editorLineNumber.foreground': '#B0AFC0', 'editorLineNumber.activeForeground': '#6969B8',
                     'editor.selectionBackground': '#9898E74A', 'editor.inactiveSelectionBackground': '#B9B9E72E',
+                    'editor.selectionHighlightBackground': '#9898E724', 'editor.wordHighlightBackground': '#70A7D92A',
+                    'editor.wordHighlightStrongBackground': '#B17BB632', 'editor.findMatchBackground': '#F0C66A75',
+                    'editor.findMatchHighlightBackground': '#F0C66A36', 'editor.findRangeHighlightBackground': '#9898E71D',
                     'editorCursor.foreground': '#7777C9', 'editorIndentGuide.background1': '#E8E7F0',
                     'editorIndentGuide.activeBackground1': '#C7C6DF', 'editor.lineHighlightBackground': '#F3F2FA',
                     'editorWhitespace.foreground': '#D5D4E2', 'editorWidget.background': '#FFFFFF',
-                    'editorWidget.border': '#D9D8E7', 'editorSuggestWidget.selectedBackground': '#EDECF9',
+                    'editorWidget.border': '#D9D8E7', 'editorWidget.resizeBorder': '#9898E7',
                     'editorSuggestWidget.background': '#FFFFFF', 'editorSuggestWidget.foreground': '#343449',
                     'editorSuggestWidget.selectedForeground': '#29293D', 'editorSuggestWidget.highlightForeground': '#5555B8',
                     'editorSuggestWidget.focusHighlightForeground': '#4545A7', 'editorSuggestWidget.selectedBackground': '#DCDCF6',
                     'editorSuggestWidget.selectedIconForeground': '#4A4AA5', 'editorSuggestWidgetStatus.foreground': '#66667B',
                     'editorSuggestWidget.border': '#BEBED8', 'editorHoverWidget.background': '#FFFFFF',
                     'editorHoverWidget.foreground': '#343449', 'editorHoverWidget.border': '#BEBED8',
-                    'minimap.background': '#F8F8FC', 'scrollbarSlider.background': '#B7B6D84D',
-                    'scrollbarSlider.hoverBackground': '#9D9CCD66', 'scrollbarSlider.activeBackground': '#8585BC73'
+                    'editorHoverWidget.highlightForeground': '#5959B5', 'editorHoverWidget.statusBarBackground': '#F4F3FB',
+                    'editorCodeLens.foreground': '#85849B', 'editorLink.activeForeground': '#5858BC',
+                    'editorInlayHint.foreground': '#77758D', 'editorInlayHint.background': '#EEEFFA',
+                    'editorError.foreground': '#D9435D', 'editorWarning.foreground': '#C77A1E',
+                    'editorInfo.foreground': '#3C7FBA', 'editorHint.foreground': '#766AC0',
+                    'editorOverviewRuler.errorForeground': '#D9435DB8', 'editorOverviewRuler.warningForeground': '#C77A1EB8',
+                    'editorOverviewRuler.infoForeground': '#3C7FBAB8', 'editorLightBulb.foreground': '#B47A19',
+                    'editorBracketHighlight.foreground1': '#7857C4', 'editorBracketHighlight.foreground2': '#3279B5',
+                    'editorBracketHighlight.foreground3': '#25866C', 'editorBracketHighlight.foreground4': '#C06A34',
+                    'editorBracketHighlight.foreground5': '#B04D78', 'editorBracketHighlight.foreground6': '#3D8E98',
+                    'editorBracketHighlight.unexpectedBracket.foreground': '#D9435D',
+                    'editorBracketPairGuide.background1': '#7857C438', 'editorBracketPairGuide.background2': '#3279B538',
+                    'editorBracketPairGuide.background3': '#25866C38', 'editorBracketPairGuide.activeBackground1': '#7857C4A8',
+                    'editorBracketPairGuide.activeBackground2': '#3279B5A8', 'editorBracketPairGuide.activeBackground3': '#25866CA8',
+                    'editorGutter.foldingControlForeground': '#7777B8', 'editorStickyScroll.background': '#F7F6FC',
+                    'editorStickyScroll.border': '#E2E1ED', 'editorStickyScrollHover.background': '#EEEFFA',
+                    'minimap.background': '#F8F8FC', 'scrollbarSlider.background': '#9898E77A',
+                    'scrollbarSlider.hoverBackground': '#8989D9B3', 'scrollbarSlider.activeBackground': '#7777C9E6'
                 }
             });
             monaco.editor.defineTheme('xfe-dark', {
-                base: 'vs-dark', inherit: true,
+                base: 'vs-dark', inherit: true, semanticHighlighting: true,
                 rules: [
-                    { token: 'keyword', foreground: 'C9A7FF' },
+                    { token: 'keyword', foreground: 'C69CF4', fontStyle: 'bold' },
+                    { token: 'keyword.control', foreground: 'F0A7E1', fontStyle: 'bold' },
+                    { token: 'keyword.json', foreground: 'F5A6CD', fontStyle: 'bold' },
+                    { token: 'namespace', foreground: 'AFA2E8' },
+                    { token: 'namespace.cpp', foreground: 'F5A6CD', fontStyle: 'bold' },
+                    { token: 'type', foreground: '7DCFFF' },
+                    { token: 'class', foreground: '7DCFFF', fontStyle: 'bold' },
+                    { token: 'interface', foreground: '5AD6C8', fontStyle: 'bold' },
+                    { token: 'struct', foreground: 'F5A97F', fontStyle: 'bold' },
+                    { token: 'enum', foreground: 'F0C57A', fontStyle: 'bold' },
+                    { token: 'attribute', foreground: 'F5A6CD' },
+                    { token: 'method', foreground: 'D2B0F3' },
+                    { token: 'property', foreground: 'FFB3D2' },
+                    { token: 'field', foreground: 'E8C07D' },
+                    { token: 'event', foreground: 'FF8EAC' },
+                    { token: 'parameter', foreground: 'F0C6A8' },
+                    { token: 'variable', foreground: 'C6D0F5' },
+                    { token: 'constant', foreground: 'FF8EA1', fontStyle: 'bold' },
+                    { token: 'operator', foreground: 'B7B0D8' },
+                    { token: 'delimiter', foreground: '9390AA' },
                     { token: 'string', foreground: 'A6E3A1' },
                     { token: 'number', foreground: 'FAB387' },
-                    { token: 'comment', foreground: '6C7086', fontStyle: 'italic' }
+                    { token: 'number.hex', foreground: 'F5A6CD' },
+                    { token: 'string.key.json', foreground: '8AADF4' },
+                    { token: 'string.value.json', foreground: 'A6E3A1' },
+                    { token: 'string.escape', foreground: 'F9C36A', fontStyle: 'bold' },
+                    { token: 'string.escape.invalid', foreground: 'FF6F91', fontStyle: 'bold underline' },
+                    { token: 'comment', foreground: '8389A1', fontStyle: 'italic' },
+                    { token: 'tag', foreground: 'CBA6F7', fontStyle: 'bold' },
+                    { token: 'attribute.name', foreground: 'F5C2E7' },
+                    { token: 'attribute.value', foreground: 'A6E3A1' },
+                    { token: 'metatag', foreground: 'F0C57A' },
+                    { token: 'strong', foreground: 'FFB3D2', fontStyle: 'bold' },
+                    { token: 'emphasis', foreground: '7DCFFF', fontStyle: 'italic' },
+                    { token: 'link', foreground: 'B4BEFE', fontStyle: 'underline' },
+                    { token: 'variable.source', foreground: 'F5A97F' }
                 ],
                 colors: {
                     'editor.background': '#202033', 'editor.foreground': '#d9d9e8',
                     'editorLineNumber.foreground': '#58586b', 'editorLineNumber.activeForeground': '#cdd6f4',
                     'editor.selectionBackground': '#55559A70', 'editor.inactiveSelectionBackground': '#45456A55',
+                    'editor.selectionHighlightBackground': '#7373BA35', 'editor.wordHighlightBackground': '#5A9BCD32',
+                    'editor.wordHighlightStrongBackground': '#BE7DB43D', 'editor.findMatchBackground': '#D9A84D76',
+                    'editor.findMatchHighlightBackground': '#D9A84D3E', 'editor.findRangeHighlightBackground': '#7777C929',
                     'editorCursor.foreground': '#b4befe', 'editorIndentGuide.background1': '#343447',
-                    'editor.lineHighlightBackground': '#26263A', 'minimap.background': '#1E1E30',
+                    'editorIndentGuide.activeBackground1': '#666684', 'editor.lineHighlightBackground': '#26263A',
+                    'editorWhitespace.foreground': '#414159', 'editorWidget.background': '#29293E',
+                    'editorWidget.border': '#555574', 'editorWidget.resizeBorder': '#9898E7',
                     'editorSuggestWidget.background': '#29293E', 'editorSuggestWidget.foreground': '#ECECF6',
                     'editorSuggestWidget.selectedForeground': '#FFFFFF', 'editorSuggestWidget.highlightForeground': '#C7C7FF',
                     'editorSuggestWidget.focusHighlightForeground': '#D9D9FF', 'editorSuggestWidget.selectedBackground': '#444466',
                     'editorSuggestWidget.selectedIconForeground': '#D7D7FF', 'editorSuggestWidgetStatus.foreground': '#B8B8CA',
                     'editorSuggestWidget.border': '#555574', 'editorHoverWidget.background': '#29293E',
-                    'editorHoverWidget.foreground': '#ECECF6', 'editorHoverWidget.border': '#555574'
+                    'editorHoverWidget.foreground': '#ECECF6', 'editorHoverWidget.border': '#555574',
+                    'editorHoverWidget.highlightForeground': '#C8C8FF', 'editorHoverWidget.statusBarBackground': '#242438',
+                    'editorCodeLens.foreground': '#9998B0', 'editorLink.activeForeground': '#C7C7FF',
+                    'editorInlayHint.foreground': '#BBB9CC', 'editorInlayHint.background': '#313149',
+                    'editorError.foreground': '#FF6F91', 'editorWarning.foreground': '#F0B35B',
+                    'editorInfo.foreground': '#69B9F5', 'editorHint.foreground': '#B4A7F5',
+                    'editorOverviewRuler.errorForeground': '#FF6F91C8', 'editorOverviewRuler.warningForeground': '#F0B35BC8',
+                    'editorOverviewRuler.infoForeground': '#69B9F5C8', 'editorLightBulb.foreground': '#F0C57A',
+                    'editorBracketHighlight.foreground1': '#C69CF4', 'editorBracketHighlight.foreground2': '#7DCFFF',
+                    'editorBracketHighlight.foreground3': '#5AD6C8', 'editorBracketHighlight.foreground4': '#F5A97F',
+                    'editorBracketHighlight.foreground5': '#F5A6CD', 'editorBracketHighlight.foreground6': '#F0C57A',
+                    'editorBracketHighlight.unexpectedBracket.foreground': '#FF6F91',
+                    'editorBracketPairGuide.background1': '#C69CF44A', 'editorBracketPairGuide.background2': '#7DCFFF4A',
+                    'editorBracketPairGuide.background3': '#5AD6C84A', 'editorBracketPairGuide.activeBackground1': '#C69CF4C0',
+                    'editorBracketPairGuide.activeBackground2': '#7DCFFFC0', 'editorBracketPairGuide.activeBackground3': '#5AD6C8C0',
+                    'editorGutter.foldingControlForeground': '#AFA2E8', 'editorStickyScroll.background': '#222236',
+                    'editorStickyScroll.border': '#3D3D55', 'editorStickyScrollHover.background': '#303049',
+                    'minimap.background': '#1E1E30',
+                    'scrollbarSlider.background': '#9898E77A', 'scrollbarSlider.hoverBackground': '#AAAAEEB3',
+                    'scrollbarSlider.activeBackground': '#BDBDF5E6'
                 }
             });
+            registerSemanticHighlighting();
             editor = monaco.editor.create(document.getElementById('editor'), {
                 theme: 'xfe-light', automaticLayout: true, fontFamily: "'Cascadia Code', 'JetBrains Mono', Consolas, monospace",
-                fontSize: 13.5, lineHeight: 22, fontLigatures: true,
+                fontSize: 13.5, lineHeight: 22, fontLigatures: true, fontWeight: '450',
                 minimap: { enabled: true, renderCharacters: false, maxColumn: 100 }, smoothScrolling: true,
                 cursorSmoothCaretAnimation: 'on', bracketPairColorization: { enabled: true },
-                cursorBlinking: 'smooth', guides: { bracketPairs: true, indentation: true }, padding: { top: 14, bottom: 12 },
+                cursorBlinking: 'smooth', guides: { bracketPairs: true, bracketPairsHorizontal: 'active', highlightActiveBracketPair: true, indentation: true, highlightActiveIndentation: true }, padding: { top: 14, bottom: 12 },
                 quickSuggestions: { other: true, comments: false, strings: false },
-                suggestOnTriggerCharacters: true, wordBasedSuggestions: 'matchingDocuments',
+                suggestOnTriggerCharacters: true, wordBasedSuggestions: 'matchingDocuments', acceptSuggestionOnEnter: 'smart',
+                tabCompletion: 'on', snippetSuggestions: 'top', suggestSelection: 'recentlyUsedByPrefix',
+                suggest: { showIcons: true, showStatusBar: true, preview: true, previewMode: 'subwordSmart', showInlineDetails: true, localityBonus: true, shareSuggestSelections: true },
+                parameterHints: { enabled: true, cycle: true }, hover: { enabled: true, delay: 280, sticky: true },
+                inlineSuggest: { enabled: true, showToolbar: 'onHover' }, inlayHints: { enabled: 'on' },
+                'semanticHighlighting.enabled': true,
                 formatOnPaste: true, formatOnType: true, tabSize: 4, insertSpaces: true,
-                renderLineHighlight: 'all', renderWhitespace: 'selection', scrollBeyondLastLine: false,
-                stickyScroll: { enabled: true }, scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 }
+                autoClosingBrackets: 'always', autoClosingQuotes: 'always', autoSurround: 'languageDefined',
+                matchBrackets: 'always', selectionHighlight: true, occurrencesHighlight: 'singleFile',
+                renderLineHighlight: 'all', renderWhitespace: 'selection', renderControlCharacters: true, scrollBeyondLastLine: false,
+                folding: true, foldingHighlight: true, showFoldingControls: 'mouseover', links: true, colorDecorators: true,
+                stickyScroll: { enabled: true, maxLineCount: 4 }, scrollbar: { verticalScrollbarSize: 12, horizontalScrollbarSize: 12 }
             });
 
             registerCompletions();
+            registerLanguageHints();
             registerFormatters();
             editor.onDidChangeCursorPosition(updateStatus);
             editor.onDidChangeModelContent(() => {
@@ -358,23 +477,161 @@
             const text = model.getValue();
             if (model.getLanguageId() === 'csharp') {
                 const stack = [];
-                for (let i = 0; i < text.length; i++) {
-                    if (text[i] === '{') stack.push(i);
-                    if (text[i] === '}' && stack.length === 0) {
-                        const p = model.getPositionAt(i); markers.push(marker('多余的右花括号', p.lineNumber, p.column));
-                    } else if (text[i] === '}') stack.pop();
+                const pairs = { '{': '}', '[': ']', '(': ')' };
+                const closing = new Set(Object.values(pairs));
+                const lines = model.getLinesContent();
+                const lexicalLines = monaco.editor.tokenize(text, 'csharp');
+                for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+                    const line = lines[lineIndex];
+                    const tokens = lexicalLines[lineIndex] || [];
+                    for (let columnIndex = 0; columnIndex < line.length; columnIndex++) {
+                        if (/comment|string/.test(lexicalTypeAt(tokens, columnIndex))) continue;
+                        const character = line[columnIndex];
+                        if (pairs[character]) {
+                            stack.push({ character, line: lineIndex + 1, column: columnIndex + 1 });
+                            continue;
+                        }
+                        if (!closing.has(character)) continue;
+                        const opening = stack[stack.length - 1];
+                        if (!opening) {
+                            markers.push(marker(`没有与“${character}”匹配的左括号`, lineIndex + 1, columnIndex + 1));
+                        } else if (pairs[opening.character] !== character) {
+                            markers.push(marker(`此处应使用“${pairs[opening.character]}”来匹配第 ${opening.line} 行的“${opening.character}”`, lineIndex + 1, columnIndex + 1));
+                            stack.pop();
+                        } else {
+                            stack.pop();
+                        }
+                    }
                 }
-                stack.forEach(i => { const p = model.getPositionAt(i); markers.push(marker('缺少匹配的右花括号', p.lineNumber, p.column)); });
+                stack.forEach(opening => markers.push(marker(`缺少与“${opening.character}”匹配的“${pairs[opening.character]}”`, opening.line, opening.column)));
             } else if (model.getLanguageId() === 'xml' && text.trim()) {
                 const parsed = new DOMParser().parseFromString(text, 'application/xml');
                 const error = parsed.querySelector('parsererror');
-                if (error) markers.push(marker(error.textContent.split('\n')[0], 1, 1));
+                if (error) {
+                    const message = error.textContent.split('\n')[0];
+                    const line = Number(/(?:line|行)\s*[:：]?\s*(\d+)/i.exec(error.textContent)?.[1] || 1);
+                    const column = Number(/(?:column|列)\s*[:：]?\s*(\d+)/i.exec(error.textContent)?.[1] || 1);
+                    markers.push(marker(`XAML / XML 结构错误：${message}`, line, column));
+                }
+            } else if (model.getLanguageId() === 'json' && text.trim()) {
+                try {
+                    JSON.parse(text);
+                } catch (error) {
+                    const offset = Number(/position\s+(\d+)/i.exec(error.message)?.[1] || 0);
+                    const position = model.getPositionAt(Math.min(offset, text.length));
+                    markers.push(marker(`JSON 语法错误：${error.message}`, position.lineNumber, position.column));
+                }
             }
             monaco.editor.setModelMarkers(model, 'xfe-basic-diagnostics', markers);
             document.getElementById('diagnostics').textContent = markers.length ? `⚠ ${markers.length} 个问题` : '✓ 0 个问题';
         }
 
-        function marker(message, line, column) { return { severity: monaco.MarkerSeverity.Error, message, startLineNumber: line, startColumn: column, endLineNumber: line, endColumn: column + 1 }; }
+        function marker(message, line, column) {
+            return { severity: monaco.MarkerSeverity.Error, source: 'XFE 编辑器', message, startLineNumber: line, startColumn: column, endLineNumber: line, endColumn: column + 1 };
+        }
+
+        function registerSemanticHighlighting() {
+            const legend = {
+                tokenTypes: ['namespace', 'type', 'class', 'interface', 'struct', 'enum', 'attribute', 'method', 'property', 'field', 'event', 'parameter', 'variable', 'constant'],
+                tokenModifiers: ['declaration', 'readonly', 'static', 'async']
+            };
+            const typeIndexes = new Map(legend.tokenTypes.map((type, index) => [type, index]));
+            monaco.languages.registerDocumentSemanticTokensProvider('csharp', {
+                getLegend: () => legend,
+                provideDocumentSemanticTokens(model, _lastResultId, cancellationToken) {
+                    const values = [];
+                    const lines = model.getLinesContent();
+                    const lexicalLines = monaco.editor.tokenize(model.getValue(), 'csharp');
+                    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+                        if (cancellationToken.isCancellationRequested) return null;
+                        const line = lines[lineIndex];
+                        const lexicalTokens = lexicalLines[lineIndex] || [];
+                        const identifierPattern = /@?[A-Za-z_]\w*/g;
+                        let match;
+                        while ((match = identifierPattern.exec(line)) !== null) {
+                            const lexicalType = lexicalTypeAt(lexicalTokens, match.index);
+                            if (/comment|string|number|keyword|directive/.test(lexicalType)) continue;
+                            const rawWord = match[0];
+                            const word = rawWord.startsWith('@') ? rawWord.slice(1) : rawWord;
+                            const before = line.slice(0, match.index);
+                            const after = line.slice(match.index + rawWord.length);
+                            const classification = classifyCSharpIdentifier(word, before, after);
+                            if (!classification || !typeIndexes.has(classification.type)) continue;
+                            let modifierMask = 0;
+                            classification.modifiers.forEach(modifier => {
+                                const modifierIndex = legend.tokenModifiers.indexOf(modifier);
+                                if (modifierIndex >= 0) modifierMask |= (1 << modifierIndex);
+                            });
+                            values.push({ line: lineIndex, start: match.index, length: rawWord.length, type: typeIndexes.get(classification.type), modifiers: modifierMask });
+                        }
+                    }
+                    values.sort((left, right) => left.line - right.line || left.start - right.start);
+                    const data = [];
+                    let previousLine = 0;
+                    let previousStart = 0;
+                    values.forEach(value => {
+                        const deltaLine = value.line - previousLine;
+                        const deltaStart = deltaLine === 0 ? value.start - previousStart : value.start;
+                        data.push(deltaLine, deltaStart, value.length, value.type, value.modifiers);
+                        previousLine = value.line;
+                        previousStart = value.start;
+                    });
+                    return { data: new Uint32Array(data) };
+                },
+                releaseDocumentSemanticTokens() { }
+            });
+        }
+
+        function lexicalTypeAt(tokens, offset) {
+            let type = '';
+            for (const token of tokens) {
+                if (token.offset > offset) break;
+                type = token.type || '';
+            }
+            return type;
+        }
+
+        function classifyCSharpIdentifier(word, before, after) {
+            const modifiers = [];
+            const addDeclarationModifiers = () => {
+                modifiers.push('declaration');
+                if (/\breadonly\b/.test(before)) modifiers.push('readonly');
+                if (/\bstatic\b/.test(before)) modifiers.push('static');
+                if (/\basync\b/.test(before)) modifiers.push('async');
+            };
+            if (/\b(?:namespace|using)\s+(?:global::)?(?:[A-Za-z_]\w*\.)*$/.test(before)) return { type: 'namespace', modifiers };
+            if (/\b(?:class|record)\s+$/.test(before)) { addDeclarationModifiers(); return { type: 'class', modifiers }; }
+            if (/\binterface\s+$/.test(before)) { addDeclarationModifiers(); return { type: 'interface', modifiers }; }
+            if (/\bstruct\s+$/.test(before)) { addDeclarationModifiers(); return { type: 'struct', modifiers }; }
+            if (/\benum\s+$/.test(before)) { addDeclarationModifiers(); return { type: 'enum', modifiers }; }
+
+            const lastAttributeOpen = before.lastIndexOf('[');
+            const lastAttributeClose = before.lastIndexOf(']');
+            if (lastAttributeOpen > lastAttributeClose && /^[A-Z]/.test(word)) return { type: 'attribute', modifiers };
+
+            const declarationPrefix = /\b(?:var|bool|byte|sbyte|short|ushort|int|uint|long|ulong|float|double|decimal|char|string|object|dynamic|[A-Z][A-Za-z0-9_.]*(?:<[^;=(){}]+>)?(?:\[\])?)[?]?\s+$/;
+            const isDeclaration = declarationPrefix.test(before);
+            if (/\bevent\s+[A-Za-z_][\w.<>,?\[\]]*\s+$/.test(before)) { addDeclarationModifiers(); return { type: 'event', modifiers }; }
+            if (/\bconst\s+[A-Za-z_][\w.<>,?\[\]]*\s+$/.test(before)) { addDeclarationModifiers(); modifiers.push('readonly'); return { type: 'constant', modifiers }; }
+            if (isDeclaration && /^\s*(?:\{|=>)/.test(after)) { addDeclarationModifiers(); return { type: 'property', modifiers }; }
+
+            if (/^\s*(?:<[^>\r\n]+>)?\s*\(/.test(after)) {
+                if (isDeclaration) addDeclarationModifiers();
+                return { type: 'method', modifiers };
+            }
+            if (/\.\s*$/.test(before)) return { type: 'property', modifiers };
+            if (isDeclaration) {
+                addDeclarationModifiers();
+                const lastOpenParenthesis = before.lastIndexOf('(');
+                const lastCloseParenthesis = before.lastIndexOf(')');
+                if (lastOpenParenthesis > lastCloseParenthesis) return { type: 'parameter', modifiers };
+                return { type: word.startsWith('_') ? 'field' : 'variable', modifiers };
+            }
+            if (/^[A-Z][A-Z0-9_]+$/.test(word)) return { type: 'constant', modifiers: ['readonly'] };
+            if (word.startsWith('_')) return { type: 'field', modifiers };
+            if (/^[A-Z]/.test(word)) return { type: 'type', modifiers };
+            return { type: 'variable', modifiers };
+        }
 
         function registerCompletions() {
             const K = monaco.languages.CompletionItemKind;
@@ -386,13 +643,18 @@
                         'int', 'long', 'double', 'decimal', 'bool', 'object', 'void', 'async', 'await', 'return',
                         'new', 'this', 'base', 'null', 'true', 'false', 'get', 'set', 'init', 'required', 'readonly',
                         'virtual', 'override', 'event', 'delegate', 'if', 'else', 'switch', 'case', 'for', 'foreach',
-                        'while', 'try', 'catch', 'finally', 'throw'].map(keyword => word(keyword, K.Keyword)),
+                        'while', 'try', 'catch', 'finally', 'throw'].map(keyword => word(keyword, K.Keyword, 'C# 关键字', csharpKeywordDocumentation(keyword))),
                     snippet('wpf-page', 'WPF UserControl 模板', 'public partial class ${1:ToolView} : UserControl\n{\n    public ${1:ToolView}()\n    {\n        InitializeComponent();\n    }\n}', K.Snippet),
                     snippet('observable-property', 'MVVM 可观察属性', '[ObservableProperty]\nprivate ${1:string} ${2:value} = ${3:string.Empty};', K.Snippet),
                     snippet('relay-command', 'MVVM 命令', '[RelayCommand]\nprivate void ${1:Execute}()\n{\n    ${0}\n}', K.Snippet),
-                    word('UserControl', K.Class), word('DependencyProperty', K.Class), word('ObservableObject', K.Class),
-                    word('RelayCommand', K.Class), word('ICommand', K.Interface), word('InitializeComponent', K.Method),
-                    word('DataContext', K.Property), word('Dispatcher', K.Property), word('async', K.Keyword), word('await', K.Keyword)
+                    word('UserControl', K.Class, 'WPF 控件基类', '用于创建可复用 WPF 用户控件。'),
+                    word('DependencyProperty', K.Class, 'WPF 依赖属性', '支持绑定、样式、动画和属性值继承。'),
+                    word('ObservableObject', K.Class, 'MVVM 可观察对象', 'CommunityToolkit.Mvvm 提供的属性通知基类。'),
+                    word('RelayCommand', K.Class, 'MVVM 命令', '将方法包装为可供界面绑定的命令。'),
+                    word('ICommand', K.Interface, '命令接口', 'WPF 命令绑定使用的标准接口。'),
+                    word('InitializeComponent', K.Method, '加载 XAML', '加载并连接当前页面或控件对应的 XAML。'),
+                    word('DataContext', K.Property, '绑定数据源', '当前元素及其子元素默认使用的数据绑定源。'),
+                    word('Dispatcher', K.Property, 'UI 调度器', '将操作调度到拥有当前对象的 UI 线程。')
                 ] })
             });
             monaco.languages.registerCompletionItemProvider('xml', {
@@ -403,14 +665,142 @@
                     snippet('TextBlock', '文本控件', '<TextBlock Text="${1:文本}" />', K.Snippet),
                     snippet('Button', '按钮控件', '<Button Content="${1:按钮}" Command="{Binding ${2:Command}}" />', K.Snippet),
                     snippet('Binding', '数据绑定', '{Binding ${1:Property}, Mode=${2:OneWay}}', K.Snippet),
-                    word('Grid.Row', K.Property), word('Grid.Column', K.Property), word('HorizontalAlignment', K.Property),
-                    word('VerticalAlignment', K.Property), word('Margin', K.Property), word('Padding', K.Property)
+                    word('Grid.Row', K.Property, 'Grid 附加属性', '指定元素所在的网格行。'),
+                    word('Grid.Column', K.Property, 'Grid 附加属性', '指定元素所在的网格列。'),
+                    word('HorizontalAlignment', K.Property, '布局属性', '设置元素的水平对齐方式。'),
+                    word('VerticalAlignment', K.Property, '布局属性', '设置元素的垂直对齐方式。'),
+                    word('Margin', K.Property, '布局属性', '设置元素边界外侧的留白。'),
+                    word('Padding', K.Property, '布局属性', '设置控件边界与内容之间的留白。')
                 ] })
             });
         }
 
-        function word(label, kind) { return { label, kind, insertText: label }; }
-        function snippet(label, detail, insertText, kind) { return { label, detail, kind, insertText, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet }; }
+        function csharpKeywordDocumentation(keyword) {
+            return ({
+                async: '声明异步方法或匿名函数，通常与 await 配合使用。',
+                await: '异步等待任务完成，而不阻塞当前线程。',
+                record: '声明具有值相等性的数据类型。',
+                required: '要求对象初始化时为成员赋值。',
+                init: '限制属性只能在初始化阶段设置。',
+                partial: '把同一个类型或成员的实现拆分到多个源文件。',
+                using: '导入命名空间，或声明可自动释放的资源。',
+                namespace: '声明用于组织类型的命名空间。',
+                var: '由编译器推断局部变量的静态类型。',
+                override: '重写基类中可重写的成员。',
+                readonly: '限制字段只能在声明处或构造函数中赋值。',
+                sealed: '阻止类型被继承，或阻止成员继续被重写。'
+            })[keyword] || `插入 C# 关键字 \`${keyword}\`。`;
+        }
+
+        function registerLanguageHints() {
+            const csharpHints = {
+                async: '将方法标记为异步方法。通常与 `await` 配合使用，返回 `Task`、`Task<T>` 或 `ValueTask`。',
+                await: '异步等待任务完成，同时不会阻塞当前线程。只能用于异步方法或异步匿名函数中。',
+                var: '让编译器根据右侧表达式推断局部变量的静态类型，并不代表动态类型。',
+                record: '声明以值相等性为核心的数据类型，适合不可变数据模型和消息对象。',
+                required: '要求对象初始化时必须为该字段或属性赋值。',
+                init: '仅允许在对象初始化期间设置属性，之后保持只读语义。',
+                partial: '允许把同一个类型、方法或属性的定义拆分到多个源文件中。',
+                using: '导入命名空间，或声明会在作用域结束时自动释放的对象。',
+                namespace: '为类型组织逻辑作用域，避免名称冲突。',
+                UserControl: 'WPF 可复用用户控件基类，通常与对应的 XAML 文件共同组成界面。',
+                DependencyProperty: 'WPF 依赖属性，支持绑定、样式、动画、继承及默认值元数据。',
+                ObservableObject: 'CommunityToolkit.Mvvm 提供的可观察对象基类，可简化属性变更通知。',
+                RelayCommand: '把方法包装为可绑定命令，适合 MVVM 中的按钮和交互行为。',
+                DataContext: 'WPF 绑定默认使用的数据源对象，并可沿可视树或逻辑树继承。',
+                Dispatcher: '用于把操作调度回拥有当前 UI 对象的线程。',
+                InitializeComponent: '加载并连接编译后的 XAML 组件，应在页面或控件构造函数中调用。'
+            };
+            const xamlHints = {
+                Binding: '创建 WPF 数据绑定。可设置 `Path`、`Mode`、`Converter` 与 `UpdateSourceTrigger`。',
+                DataContext: '设置当前元素及其子元素默认使用的绑定数据源。',
+                'Grid.Row': '指定元素所在的 Grid 行，索引从 0 开始。',
+                'Grid.Column': '指定元素所在的 Grid 列，索引从 0 开始。',
+                HorizontalAlignment: '控制元素在可用水平空间中的对齐方式。',
+                VerticalAlignment: '控制元素在可用垂直空间中的对齐方式。',
+                Margin: '设置元素边界外侧的留白，顺序为左、上、右、下。',
+                Padding: '设置控件边界与其内容之间的内侧留白。'
+            };
+            registerHoverHints('csharp', csharpHints, 'C#');
+            registerHoverHints('xml', xamlHints, 'XAML');
+
+            const signatures = {
+                SetValue: { label: 'void SetValue(DependencyProperty dp, object value)', documentation: '为当前依赖对象设置依赖属性值。', parameters: ['要设置的依赖属性标识符。', '新的属性值。'] },
+                GetValue: { label: 'object GetValue(DependencyProperty dp)', documentation: '读取当前依赖对象上的依赖属性值。', parameters: ['要读取的依赖属性标识符。'] },
+                OnPropertyChanged: { label: 'void OnPropertyChanged(string? propertyName = null)', documentation: '通知绑定系统指定属性已经发生变化。', parameters: ['发生变化的属性名。'] },
+                WriteLine: { label: 'void Console.WriteLine(string? value)', documentation: '将文本及换行符写入标准输出。', parameters: ['要写出的文本或对象。'] },
+                Delay: { label: 'Task Task.Delay(int millisecondsDelay)', documentation: '创建一个在指定时间后完成的异步任务。', parameters: ['延迟的毫秒数。'] },
+                IsNullOrWhiteSpace: { label: 'bool string.IsNullOrWhiteSpace(string? value)', documentation: '判断字符串是否为 null、空字符串或仅包含空白字符。', parameters: ['要检查的字符串。'] },
+                Show: { label: 'MessageBoxResult MessageBox.Show(string messageBoxText, string caption)', documentation: '显示消息框。', parameters: ['消息正文。', '窗口标题。'] }
+            };
+            monaco.languages.registerSignatureHelpProvider('csharp', {
+                signatureHelpTriggerCharacters: ['(', ','],
+                signatureHelpRetriggerCharacters: [','],
+                provideSignatureHelp(model, position) {
+                    const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+                    const call = /([A-Za-z_]\w*)\s*\(([^()]*)$/.exec(linePrefix);
+                    if (!call || !signatures[call[1]]) return null;
+                    const definition = signatures[call[1]];
+                    const activeParameter = Math.min((call[2].match(/,/g) || []).length, definition.parameters.length - 1);
+                    return {
+                        value: {
+                            signatures: [{
+                                label: definition.label,
+                                documentation: definition.documentation,
+                                parameters: definition.parameters.map((documentation, index) => ({ label: signatureParameterLabel(definition.label, index), documentation }))
+                            }],
+                            activeSignature: 0,
+                            activeParameter: Math.max(0, activeParameter)
+                        },
+                        dispose() { }
+                    };
+                }
+            });
+        }
+
+        function registerHoverHints(language, hints, label) {
+            monaco.languages.registerHoverProvider(language, {
+                provideHover(model, position) {
+                    const range = model.getWordAtPosition(position);
+                    if (!range) return null;
+                    let name = range.word;
+                    if (language === 'xml') {
+                        const line = model.getLineContent(position.lineNumber);
+                        const offset = position.column - 1;
+                        const attributePattern = /[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?/g;
+                        let candidate;
+                        while ((candidate = attributePattern.exec(line)) !== null) {
+                            if (offset >= candidate.index && offset <= candidate.index + candidate[0].length && hints[candidate[0]]) {
+                                name = candidate[0];
+                                break;
+                            }
+                        }
+                    }
+                    const help = hints[name];
+                    if (!help) return null;
+                    return {
+                        range: new monaco.Range(position.lineNumber, range.startColumn, position.lineNumber, range.endColumn),
+                        contents: [{ value: `**${name}** · ${label}` }, { value: help }]
+                    };
+                }
+            });
+        }
+
+        function signatureParameterLabel(signature, index) {
+            const open = signature.indexOf('(');
+            const close = signature.lastIndexOf(')');
+            if (open < 0 || close <= open) return '';
+            return (signature.slice(open + 1, close).split(',')[index] || '').trim();
+        }
+
+        function word(label, kind, detail = '代码建议', documentation = '') {
+            const item = { label, kind, insertText: label, detail };
+            if (documentation) item.documentation = documentation;
+            return item;
+        }
+        function snippet(label, detail, insertText, kind) {
+            return { label, detail, documentation: detail, kind, insertText, sortText: `0_${label}`, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet };
+        }
 
         function registerFormatters() {
             monaco.languages.registerDocumentFormattingEditProvider('xml', { provideDocumentFormattingEdits(model) { return [{ range: model.getFullModelRange(), text: formatXml(model.getValue()) }]; } });

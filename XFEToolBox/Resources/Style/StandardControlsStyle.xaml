@@ -165,23 +165,31 @@
 
     <!-- 选择控件。 -->
     <Style x:Key="ToolBoxCheckBoxStyle" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="MinHeight" Value="22"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="11"/>
         <Setter Property="Cursor" Value="Hand"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/><Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
-            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Border x:Name="Box" Width="16" Height="16" Background="{DynamicResource ToolControlBackgroundBrush}"
-                        BorderBrush="{DynamicResource ToolControlBorderBrush}" BorderThickness="1" CornerRadius="5" VerticalAlignment="Center"/>
-                <Path x:Name="CheckMark" Width="9" Height="7" Margin="3.5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Border x:Name="Box" Width="18" Height="18" Background="{DynamicResource ToolControlBackgroundBrush}"
+                        BorderBrush="{DynamicResource ToolControlBorderBrush}" BorderThickness="1" CornerRadius="6" VerticalAlignment="Center"/>
+                <Path x:Name="CheckMark" Width="10" Height="8" Margin="4,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                       Data="M 1,3.5 L 3.5,6 L 8,1" Stretch="Fill" Stroke="White" StrokeThickness="1.8"
                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed"/>
-                <ContentPresenter Grid.Column="1" Margin="4,0,0,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                <Border x:Name="IndeterminateMark" Width="8" Height="2" Margin="5,0,0,0" HorizontalAlignment="Left"
+                        VerticalAlignment="Center" Background="White" CornerRadius="1" Visibility="Collapsed"/>
+                <ContentPresenter Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
             </Grid>
             <ControlTemplate.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Box" Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/></Trigger>
                 <Trigger Property="IsChecked" Value="True"><Setter TargetName="Box" Property="Background" Value="{DynamicResource MainColor}"/><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/><Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/></Trigger>
+                <Trigger Property="IsChecked" Value="{x:Null}"><Setter TargetName="Box" Property="Background" Value="{DynamicResource MainColor}"/><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/><Setter TargetName="IndeterminateMark" Property="Visibility" Value="Visible"/></Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Box" Property="BorderThickness" Value="2"/><Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource MainColor}"/></Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="ToolBoxGridCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxCheckBoxStyle}">
+        <Setter Property="Width" Value="22"/><Setter Property="Height" Value="22"/><Setter Property="MinHeight" Value="22"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style TargetType="CheckBox" BasedOn="{StaticResource ToolBoxCheckBoxStyle}"/>
 
@@ -270,16 +278,21 @@
     <!-- 列表：默认轻量行，卡片列表作为可复用变体。资源管理器和控制台保留专用模板。 -->
     <Style x:Key="ToolBoxListBoxStyle" TargetType="ListBox">
         <Setter Property="Padding" Value="5"/><Setter Property="Background" Value="{DynamicResource ToolSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="11"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/><Setter Property="BorderThickness" Value="1"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/><Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/><Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="controls:ControlAssist.CornerRadius" Value="12"/>
     </Style>
     <Style TargetType="ListBox" BasedOn="{StaticResource ToolBoxListBoxStyle}"/>
 
     <Style x:Key="ToolBoxListBoxItemStyle" TargetType="ListBoxItem">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="12,9"/><Setter Property="Margin" Value="1,1,1,5"/>
+        <Setter Property="MinHeight" Value="42"/><Setter Property="Padding" Value="13,8"/><Setter Property="Margin" Value="1,1,1,2"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="11"/>
         <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="1"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/><Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
@@ -288,14 +301,15 @@
                 <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
             </Border>
             <ControlTemplate.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolDividerBrush}"/></Trigger>
-                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolControlHoverBorderBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/><Setter Property="Foreground" Value="#5555A8"/></Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/></Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style x:Key="ToolBoxCardListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ToolBoxListBoxItemStyle}">
-        <Setter Property="Padding" Value="13,10"/><Setter Property="Margin" Value="0,0,0,7"/>
+        <Setter Property="MinHeight" Value="52"/><Setter Property="Padding" Value="14,10"/><Setter Property="Margin" Value="1,0,1,7"/>
         <Setter Property="Background" Value="{DynamicResource ToolControlBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ToolDividerBrush}"/>
     </Style>
@@ -303,23 +317,29 @@
 
     <!-- 数据表格。管理页仅保留语义别名，不再复制模板。 -->
     <Style x:Key="ToolBoxDataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
-        <Setter Property="Height" Value="40"/><Setter Property="Padding" Value="14,0"/>
+        <Setter Property="Height" Value="44"/><Setter Property="Padding" Value="16,0"/>
         <Setter Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
-        <Setter Property="FontSize" Value="10"/><Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="10.5"/><Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/><Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/><Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
+    <Style x:Key="ToolBoxDataGridCenteredHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridColumnHeaderStyle}">
+        <Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="Padding" Value="8,0"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridRightHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridColumnHeaderStyle}">
+        <Setter Property="HorizontalContentAlignment" Value="Right"/><Setter Property="Padding" Value="8,0,16,0"/>
+    </Style>
     <Style x:Key="ToolBoxDataGridCellStyle" TargetType="DataGridCell">
-        <Setter Property="Padding" Value="14,0"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="16,0"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
         <Setter Property="FontSize" Value="10.5"/><Setter Property="BorderBrush" Value="{DynamicResource ToolDividerBrush}"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/></Trigger></Style.Triggers>
     </Style>
     <Style x:Key="ToolBoxDataGridRowStyle" TargetType="DataGridRow">
-        <Setter Property="Height" Value="41"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="MinHeight" Value="46"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Style.Triggers>
-            <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="#F8F8FC"/></Trigger>
+            <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="#FAFAFD"/></Trigger>
             <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/></Trigger>
             <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/></Trigger>
         </Style.Triggers>
@@ -331,47 +351,65 @@
         <Setter Property="AutoGenerateColumns" Value="False"/><Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="CanUserDeleteRows" Value="False"/><Setter Property="CanUserResizeRows" Value="False"/>
         <Setter Property="SelectionMode" Value="Single"/><Setter Property="SelectionUnit" Value="FullRow"/><Setter Property="AlternationCount" Value="2"/>
+        <Setter Property="CanUserReorderColumns" Value="False"/><Setter Property="CanUserSortColumns" Value="True"/>
+        <Setter Property="EnableRowVirtualization" Value="True"/><Setter Property="EnableColumnVirtualization" Value="True"/>
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource ToolBoxDataGridColumnHeaderStyle}"/>
         <Setter Property="CellStyle" Value="{StaticResource ToolBoxDataGridCellStyle}"/>
         <Setter Property="RowStyle" Value="{StaticResource ToolBoxDataGridRowStyle}"/>
         <Setter Property="RowHeaderWidth" Value="0"/><Setter Property="HorizontalGridLinesBrush" Value="Transparent"/>
         <Setter Property="VerticalGridLinesBrush" Value="Transparent"/><Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="controls:ControlAssist.CornerRadius" Value="12"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridPrimaryTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridSecondaryTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/><Setter Property="FontSize" Value="10"/>
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridCenteredTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ToolBoxDataGridSecondaryTextStyle}">
+        <Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="TextAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridNumericTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ToolBoxDataGridSecondaryTextStyle}">
+        <Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="TextAlignment" Value="Right"/><Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
     </Style>
     <Style TargetType="DataGrid" BasedOn="{StaticResource ToolBoxDataGridStyle}"/>
 
     <!-- 横向和纵向共用的统一滚动条。 -->
     <Style x:Key="ToolBoxScrollBarThumbStyle" TargetType="Thumb">
-        <Setter Property="MinHeight" Value="34"/><Setter Property="MinWidth" Value="34"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Thumb">
-            <Border x:Name="Surface" Margin="1" Background="{DynamicResource MainColor}" CornerRadius="4" Opacity="0.5"/>
+            <Border x:Name="Surface" Margin="2" Background="{DynamicResource MainColor}" CornerRadius="5" Opacity="0.48"/>
             <ControlTemplate.Triggers>
-                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.72"/></Trigger>
-                <Trigger Property="IsDragging" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.92"/></Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.7"/></Trigger>
+                <Trigger Property="IsDragging" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.9"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style x:Key="ToolBoxScrollBarStyle" TargetType="ScrollBar">
-        <Setter Property="Width" Value="9"/><Setter Property="MinWidth" Value="9"/><Setter Property="Height" Value="Auto"/><Setter Property="MinHeight" Value="0"/>
-        <Setter Property="Background" Value="Transparent"/><Setter Property="Margin" Value="1,2"/><Setter Property="IsTabStop" Value="False"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Width" Value="12"/><Setter Property="MinWidth" Value="12"/><Setter Property="Height" Value="Auto"/><Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Background" Value="#ECECFA"/><Setter Property="Margin" Value="1,3,1,3"/><Setter Property="IsTabStop" Value="False"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
             <Grid>
+                <Border x:Name="TrackSurface" Background="{TemplateBinding Background}" CornerRadius="6"/>
                 <Track x:Name="VerticalTrack" Orientation="Vertical" IsDirectionReversed="True" Focusable="False">
                     <Track.DecreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Focusable="False" Opacity="0"/></Track.DecreaseRepeatButton>
-                    <Track.Thumb><Thumb Style="{StaticResource ToolBoxScrollBarThumbStyle}"/></Track.Thumb>
+                    <Track.Thumb><Thumb MinHeight="34" Style="{StaticResource ToolBoxScrollBarThumbStyle}"/></Track.Thumb>
                     <Track.IncreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Focusable="False" Opacity="0"/></Track.IncreaseRepeatButton>
                 </Track>
                 <Track x:Name="HorizontalTrack" Orientation="Horizontal" IsDirectionReversed="False" Focusable="False" Visibility="Collapsed">
                     <Track.DecreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageLeftCommand}" Focusable="False" Opacity="0"/></Track.DecreaseRepeatButton>
-                    <Track.Thumb><Thumb Style="{StaticResource ToolBoxScrollBarThumbStyle}"/></Track.Thumb>
+                    <Track.Thumb><Thumb MinWidth="34" Style="{StaticResource ToolBoxScrollBarThumbStyle}"/></Track.Thumb>
                     <Track.IncreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageRightCommand}" Focusable="False" Opacity="0"/></Track.IncreaseRepeatButton>
                 </Track>
             </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="Orientation" Value="Horizontal">
                     <Setter TargetName="VerticalTrack" Property="Visibility" Value="Collapsed"/><Setter TargetName="HorizontalTrack" Property="Visibility" Value="Visible"/>
-                    <Setter Property="Width" Value="Auto"/><Setter Property="MinWidth" Value="0"/><Setter Property="Height" Value="9"/><Setter Property="MinHeight" Value="9"/><Setter Property="Margin" Value="2,1"/>
+                    <Setter Property="Width" Value="Auto"/><Setter Property="MinWidth" Value="0"/><Setter Property="Height" Value="12"/><Setter Property="MinHeight" Value="12"/><Setter Property="Margin" Value="3,1,3,1"/>
                 </Trigger>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="TrackSurface" Property="Background" Value="#E7E7F7"/></Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>

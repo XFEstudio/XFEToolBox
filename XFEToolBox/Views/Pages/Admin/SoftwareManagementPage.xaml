@@ -3,15 +3,6 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       Background="Transparent" Title="" Loaded="Page_Loaded">
-    <Page.Resources>
-        <Style x:Key="ChannelCheckBox" TargetType="CheckBox" BasedOn="{StaticResource AdminCheckBox}">
-            <Setter Property="Width" Value="20"/>
-            <Setter Property="Height" Value="20"/>
-            <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="ToolTip" Value="启用此下载渠道"/>
-        </Style>
-    </Page.Resources>
     <Grid Margin="14,9,14,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -216,11 +207,11 @@
                                     <DataGridComboBoxColumn x:Name="ModeColumn" Header="方式"
                                                             SelectedItemBinding="{Binding Mode, UpdateSourceTrigger=PropertyChanged}" Width="82"/>
                                     <DataGridTextColumn Header="地址 / 文件名" Binding="{Binding DisplayAddress, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
-                                    <DataGridTemplateColumn Header="启用" Width="58">
+                                    <DataGridTemplateColumn Header="启用" Width="64" HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                          Style="{StaticResource ChannelCheckBox}"/>
+                                                          Style="{StaticResource AdminGridCheckBox}" ToolTip="启用此下载渠道"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>

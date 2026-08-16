@@ -195,7 +195,7 @@ public partial class ToolBoxPage : Page
     {
         var assemblyName = typeof(ToolBoxPage).Assembly.GetName().Name;
         var image = new BitmapImage(new Uri(
-            $"pack://application:,,,/{assemblyName};component/Resources/Image/wrench_tool.png",
+            $"pack://application:,,,/{assemblyName};component/Resources/Image/default_tool_icon.png",
             UriKind.Absolute));
         image.Freeze();
         return image;

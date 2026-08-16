@@ -1,31 +1,54 @@
-# XFEToolBox 服务端与工具包规范
+# 工具源码包、Code Studio 与服务端接口
 
 ## 设计边界
 
-服务端是使用 `XFEExtension.NetCore.ServerInteractive` 构建的 .NET 10 控制台应用。它保存、校验并分发由受信管理员上传的工具源码包，不会在服务器上编译或执行包内代码。WPF 客户端后续可以使用 `XFEToolBox.Core.Tools.ToolCatalogClient` 获取目录和下载包，并在加载前校验服务端给出的 SHA-256。
+`.xfetool` 是扩展名固定的 ZIP 源码包，当前 `packageFormatVersion` 为 `1`。服务端使用 `XFEExtension.NetCore.ServerInteractive` 保存、校验和分发工具包，但不会在服务器上编译或执行其中的代码。
 
-`.xfetool` 是扩展名固定的 ZIP 文件。当前包格式版本为 `1`。
+客户端在下载后校验服务端返回的 SHA-256，再把包解压到临时目录、生成独立的 WPF 运行工程并调用 `dotnet` 编译。工具最终在单独进程和窗口中运行，但仍拥有当前桌面用户的系统权限，因此发布前必须审核源码。
+
+## 使用 Code Studio
+
+客户端的 XFEToolBox Code Studio 可以完成完整的工具开发流程：
+
+1. 新建项目，或打开包含 `manifest.json` 的现有目录。
+2. 在 Monaco Editor 中编辑 C#、XAML、JSON 和 Markdown；`manifest.json` 同时提供可视化设计器。
+3. 使用预览检查 XAML 或 Markdown，并使用“运行”在独立窗口中编译测试。
+4. 导出 `.xfetool` 到工程目录之外，或以管理员账号直接发布到工具服务器。
+
+默认工作区位于客户端本地数据目录的 `EditorWorkspaces`。工程历史和资源管理器布局保存在客户端本地数据中，不会写入导出的工具包。
 
 ## 包目录
 
-推荐目录如下；`src` 内可以继续放置其他 ViewModel、Model、Converter 和服务类，`assets` 可放图片、字体等资源。
+Code Studio 新建项目时采用以下结构；也可以使用其他目录名，只要 `manifest.json` 中的入口路径与包内文件一致。
 
 ```text
 base64-generator.xfetool
 ├── manifest.json
-├── src
+├── README.md
+├── Code
 │   ├── Views
-│   │   ├── Base64Tool.xaml
-│   │   └── Base64Tool.xaml.cs
+│   │   ├── MainPage.xaml
+│   │   └── MainPage.xaml.cs
 │   ├── ViewModels
-│   │   └── Base64ToolViewModel.cs
+│   │   └── MainPageViewModel.cs
 │   └── Models
-│       └── Base64Options.cs
-└── assets
+│       └── ToolModel.cs
+└── Assets
     └── icon.png
 ```
 
-服务端允许 `.xaml`、`.cs`、`.json`、`.xml`、`.resx`、文本/Markdown、常用图片、SVG 和字体文件；不允许 DLL、EXE、脚本或符号链接。压缩包默认最大 10 MiB、解压后最大 30 MiB、最多 256 个文件，这些限制由 `ServerProfile` 的 AutoConfig XML 配置管理。
+服务端允许 `.xaml`、`.cs`、`.json`、`.xml`、`.resx`、`.txt`、`.md`、常用图片、SVG、TTF 和 OTF；不允许 DLL、EXE、脚本、重复路径或符号链接。默认限制为：
+
+| 项目 | 默认值 |
+| --- | --- |
+| 压缩包大小 | 10 MiB |
+| 解压后总大小 | 30 MiB |
+| 文件数量 | 256 |
+| 单个清单大小 | 256 KiB |
+| 单个图标大小 | 512 KiB |
+| 最大压缩率 | 100:1 |
+
+包大小、解压大小、文件数和压缩率可以通过服务端 `ServerProfile` 的 AutoConfig XML 调整。
 
 ## manifest.json
 
@@ -37,62 +60,82 @@ base64-generator.xfetool
   "version": "1.0.0",
   "description": "文本与 Base64 的相互转换。",
   "author": "XFEstudio",
-  "icon": "assets/icon.png",
+  "icon": "Assets/icon.png",
   "category": "编码",
   "tags": ["base64", "编码"],
   "minimumHostVersion": "0.2.0",
   "releaseNotes": "首个版本。",
   "entry": {
-    "viewXaml": "src/Views/Base64Tool.xaml",
-    "viewClass": "XFEToolBox.Tools.Base64.Views.Base64Tool",
-    "viewCodeBehind": "src/Views/Base64Tool.xaml.cs",
-    "viewModel": "src/ViewModels/Base64ToolViewModel.cs",
-    "viewModelClass": "XFEToolBox.Tools.Base64.ViewModels.Base64ToolViewModel"
+    "viewXaml": "Code/Views/MainPage.xaml",
+    "viewClass": "XFEToolBox.Tools.Base64.MainPage",
+    "viewCodeBehind": "Code/Views/MainPage.xaml.cs",
+    "viewModel": "Code/ViewModels/MainPageViewModel.cs",
+    "viewModelClass": "XFEToolBox.Tools.Base64.MainPageViewModel"
+  },
+  "window": {
+    "width": 980,
+    "height": 700,
+    "minWidth": 560,
+    "minHeight": 420,
+    "allowResize": true,
+    "allowMaximize": true,
+    "showMinimizeButton": true,
+    "showCloseButton": true
   },
   "requestedPermissions": ["clipboard"]
 }
 ```
 
-- `id`：稳定不变的工具标识，仅允许小写字母、数字、`.` 和 `-`，并以字母开头。
-- `icon`：可选的包内图标路径，支持 PNG、JPEG、GIF、BMP 和 ICO；未设置时客户端使用默认工具图标。
-- `version`、`minimumHostVersion`：SemVer，例如 `1.2.0`、`2.0.0-beta.1`。
-- `viewXaml`、`viewCodeBehind`：必填，且文件必须存在于包内。
-- `viewModel`、`viewModelClass`：可选，但设置其中的类名时必须同时提供源码文件。
-- `requestedPermissions`：只是权限声明；是否授权由客户端宿主决定。
+关键约束：
 
-## 启动
+- `id`：稳定不变的工具标识，长度为 1–64，只允许小写字母、数字、`.` 和 `-`，并以字母开头。
+- `version`、`minimumHostVersion`：使用 SemVer，例如 `1.2.0` 或 `2.0.0-beta.1`。
+- `icon`：可选的包内 PNG、JPEG、GIF、BMP 或 ICO，文件必须存在且不超过 512 KiB。
+- `viewXaml`、`viewClass`、`viewCodeBehind`：必填；两个文件路径必须存在，扩展名分别为 `.xaml` 和 `.cs`。
+- `viewModel`、`viewModelClass`：可选；声明 ViewModel 源文件时文件必须存在。
+- `window`：可选；省略时使用示例中的默认尺寸与按钮设置。`allowMaximize` 控制双击顶部拖拽区是否可最大化，不会额外显示最大化按钮。
+- `tags`：最多 20 个，每项 1–40 个字符。
+- `requestedPermissions`：最多 32 项，每项不超过 64 个字符。它只是能力声明，宿主仍需自行决定是否授权。
 
-服务器配置统一由 AutoConfig XML 管理。首次启动会生成配置文件：
+## 启动与配置服务端
 
 ```powershell
 dotnet run --project .\XFEToolBox.Server\XFEToolBox.Server.csproj
 ```
 
-停止服务器后，在 `ServerProfile` 对应的 AutoConfig XML 中设置 `AdminApiKey`、`StorageRoot`、监听地址、初始管理员账号以及包限制，再重新启动。相对数据目录以服务器可执行文件目录为基准；也可以直接在 `StorageRoot` 中填写绝对路径。不要把包含真实管理密钥的配置文件提交到仓库。
+首次启动会生成 AutoConfig XML、初始管理员和默认软件下载目录。停止服务器后可以修改 `ServerProfile` 对应配置中的监听地址、`StorageRoot`、`SoftwareStorageRoot`、上传限制、注册开关和初始管理员设置，再重新启动。
 
-## API
+相对数据目录以服务器可执行文件目录为基准，也可以配置绝对路径。`AdminApiKey` 只用于遗留的密钥管理接口；真实密钥和包含敏感账号数据的配置文件不得提交到仓库。
+
+## 工具 API
+
+所有路径都以默认主入口 `/api` 为前缀。服务端接受 GET 与 POST，但带请求体或产生修改的接口应使用 POST。
 
 公开接口：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| `GET/POST` | `/api/health` | 健康检查 |
-| `POST` | `/api/v1/tools/list` | JSON 可传 `search`、`category`，查询已发布工具 |
-| `POST` | `/api/v1/tools/get` | JSON 传 `toolId`，获取详情及已发布版本 |
-| `POST` | `/api/v1/tools/download` | JSON 传 `toolId`、`version`，流式下载指定版本 |
+| `GET/POST` | `/api/health` | 健康检查与包格式版本 |
+| `POST` | `/api/v1/tools/list` | 可传 `search`、`category`，查询已发布工具 |
+| `POST` | `/api/v1/tools/get` | 传 `toolId`，获取详情及已发布版本 |
+| `POST` | `/api/v1/tools/download` | 传 `toolId`、`version`，流式下载指定版本 |
 
-管理接口支持 `X-Admin-Key` 请求头或 `Authorization: Bearer <key>`：
+登录态管理员接口：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
-| `GET/POST` | `/api/v1/admin/tools/list` | 查看全部版本，包括草稿 |
-| `POST` | `/api/v1/admin/tools/upload` | JSON 传 `packageBase64`，可传 `published`、`overwrite` |
-| `POST` | `/api/v1/admin/tools/publication` | JSON 传 `toolId`、`version`、`published`，发布或下架 |
+| `POST` | `/api/v1/manage/tools/list` | 查看全部版本，包括未发布版本 |
+| `POST` | `/api/v1/manage/tools/upload` | 传 `packageBase64`，可传 `published`、`overwrite` |
+| `POST` | `/api/v1/manage/tools/publication` | 传 `toolId`、`version`、`published`，发布或下架 |
 
-上传示例：
+这些接口使用标准登录会话并校验管理员角色，桌面管理端和 Code Studio 发布功能走这一组接口。
+
+为兼容自动化部署，服务端仍保留 `/api/v1/admin/tools/*` 接口。它要求先在 `ServerProfile.AdminApiKey` 配置非空密钥，再通过 `X-Admin-Key` 或 `Authorization: Bearer <key>` 提交。建议只在受信网络和受控发布流水线中使用。
+
+密钥接口上传示例：
 
 ```powershell
-$adminApiKey = "与 AutoConfig 中 AdminApiKey 相同的密钥"
+$adminApiKey = "与 ServerProfile.AdminApiKey 相同的密钥"
 $headers = @{ "X-Admin-Key" = $adminApiKey }
 $packagePath = (Resolve-Path .\base64-generator.xfetool).Path
 $body = @{
@@ -100,9 +143,15 @@ $body = @{
     published = $true
     overwrite = $false
 } | ConvertTo-Json -Compress
-Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/v1/admin/tools/upload -Headers $headers -ContentType "application/json" -Body $body
+
+Invoke-RestMethod `
+    -Method Post `
+    -Uri http://localhost:3000/api/v1/admin/tools/upload `
+    -Headers $headers `
+    -ContentType "application/json" `
+    -Body $body
 ```
 
 ## 安全约定
 
-源码工具拥有与桌面客户端相同的进程权限，因此客户端只能加载受信管理员发布的包。SHA-256 用于发现下载损坏或内容不一致，不代替代码审核和发布者签名。后续实现客户端加载器时，应把权限提示、版本兼容检查、编译缓存和隔离策略放在加载前完成。
+SHA-256 用于发现下载损坏或目录内容不一致，不等同于发布者签名或代码审核。源码工具虽然在独立进程中运行，但没有操作系统级沙箱，能够使用当前用户可访问的文件、网络和系统资源。管理员只能发布已审核的源码；客户端在运行前还应保留版本兼容、权限提示、缓存校验和资源限制。

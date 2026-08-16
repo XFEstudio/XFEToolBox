@@ -154,7 +154,11 @@ internal static class ToolProjectRunService
         var root = EscapeXml(Path.GetFullPath(workspaceRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var coreAssembly = EscapeXml(typeof(ToolPackageManifest).Assembly.Location);
         var clientCoreAssembly = EscapeXml(typeof(AppPath).Assembly.Location);
-        var clientAssembly = EscapeXml(typeof(ToolProjectRunService).Assembly.Location);
+        var clientAssemblyPath = typeof(ToolProjectRunService).Assembly.Location;
+        var clientAssembly = EscapeXml(clientAssemblyPath);
+        var xfeExtensionAssembly = EscapeXml(Path.Combine(
+            Path.GetDirectoryName(clientAssemblyPath)!,
+            "XFEExtension.NetCore.dll"));
         return $$"""
                  <Project Sdk="Microsoft.NET.Sdk">
                    <PropertyGroup>
@@ -181,6 +185,7 @@ internal static class ToolProjectRunService
                      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
                      <Reference Include="XFEToolBox.Core"><HintPath>{{coreAssembly}}</HintPath><Private>true</Private></Reference>
                      <Reference Include="XFEToolBox.Client.Core"><HintPath>{{clientCoreAssembly}}</HintPath><Private>true</Private></Reference>
+                     <Reference Include="XFEExtension.NetCore"><HintPath>{{xfeExtensionAssembly}}</HintPath><Private>true</Private></Reference>
                      <Reference Include="{{EscapeXml(hostAssemblyName)}}"><HintPath>{{clientAssembly}}</HintPath><Private>true</Private></Reference>
                    </ItemGroup>
                  </Project>
@@ -202,7 +207,7 @@ internal static class ToolProjectRunService
         var mainStyleResourceUri = JsonSerializer.Serialize(
             $"pack://application:,,,/{hostAssemblyName};component/Resources/Style/MainStyle.xaml");
         var defaultIconResourceUri = JsonSerializer.Serialize(
-            $"pack://application:,,,/{hostAssemblyName};component/Resources/Image/wrench_tool.png");
+            $"pack://application:,,,/{hostAssemblyName};component/Resources/Image/default_tool_icon.png");
         var width = JsonSerializer.Serialize(window.Width);
         var height = JsonSerializer.Serialize(window.Height);
         var minWidth = JsonSerializer.Serialize(window.MinWidth);

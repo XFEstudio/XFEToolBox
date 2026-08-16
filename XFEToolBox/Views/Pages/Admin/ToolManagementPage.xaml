@@ -2,7 +2,14 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+      xmlns:utilities="clr-namespace:XFEToolBox.Client.Utilities"
       Background="Transparent" Title="" Loaded="Page_Loaded">
+    <Page.Resources>
+        <utilities:ByteSizeConverter x:Key="ByteSizeConverter"/>
+        <Style x:Key="ToolVersionRow" TargetType="DataGridRow" BasedOn="{StaticResource AdminDataGridRow}">
+            <Setter Property="MinHeight" Value="56"/>
+        </Style>
+    </Page.Resources>
     <Grid Margin="14,9,14,12">
         <Grid.RowDefinitions>
             <RowDefinition Height="50"/>
@@ -57,18 +64,100 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-                <controls:RoundedClipBorder Grid.Row="1" Background="White" BorderBrush="#E5E5F0" BorderThickness="1"
-                                            CornerRadius="12">
-                    <DataGrid x:Name="ToolGrid" Style="{StaticResource AdminDataGrid}" IsReadOnly="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="工具" Binding="{Binding Manifest.Name}" Width="1.15*"/>
-                            <DataGridTextColumn Header="标识" Binding="{Binding Manifest.Id}" Width="*"/>
-                            <DataGridTextColumn Header="版本" Binding="{Binding Manifest.Version}" Width="90"/>
-                            <DataGridCheckBoxColumn Header="已发布" Binding="{Binding Package.Published}" Width="80"/>
-                            <DataGridTextColumn Header="大小（字节）" Binding="{Binding Package.PackageSize}" Width="105"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </controls:RoundedClipBorder>
+                <Grid Grid.Row="1">
+                    <controls:RoundedClipBorder Background="White" BorderBrush="#E5E5F0" BorderThickness="1"
+                                                CornerRadius="12">
+                        <DataGrid x:Name="ToolGrid" Style="{StaticResource AdminDataGrid}" RowStyle="{StaticResource ToolVersionRow}"
+                                  IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="工具" SortMemberPath="Manifest.Name" Width="1.25*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid ToolTip="{Binding Manifest.Description}">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="28" Height="28" CornerRadius="9" Background="#EEEEFC" VerticalAlignment="Center">
+                                                    <Path Width="13" Height="13" Stretch="Uniform" Stroke="#7777C9" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M 2,5 L 7,2 L 12,5 L 7,8 Z M 2,5 L 2,11 L 7,14 L 12,11 L 12,5 M 7,8 L 7,14"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Manifest.Name}" Style="{StaticResource ToolBoxDataGridPrimaryTextStyle}"/>
+                                                    <TextBlock Text="{Binding Manifest.Author, StringFormat=发布者：{0}}" Style="{StaticResource ToolBoxDataGridSecondaryTextStyle}" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="工具标识" SortMemberPath="Manifest.Id" Width="1.05*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Manifest.Id}" Style="{StaticResource ToolBoxDataGridSecondaryTextStyle}"
+                                                       FontFamily="Cascadia Mono, Consolas" ToolTip="{Binding Manifest.Id}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="版本" SortMemberPath="Manifest.Version" Width="92"
+                                                        HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border Padding="9,4" Background="#F0F0FB" BorderBrush="#DDDDF1" BorderThickness="1"
+                                                    CornerRadius="9" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Manifest.Version}" Foreground="#6666A8" FontSize="9.5" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="发布状态" SortMemberPath="Package.Published" Width="112"
+                                                        HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <CheckBox IsChecked="{Binding Package.Published, Mode=OneWay}" Style="{StaticResource AdminGridCheckBox}"
+                                                          IsHitTestVisible="False" Focusable="False"/>
+                                                <TextBlock x:Name="PublicationText" Text="未发布" Margin="5,0,0,0" Foreground="#9999AA"
+                                                           FontSize="9.5" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Package.Published}" Value="True">
+                                                    <Setter TargetName="PublicationText" Property="Text" Value="已发布"/>
+                                                    <Setter TargetName="PublicationText" Property="Foreground" Value="#4B966D"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="包大小" SortMemberPath="Package.PackageSize" Width="112"
+                                                        HeaderStyle="{StaticResource AdminDataGridRightHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Package.PackageSize, Converter={StaticResource ByteSizeConverter}}"
+                                                       Style="{StaticResource ToolBoxDataGridNumericTextStyle}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </controls:RoundedClipBorder>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasItems, ElementName=ToolGrid}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Border Width="48" Height="48" CornerRadius="15" Background="#F0EFFC" HorizontalAlignment="Center">
+                            <TextBlock Text="◇" Foreground="#8585D3" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="还没有工具版本" Foreground="#55556B" FontSize="11.5" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                        <TextBlock Text="可以从项目中直接发布，或上传 .xfetool 工具包" Foreground="#9999AA" FontSize="9"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 
@@ -88,8 +177,22 @@
                     <TextBlock x:Name="StatusText" Foreground="#ECFFFFFF" FontSize="10.5"
                                VerticalAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
-                <Button Grid.Column="1" Content="切换选中版本的发布状态" controls:ButtonAssist.IsPrimary="True"
-                        HorizontalAlignment="Right" MinWidth="178" Click="TogglePublicationButton_Click"/>
+                <Button Grid.Column="1" controls:ButtonAssist.IsPrimary="True"
+                        HorizontalAlignment="Right" MinWidth="150" Click="TogglePublicationButton_Click">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Setter Property="Content" Value="发布选中版本"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedItem, ElementName=ToolGrid}" Value="{x:Null}">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SelectedItem.Package.Published, ElementName=ToolGrid}" Value="True">
+                                    <Setter Property="Content" Value="下架选中版本"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </Grid>
         </Border>
     </Grid>

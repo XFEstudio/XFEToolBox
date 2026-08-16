@@ -88,8 +88,11 @@
     </Style>
 
     <Style x:Key="AdminCheckBox" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxCheckBoxStyle}"/>
+    <Style x:Key="AdminGridCheckBox" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxGridCheckBoxStyle}"/>
 
     <Style x:Key="AdminDataGridColumnHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridColumnHeaderStyle}"/>
+    <Style x:Key="AdminDataGridCenteredHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridCenteredHeaderStyle}"/>
+    <Style x:Key="AdminDataGridRightHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ToolBoxDataGridRightHeaderStyle}"/>
     <Style x:Key="AdminDataGridCell" TargetType="DataGridCell" BasedOn="{StaticResource ToolBoxDataGridCellStyle}"/>
     <Style x:Key="AdminDataGridRow" TargetType="DataGridRow" BasedOn="{StaticResource ToolBoxDataGridRowStyle}"/>
     <Style x:Key="AdminDataGrid" TargetType="DataGrid" BasedOn="{StaticResource ToolBoxDataGridStyle}">
