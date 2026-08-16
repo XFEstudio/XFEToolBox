@@ -304,14 +304,15 @@
                     <MenuItem Header="文件" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
                         <MenuItem Header="新建工程" InputGestureText="Ctrl+Shift+N" Click="NewProjectButton_Click"/>
-                        <MenuItem Header="打开工程" InputGestureText="Ctrl+O" Click="OpenFolderButton_Click"/>
-                        <MenuItem Header="新建项" InputGestureText="Ctrl+N" Click="NewFileButton_Click"/>
+                        <MenuItem Header="打开工程" InputGestureText="Ctrl+Shift+O" Click="OpenFolderButton_Click"/>
+                        <MenuItem Header="新建项" InputGestureText="Ctrl+Shift+A" Click="NewFileButton_Click"/>
                         <Separator Style="{StaticResource EditorMenuSeparator}"/>
-                        <MenuItem x:Name="SaveButton" Header="保存全部" InputGestureText="Ctrl+S" Click="SaveButton_Click"/>
+                        <MenuItem x:Name="SaveButton" Header="保存全部" InputGestureText="Ctrl+Shift+S" Click="SaveButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="代码" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
-                        <MenuItem Header="格式化当前文件" InputGestureText="Shift+Alt+F" Click="FormatButton_Click"/>
+                        <MenuItem Header="格式化文档" InputGestureText="Ctrl+K, Ctrl+D" Click="FormatButton_Click"/>
+                        <MenuItem Header="生成工程" InputGestureText="Ctrl+Shift+B" Click="BuildProjectButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="工具包" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
@@ -320,10 +321,10 @@
                     </MenuItem>
                 </Menu>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+F5）">
+                    <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+Shift+W）">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="◫" FontSize="15" Margin="0,0,6,0"/><TextBlock Text="预览" VerticalAlignment="Center"/></StackPanel>
                     </Button>
-                    <Button x:Name="RunButton" controls:ButtonAssist.IsPrimary="True" Margin="0,0,8,0" Click="RunButton_Click" ToolTip="完整编译并运行工具（F5）">
+                    <Button x:Name="RunButton" controls:ButtonAssist.IsPrimary="True" Margin="0,0,8,0" Click="RunButton_Click" ToolTip="完整编译并运行工具（F5 / Ctrl+F5）">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="▶" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="运行" VerticalAlignment="Center"/></StackPanel>
                     </Button>
                     <Button x:Name="EditorThemeButton" Content="◐" Width="38" MinWidth="38" Padding="0" Margin="0,0,8,0" ToolTip="切换代码区明暗主题" Click="ToggleThemeButton_Click"/>
@@ -492,7 +493,7 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                         <StackPanel x:Name="EmptyExplorer" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
-                            <TextBlock Text="暂无可编辑文件" Foreground="#88889A" FontSize="10.5" HorizontalAlignment="Center"/>
+                            <TextBlock Text="暂无工程文件" Foreground="#88889A" FontSize="10.5" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
 
@@ -637,14 +638,16 @@
                                             <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
                                                 <StackPanel>
                                                     <TextBlock Text="窗口外观与行为" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="工具启动时由工具箱统一创建窗口。顶部始终复用工具箱拖动条，右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
-                                                    <Grid>
+                                                    <TextBlock Text="工具启动时由工具箱统一创建带图标、标题和副标题的窗口；右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <TextBlock Text="标题栏副标题" Style="{StaticResource ManifestFieldLabel}"/>
+                                                    <controls:TextEditor x:Name="ManifestSubtitleBox" Style="{StaticResource ManifestTextEditor}" HintText="简短说明工具用途；留空时使用工具说明" TextChanged="ManifestDesignerField_TextChanged"/>
+                                                    <Grid Margin="0,12,0,0">
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="980" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="700" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="760" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="300" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
                                                     </Grid>
                                                     <TextBlock Text="窗口行为" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,7"/>
                                                     <Border Padding="10,10,2,2" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">

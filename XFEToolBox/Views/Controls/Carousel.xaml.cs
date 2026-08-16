@@ -63,6 +63,20 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
     public static readonly DependencyProperty CurrentTitleProperty = CurrentTitlePropertyKey.DependencyProperty;
 
+    public string CurrentBadge
+    {
+        get => (string)GetValue(CurrentBadgeProperty);
+        private set => SetValue(CurrentBadgePropertyKey, value);
+    }
+
+    private static readonly DependencyPropertyKey CurrentBadgePropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(CurrentBadge),
+        typeof(string),
+        typeof(Carousel),
+        new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty CurrentBadgeProperty = CurrentBadgePropertyKey.DependencyProperty;
+
     public bool AutoPlay
     {
         get => (bool)GetValue(AutoPlayProperty);
@@ -270,7 +284,8 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         if (!ReferenceEquals(sender, currentItem))
             return;
 
-        if (e.PropertyName is nameof(CarouselImageItem.Image) or nameof(CarouselImageItem.Title) or nameof(CarouselImageItem.Action))
+        if (e.PropertyName is nameof(CarouselImageItem.Image) or nameof(CarouselImageItem.Title)
+            or nameof(CarouselImageItem.Badge) or nameof(CarouselImageItem.Action))
             UpdateImage(skipTransition: true);
     }
 
@@ -307,6 +322,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
             currentItem = null;
             CurrentImageSource = null;
             CurrentTitle = string.Empty;
+            CurrentBadge = string.Empty;
             ImageFront.Source = null;
             ImageBack.Source = null;
             NotifyStateChanged();
@@ -322,6 +338,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
         CurrentImageSource = nextItem.Image;
         CurrentTitle = nextItem.Title;
+        CurrentBadge = nextItem.Badge;
         currentItem = nextItem;
 
         if (!itemChanged || skipTransition)

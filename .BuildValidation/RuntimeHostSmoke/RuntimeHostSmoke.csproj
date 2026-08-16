@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="XFEToolBox"><HintPath>..\host-bin\Debug\net10.0-windows10.0.17763.0\XFEToolBox.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="XFEToolBox.Core"><HintPath>..\host-bin\Debug\net10.0\XFEToolBox.Core.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="XFEToolBox.Client.Core"><HintPath>..\host-bin\Debug\net10.0\XFEToolBox.Client.Core.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+</Project>

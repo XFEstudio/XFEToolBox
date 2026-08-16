@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,6 +12,7 @@ using System.Windows.Media.Imaging;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
+using XFEToolBox.Client.Profiles.CacheProfiles;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
 
@@ -19,7 +21,12 @@ namespace XFEToolBox.Client.Views.Pages;
 public partial class ToolBoxPage : Page
 {
     private static readonly ImageSource DefaultToolIcon = CreateDefaultIcon();
+    private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly ObservableCollection<ToolCardViewModel> _tools = [];
+    private ToolPackageSummary[] _cachedCatalog = [];
+    private bool _cacheLoaded;
+    private bool _hasCachedCatalog;
+    private int _refreshGeneration;
 
     public static ToolBoxPage Current { get; private set; } = new();
 
@@ -30,8 +37,8 @@ public partial class ToolBoxPage : Page
         ToolCards.ItemsSource = _tools;
     }
 
-    private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync();
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
+    private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
     private async void SearchButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
     private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -39,34 +46,148 @@ public partial class ToolBoxPage : Page
         if (e.Key == Key.Enter) await RefreshAsync();
     }
 
-    private async Task RefreshAsync()
+    private async Task RefreshAsync(bool refreshFullCatalog = false)
     {
-        try
+        EnsureCacheLoaded();
+        var query = SearchTextBox.Text.Trim();
+        if (_hasCachedCatalog)
+        {
+            ApplyTools(FilterCachedTools(query));
+            StatusText.Text = _tools.Count == 0
+                ? "缓存中没有符合条件的工具，正在后台刷新…"
+                : "已显示本地缓存，正在后台刷新…";
+        }
+        else
         {
             StatusText.Text = "正在连接工具服务器…";
+        }
+
+        var refreshGeneration = ++_refreshGeneration;
+        try
+        {
+            var requestQuery = refreshFullCatalog ? string.Empty : query;
             var response = await ClientSession.Requester.Request<ToolPackageSummary[]>(
-                "catalogTools", SearchTextBox.Text.Trim(), string.Empty);
+                "catalogTools", requestQuery, string.Empty);
+            if (refreshGeneration != _refreshGeneration) return;
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                ShowEmptyResult(response.Message);
+                ShowRefreshFailure(response.Message);
                 return;
             }
 
-            _tools.Clear();
-            foreach (var tool in response.Result ?? [])
+            var tools = response.Result ?? [];
+            if (refreshFullCatalog || string.IsNullOrWhiteSpace(query))
             {
-                var cached = File.Exists(GetCachePath(tool));
-                _tools.Add(new ToolCardViewModel(tool, CreateIconSource(tool.IconDataUrl), cached));
+                _cachedCatalog = tools;
+                _hasCachedCatalog = true;
+                TrySaveCatalogCache(tools);
+                tools = FilterCachedTools(query);
             }
 
-            EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            ToolCountText.Text = $"{_tools.Count} 个工具";
-            StatusText.Text = _tools.Count == 0 ? "没有符合条件的工具。" : "点击工具卡片即可打开；未缓存的工具会先自动获取。";
+            ApplyTools(tools);
+            StatusText.Text = _tools.Count == 0
+                ? "没有符合条件的工具。"
+                : "点击工具卡片即可打开；未缓存的工具会先自动获取。右键卡片可清除该工具的数据。";
         }
         catch (Exception exception)
         {
-            ShowEmptyResult($"读取失败：{exception.Message}");
+            if (refreshGeneration == _refreshGeneration)
+                ShowRefreshFailure($"读取失败：{exception.Message}");
         }
+    }
+
+    private void EnsureCacheLoaded()
+    {
+        if (_cacheLoaded) return;
+        _cacheLoaded = true;
+        try
+        {
+            var json = AppCacheProfile.ToolCatalogJson;
+            if (string.IsNullOrWhiteSpace(json)) return;
+            _cachedCatalog = JsonSerializer.Deserialize<ToolPackageSummary[]>(json, CacheJsonOptions) ?? [];
+            _hasCachedCatalog = true;
+        }
+        catch
+        {
+            _cachedCatalog = [];
+            _hasCachedCatalog = false;
+        }
+    }
+
+    private ToolPackageSummary[] FilterCachedTools(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return _cachedCatalog;
+        return _cachedCatalog.Where(tool =>
+                Contains(tool.Name, query)
+                || Contains(tool.Description, query)
+                || Contains(tool.Author, query)
+                || Contains(tool.Category, query)
+                || tool.Tags?.Any(tag => Contains(tag, query)) == true)
+            .ToArray();
+    }
+
+    private void ApplyTools(IReadOnlyList<ToolPackageSummary> tools)
+    {
+        var desiredCards = tools.Select(tool =>
+        {
+            var existing = _tools.FirstOrDefault(card =>
+                string.Equals(card.Id, tool.Id, StringComparison.OrdinalIgnoreCase)
+                && ToolSummariesEquivalent(card.Package, tool));
+            if (existing is not null) return existing;
+            return new ToolCardViewModel(tool, CreateIconSource(tool.IconDataUrl), File.Exists(GetCachePath(tool)));
+        }).ToArray();
+
+        ReconcileCollection(_tools, desiredCards);
+        EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ToolCountText.Text = $"{_tools.Count} 个工具";
+    }
+
+    private void ShowRefreshFailure(string message)
+    {
+        if (_hasCachedCatalog)
+        {
+            EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            ToolCountText.Text = $"{_tools.Count} 个工具";
+            StatusText.Text = $"后台刷新失败，当前显示本地缓存：{message}";
+            return;
+        }
+
+        ShowEmptyResult(message);
+    }
+
+    private static void TrySaveCatalogCache(ToolPackageSummary[] tools)
+    {
+        try
+        {
+            AppCacheProfile.ToolCatalogJson = JsonSerializer.Serialize(tools, CacheJsonOptions);
+        }
+        catch
+        {
+            // 缓存写入失败不应影响已成功获取的在线目录。
+        }
+    }
+
+    private static bool Contains(string? value, string query) =>
+        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
+
+    private static bool ToolSummariesEquivalent(ToolPackageSummary left, ToolPackageSummary right) =>
+        JsonSerializer.Serialize(left, CacheJsonOptions) == JsonSerializer.Serialize(right, CacheJsonOptions);
+
+    private static void ReconcileCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> desired)
+        where T : class
+    {
+        for (var index = 0; index < desired.Count; index++)
+        {
+            var item = desired[index];
+            var currentIndex = target.IndexOf(item);
+            if (currentIndex < 0)
+                target.Insert(index, item);
+            else if (currentIndex != index)
+                target.Move(currentIndex, index);
+        }
+
+        while (target.Count > desired.Count)
+            target.RemoveAt(target.Count - 1);
     }
 
     private void ShowEmptyResult(string message)
@@ -81,6 +202,36 @@ public partial class ToolBoxPage : Page
     {
         if (sender is Button { CommandParameter: ToolCardViewModel card })
             await OpenToolAsync(card);
+    }
+
+    private void ClearToolDataMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: ToolCardViewModel card }) return;
+
+        try
+        {
+            var size = ToolDataManager.GetToolDataSize(card.Id);
+            if (size == 0 && !ToolDataManager.HasToolData(card.Id))
+            {
+                StatusText.Text = $"{card.Name} 当前没有已保存的数据。";
+                return;
+            }
+
+            var sizeText = FormatDataSize(size);
+            var result = PopupHelper.ShowConfirmDialog(
+                $"确定清除“{card.Name}”的全部工具数据吗？\n\n当前占用：{sizeText}\n包括工具设置与上次窗口状态。此操作无法撤销；若工具仍在运行，关闭时可能重新写入窗口状态。",
+                showCancelButton: true,
+                confirmText: "清除数据");
+            if (result != MessageBoxResult.OK) return;
+
+            ToolDataManager.ClearToolData(card.Id);
+            StatusText.Text = $"已清除 {card.Name} 的工具数据。";
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"清除 {card.Name} 的数据失败：{exception.Message}";
+        }
     }
 
     private async Task OpenToolAsync(ToolCardViewModel card)
@@ -165,6 +316,14 @@ public partial class ToolBoxPage : Page
         using var sha256 = SHA256.Create();
         var actual = Convert.ToHexString(await sha256.ComputeHashAsync(stream)).ToLowerInvariant();
         return string.Equals(actual, expectedSha256, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatDataSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024d:F1} KB";
+        if (bytes < 1024L * 1024 * 1024) return $"{bytes / 1024d / 1024:F1} MB";
+        return $"{bytes / 1024d / 1024 / 1024:F1} GB";
     }
 
     private static ImageSource CreateIconSource(string? dataUrl)

@@ -60,6 +60,7 @@ internal static class ToolProjectWorkspaceService
                   "packageFormatVersion": 1,
                   "id": "local.{{safeId}}",
                   "name": {{jsonProjectName}},
+                  "subtitle": "WPF 独立工具",
                   "version": "1.0.0",
                   "description": "请在这里填写工具说明。",
                   "author": "XFEstudio",
@@ -74,10 +75,10 @@ internal static class ToolProjectWorkspaceService
                     "viewModelClass": "{{toolNamespace}}.MainPageViewModel"
                   },
                   "window": {
-                    "width": 980,
-                    "height": 700,
-                    "minWidth": 560,
-                    "minHeight": 420,
+                    "width": 760,
+                    "height": 560,
+                    "minWidth": 420,
+                    "minHeight": 300,
                     "allowResize": true,
                     "allowMaximize": true,
                     "showMinimizeButton": true,
@@ -91,14 +92,12 @@ internal static class ToolProjectWorkspaceService
                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
                     <Grid Margin="24">
-                        <StackPanel>
-                            <TextBlock Text="{{xamlProjectName}}" FontSize="28" FontWeight="Bold" />
-                            <TextBlock Text="在这里编写工具界面" Margin="0,8,0,0" />
-                        </StackPanel>
+                        <TextBlock Text="在这里编写工具界面" />
                     </Grid>
                 </UserControl>
                 """,
             [Path.Combine("Code", "Views", "MainPage.xaml.cs")] = $$"""
+                using System.Windows;
                 using System.Windows.Controls;
 
                 namespace {{toolNamespace}};
@@ -109,12 +108,17 @@ internal static class ToolProjectWorkspaceService
                     {
                         InitializeComponent();
                         DataContext = new MainPageViewModel();
+                        Unloaded += OnUnloaded;
                     }
+
+                    private void OnUnloaded(object sender, RoutedEventArgs e) =>
+                        ((MainPageViewModel)DataContext).SaveSettings();
                 }
                 """,
             [Path.Combine("Code", "ViewModels", "MainPageViewModel.cs")] = $$"""
                 using CommunityToolkit.Mvvm.ComponentModel;
                 using CommunityToolkit.Mvvm.Input;
+                using XFEToolBox.Core.Tools;
 
                 namespace {{toolNamespace}};
 
@@ -123,8 +127,22 @@ internal static class ToolProjectWorkspaceService
                     [ObservableProperty]
                     private string result = string.Empty;
 
+                    public MainPageViewModel()
+                    {
+                        if (ToolDataStore.IsInitialized)
+                            result = ToolDataStore.Read("settings", new ToolSettings(string.Empty)).LastResult;
+                    }
+
+                    public void SaveSettings()
+                    {
+                        if (ToolDataStore.IsInitialized)
+                            ToolDataStore.Write("settings", new ToolSettings(Result));
+                    }
+
                     [RelayCommand]
                     private void Execute() => Result = "工具执行成功";
+
+                    private sealed record ToolSettings(string LastResult);
                 }
                 """,
             [Path.Combine("Code", "Models", "ToolModel.cs")] = $$"""

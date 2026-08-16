@@ -15,6 +15,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Xml.Linq;
 using Ganss.Xss;
@@ -53,6 +54,11 @@ public partial class ToolCodeEditorWindow : Window
     {
         ".cs", ".xaml", ".json", ".xml", ".resx", ".txt", ".md", ".markdown", ".mdown", ".mkd", ".mkdn",
         ".yml", ".yaml", ".config", ".props", ".targets"
+    };
+
+    private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico"
     };
 
     private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
@@ -235,14 +241,17 @@ public partial class ToolCodeEditorWindow : Window
             return;
 
         var files = new List<EditorFileContent>();
-        foreach (var item in _files)
+        foreach (var item in _files.Where(item => item.IsEditable))
         {
             var fullPath = GetSafeFullPath(item.RelativePath);
             files.Add(new EditorFileContent(item.RelativePath, await File.ReadAllTextAsync(fullPath)));
         }
 
+        var requestedActivePath = activePath is not null && EditableExtensions.Contains(Path.GetExtension(activePath))
+            ? activePath
+            : null;
         var payload = JsonSerializer.Serialize(
-            new { files, activePath = activePath ?? files.FirstOrDefault()?.Path }, JsonOptions);
+            new { files, activePath = requestedActivePath ?? files.FirstOrDefault()?.Path }, JsonOptions);
         await EditorWebView.ExecuteScriptAsync($"window.editorHost.loadWorkspace({payload})");
     }
 
@@ -266,7 +275,7 @@ public partial class ToolCodeEditorWindow : Window
 
             var paths = Directory.EnumerateFiles(_workspaceRoot, "*", SearchOption.AllDirectories)
                 .Where(path => !IsBuildDirectory(path))
-                .Where(path => EditableExtensions.Contains(Path.GetExtension(path)))
+                .Where(IsExplorerVisibleFile)
                 .Select(path => Path.GetRelativePath(_workspaceRoot, path).Replace('\\', '/'))
                 .OrderBy(path => path.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .ThenBy(path => path, StringComparer.OrdinalIgnoreCase);
@@ -337,6 +346,12 @@ public partial class ToolCodeEditorWindow : Window
 
     private static string GetParentPath(string relativePath) =>
         Path.GetDirectoryName(relativePath)?.Replace('\\', '/') ?? string.Empty;
+
+    private static bool IsExplorerVisibleFile(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return EditableExtensions.Contains(extension) || ImageExtensions.Contains(extension);
+    }
 
     private static string? TryGetXamlPathForCodeBehind(string relativePath) =>
         relativePath.EndsWith(".xaml.cs", StringComparison.OrdinalIgnoreCase)
@@ -604,7 +619,8 @@ public partial class ToolCodeEditorWindow : Window
             if (file.IsFolder)
             {
                 var removedPaths = _files
-                    .Where(item => item.RelativePath.StartsWith(file.RelativePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase))
+                    .Where(item => item.IsEditable
+                                   && item.RelativePath.StartsWith(file.RelativePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase))
                     .Select(item => item.RelativePath)
                     .ToArray();
                 Directory.Delete(fullPath, recursive: true);
@@ -617,7 +633,7 @@ public partial class ToolCodeEditorWindow : Window
             else
             {
                 File.Delete(fullPath);
-                if (_editorReady)
+                if (_editorReady && file.IsEditable)
                     await EditorWebView.ExecuteScriptAsync($"window.editorHost.removeFile({JsonSerializer.Serialize(file.RelativePath)})");
             }
 
@@ -767,6 +783,12 @@ public partial class ToolCodeEditorWindow : Window
                 return;
             }
 
+            if (previewPath is not null && ImageExtensions.Contains(Path.GetExtension(previewPath)))
+            {
+                await ShowImagePreviewAsync(previewPath);
+                return;
+            }
+
             if (previewPath is not null && Path.GetExtension(previewPath).Equals(".xaml", StringComparison.OrdinalIgnoreCase))
             {
                 var xaml = await ReadEditorOrDiskFileAsync(previewPath);
@@ -886,6 +908,73 @@ public partial class ToolCodeEditorWindow : Window
     private static bool IsPlainTextPreviewPath(string path) =>
         Path.GetExtension(path).ToLowerInvariant() is ".json" or ".xml" or ".resx" or ".txt" or ".yml" or ".yaml" or ".config" or ".props" or ".targets";
 
+    private async Task ShowImagePreviewAsync(string relativePath, bool openAsDocument = false)
+    {
+        if (_lastSurfacePath?.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) == true)
+            await FlushManifestDesignerAsync();
+
+        var fullPath = GetSafeFullPath(relativePath);
+        if (!File.Exists(fullPath))
+            throw new FileNotFoundException($"图像文件不存在：{relativePath}", fullPath);
+
+        var bitmap = new BitmapImage();
+        await using (var stream = new FileStream(
+                         fullPath,
+                         FileMode.Open,
+                         FileAccess.Read,
+                         FileShare.ReadWrite | FileShare.Delete,
+                         81920,
+                         FileOptions.Asynchronous | FileOptions.SequentialScan))
+        {
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = stream;
+            bitmap.EndInit();
+        }
+        bitmap.Freeze();
+
+        _activePath = relativePath;
+        _lastSurfacePath = relativePath;
+        _manifestSourceMode = false;
+        ManifestDesignerPanel.Visibility = Visibility.Collapsed;
+        ManifestViewToggleButton.Visibility = Visibility.Collapsed;
+        UpdateXamlRelatedFileButton(relativePath);
+        ActiveFileText.Text = relativePath;
+
+        ShowWpfPreviewSurface();
+        PreviewErrorPanel.Visibility = Visibility.Collapsed;
+        PreviewTitleText.Text = $"{relativePath} · 图像预览";
+        PreviewSubtitleText.Text = $"{bitmap.PixelWidth} × {bitmap.PixelHeight} · {Path.GetExtension(relativePath).TrimStart('.').ToUpperInvariant()}";
+        var previewScale = Math.Min(1d, Math.Min(360d / bitmap.PixelWidth, 360d / bitmap.PixelHeight));
+        var image = new Image
+        {
+            Source = bitmap,
+            Stretch = Stretch.Uniform,
+            Width = Math.Max(1, bitmap.PixelWidth * previewScale),
+            Height = Math.Max(1, bitmap.PixelHeight * previewScale),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            SnapsToDevicePixels = true
+        };
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+        PreviewContent.Content = image;
+
+        if (openAsDocument)
+        {
+            _previewDocumentTabOpen = true;
+            PreviewDocumentTabButton.Content = $"预览 · {Path.GetFileName(relativePath)}";
+            PreviewDocumentTabStrip.Visibility = Visibility.Visible;
+            ShowPreviewDocumentSurface();
+        }
+        else
+        {
+            ShowPreviewPanel();
+        }
+
+        UpdateEditorWebViewVisibility();
+        SetHostStatus($"已预览图像 {relativePath}");
+    }
+
     private static HtmlSanitizer CreateMarkdownSanitizer()
     {
         var sanitizer = new HtmlSanitizer();
@@ -988,6 +1077,39 @@ public partial class ToolCodeEditorWindow : Window
         catch (Exception exception)
         {
             await ReportOperationFailureAsync("运行工具失败", exception);
+        }
+        finally
+        {
+            RunButton.IsEnabled = true;
+        }
+    }
+
+    private async void BuildProjectButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_editorReady)
+        {
+            SetHostStatus("编辑器仍在初始化");
+            return;
+        }
+
+        RunButton.IsEnabled = false;
+        try
+        {
+            SetHostStatus("正在保存并生成工具工程…");
+            var manifest = await SaveAndReadManifestAsync();
+            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest);
+            if (!result.Success)
+            {
+                SetHostStatus("工具生成失败");
+                await ShowAlertAsync("生成工具失败", result.Message);
+                return;
+            }
+
+            SetHostStatus("工具工程生成成功 · 0 个错误");
+        }
+        catch (Exception exception)
+        {
+            await ReportOperationFailureAsync("生成工具失败", exception);
         }
         finally
         {
@@ -1179,6 +1301,11 @@ public partial class ToolCodeEditorWindow : Window
         try
         {
             ActiveFileText.Text = file.RelativePath;
+            if (file.IsImage)
+            {
+                await ShowImagePreviewAsync(file.RelativePath);
+                return;
+            }
             await EditorWebView.ExecuteScriptAsync(
                 $"window.editorHost.activateFile({JsonSerializer.Serialize(file.RelativePath)})");
         }
@@ -1250,6 +1377,7 @@ public partial class ToolCodeEditorWindow : Window
             ManifestPackageFormatText.Text = manifest.PackageFormatVersion.ToString();
             ManifestIdBox.Text = manifest.Id;
             ManifestNameBox.Text = manifest.Name;
+            ManifestSubtitleBox.Text = manifest.Subtitle ?? string.Empty;
             ManifestVersionBox.Text = manifest.Version;
             ManifestDescriptionBox.Text = manifest.Description;
             ManifestAuthorBox.Text = manifest.Author;
@@ -1331,6 +1459,7 @@ public partial class ToolCodeEditorWindow : Window
             PackageFormatVersion = ToolPackageManifest.CurrentPackageFormatVersion,
             Id = ManifestIdBox.Text.Trim(),
             Name = ManifestNameBox.Text.Trim(),
+            Subtitle = NullIfWhiteSpace(ManifestSubtitleBox.Text),
             Version = ManifestVersionBox.Text.Trim(),
             Description = ManifestDescriptionBox.Text.Trim(),
             Author = ManifestAuthorBox.Text.Trim(),
@@ -1634,13 +1763,28 @@ public partial class ToolCodeEditorWindow : Window
             FileList.SelectedItem = item;
     }
 
-    private void ExplorerItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private async void ExplorerItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount != 2 || sender is not FrameworkElement { DataContext: EditorExplorerItem { IsFolder: true } folder })
+        if (e.ClickCount != 2 || sender is not FrameworkElement { DataContext: EditorExplorerItem item })
             return;
 
-        folder.IsExpanded = !folder.IsExpanded;
-        RefreshExplorerView();
+        if (item.IsFolder)
+        {
+            item.IsExpanded = !item.IsExpanded;
+            RefreshExplorerView();
+        }
+        else if (item.IsImage)
+        {
+            SelectExplorerItem(item.RelativePath);
+            try
+            {
+                await ShowImagePreviewAsync(item.RelativePath, openAsDocument: true);
+            }
+            catch (Exception exception)
+            {
+                await ReportOperationFailureAsync("打开图像失败", exception);
+            }
+        }
         e.Handled = true;
     }
 
@@ -1669,6 +1813,11 @@ public partial class ToolCodeEditorWindow : Window
         try
         {
             ActiveFileText.Text = item.RelativePath;
+            if (item.IsImage)
+            {
+                await ShowImagePreviewAsync(item.RelativePath, openAsDocument: true);
+                return;
+            }
             await EditorWebView.ExecuteScriptAsync(
                 $"window.editorHost.activateFile({JsonSerializer.Serialize(item.RelativePath)})");
         }
@@ -1791,8 +1940,8 @@ public partial class ToolCodeEditorWindow : Window
             return "请输入新名称。";
         if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.Contains('/') || name.Contains('\\'))
             return "名称包含无效字符。";
-        if (!item.IsFolder && !EditableExtensions.Contains(Path.GetExtension(name)))
-            return "重命名后的文件类型不受编辑器支持。";
+        if (!item.IsFolder && !IsExplorerVisibleFile(name))
+            return "重命名后的文件类型不受工程资源管理器支持。";
 
         var parent = Path.GetDirectoryName(item.RelativePath)?.Replace('\\', '/');
         var destination = string.IsNullOrWhiteSpace(parent) ? name : $"{parent}/{name}";
@@ -1937,6 +2086,8 @@ public partial class ToolCodeEditorWindow : Window
             await ToolProjectWorkspaceService.SaveExplorerOrderAsync(_workspaceRoot, _explorerOrder);
             await ReloadFileListAsync(destinationPath);
             await SendWorkspaceAsync(source.IsFolder ? null : destinationPath);
+            if (!source.IsFolder && ImageExtensions.Contains(Path.GetExtension(destinationPath)))
+                await ShowImagePreviewAsync(destinationPath);
             SetHostStatus($"已移动到 {destinationPath}");
         }
         catch (Exception exception)
@@ -1950,21 +2101,33 @@ public partial class ToolCodeEditorWindow : Window
         var manifestPath = Path.Combine(_workspaceRoot, "manifest.json");
         if (!File.Exists(manifestPath))
             return;
-        var root = JsonNode.Parse(await File.ReadAllTextAsync(manifestPath));
-        if (root?["entry"] is not JsonObject entry)
+        if (JsonNode.Parse(await File.ReadAllTextAsync(manifestPath)) is not JsonObject root)
             return;
 
         var changed = false;
-        foreach (var key in new[] { "viewXaml", "viewCodeBehind", "viewModel" })
+        if (root["icon"]?.GetValue<string>() is { } iconPath)
         {
-            var value = entry[key]?.GetValue<string>();
-            if (value is null)
-                continue;
-            var replacement = ReplaceMovedPath(value.Replace('\\', '/'), sourcePath, destinationPath, isFolder);
-            if (replacement.Equals(value, StringComparison.Ordinal))
-                continue;
-            entry[key] = replacement;
-            changed = true;
+            var replacement = ReplaceMovedPath(iconPath.Replace('\\', '/'), sourcePath, destinationPath, isFolder);
+            if (!replacement.Equals(iconPath, StringComparison.Ordinal))
+            {
+                root["icon"] = replacement;
+                changed = true;
+            }
+        }
+
+        if (root["entry"] is JsonObject entry)
+        {
+            foreach (var key in new[] { "viewXaml", "viewCodeBehind", "viewModel" })
+            {
+                var value = entry[key]?.GetValue<string>();
+                if (value is null)
+                    continue;
+                var replacement = ReplaceMovedPath(value.Replace('\\', '/'), sourcePath, destinationPath, isFolder);
+                if (replacement.Equals(value, StringComparison.Ordinal))
+                    continue;
+                entry[key] = replacement;
+                changed = true;
+            }
         }
 
         if (changed)
@@ -2062,6 +2225,8 @@ public partial class ToolCodeEditorWindow : Window
             _dirty = false;
             await ReloadFileListAsync(selectedPath);
             await SendWorkspaceAsync(activePath);
+            if (activePath is not null && ImageExtensions.Contains(Path.GetExtension(activePath)))
+                await ShowImagePreviewAsync(activePath);
             SetHostStatus("文件列表已刷新");
         }
         catch (Exception exception)
@@ -2123,6 +2288,9 @@ public partial class ToolCodeEditorWindow : Window
                 break;
             case "format":
                 FormatButton_Click(this, new RoutedEventArgs());
+                break;
+            case "build":
+                BuildProjectButton_Click(this, new RoutedEventArgs());
                 break;
             case "export":
                 PackageButton_Click(this, new RoutedEventArgs());
@@ -2433,15 +2601,17 @@ public partial class ToolCodeEditorWindow : Window
         }
         else if (e.Key == Key.F5 && modifiers == ModifierKeys.Control)
         {
-            PreviewButton_Click(this, new RoutedEventArgs());
+            RunButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
-        else if (modifiers == ModifierKeys.Control && e.Key == Key.S)
+        else if ((modifiers == ModifierKeys.Control
+                  || modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+                 && e.Key == Key.S)
         {
             SaveButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
-        else if (modifiers == ModifierKeys.Control && e.Key == Key.O)
+        else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.O)
         {
             OpenFolderButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
@@ -2456,15 +2626,24 @@ public partial class ToolCodeEditorWindow : Window
             NewProjectButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
+        else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.A)
+        {
+            NewFileButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.B)
+        {
+            BuildProjectButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.W)
+        {
+            PreviewButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
         else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.E)
         {
             PackageButton_Click(this, new RoutedEventArgs());
-            e.Handled = true;
-        }
-        else if (modifiers == (ModifierKeys.Shift | ModifierKeys.Alt)
-                 && (e.Key == Key.F || e.SystemKey == Key.F))
-        {
-            FormatButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
     }
@@ -2574,6 +2753,8 @@ public partial class ToolCodeEditorWindow : Window
             ".md" or ".markdown" or ".mdown" or ".mkd" or ".mkdn" =>
                 new(path, false, "M↓", "#F0F0FA", "#6868A6"),
             ".yml" or ".yaml" => new(path, false, "Y", "#FFF0F3", "#B96274"),
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".ico" =>
+                new(path, false, "▧", "#EAF8FC", "#4D8FA6"),
             _ => new(path, false, "·", "#F1F1F6", "#77778B")
         };
 
@@ -2591,6 +2772,8 @@ public partial class ToolCodeEditorWindow : Window
 
         public string RelativePath { get; } = relativePath;
         public bool IsFolder { get; } = isFolder;
+        public bool IsEditable => !IsFolder && EditableExtensions.Contains(Path.GetExtension(RelativePath));
+        public bool IsImage => !IsFolder && ImageExtensions.Contains(Path.GetExtension(RelativePath));
         public string Icon { get; } = icon;
         public string IconBackground { get; } = iconBackground;
         public string IconForeground { get; } = iconForeground;

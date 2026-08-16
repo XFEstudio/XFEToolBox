@@ -21,7 +21,14 @@
             background: var(--surface); color: var(--text);
             font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
         }
-        body { display: grid; grid-template-rows: 42px 1fr 27px; }
+        /* HWND WebView2 不接受 WPF 父级 Clip，圆角必须由 Chromium 自身完成裁切。 */
+        body {
+            display: grid;
+            grid-template-rows: 42px 1fr 27px;
+            border-radius: 12px;
+            clip-path: inset(0 round 12px);
+            contain: paint;
+        }
         #tabs {
             display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; overflow-y: hidden;
             padding: 5px 7px 0; background: var(--surface-subtle); border-bottom: 1px solid var(--border);
@@ -115,6 +122,9 @@
         let suppressChange = false;
         let currentTheme = 'light';
         let tabOrder = [];
+        let renderAllWhitespace = false;
+        let wordWrapEnabled = false;
+        let allRegionsFolded = false;
 
         require.config({ paths: { vs: './monaco/vs' } });
         require(['vs/editor/editor.main'], function () {
@@ -308,17 +318,112 @@
                 validateModel(editor.getModel());
                 post({ type: 'changed', path: activePath });
             });
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => requestHostSave());
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => requestHostSave());
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN, () => post({ type: 'command', command: 'newFile' }));
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyN, () => post({ type: 'command', command: 'newProject' }));
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO, () => post({ type: 'command', command: 'openProject' }));
-            editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => post({ type: 'command', command: 'format' }));
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyE, () => post({ type: 'command', command: 'export' }));
-            editor.addCommand(monaco.KeyCode.F5, () => post({ type: 'command', command: 'run' }));
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.F5, () => post({ type: 'command', command: 'preview' }));
+            registerVisualStudioKeybindings();
             post({ type: 'ready' });
         });
+
+        function registerVisualStudioKeybindings() {
+            const Ctrl = monaco.KeyMod.CtrlCmd;
+            const Shift = monaco.KeyMod.Shift;
+            const Alt = monaco.KeyMod.Alt;
+            const chord = (first, second) => monaco.KeyMod.chord(first, second);
+            const bind = (keybinding, handler) => editor.addCommand(keybinding, handler);
+            const ctrlKey = key => Ctrl | key;
+            const ctrlShiftKey = key => Ctrl | Shift | key;
+
+            // Visual Studio：文件、项目、生成与运行。
+            bind(ctrlKey(monaco.KeyCode.KeyS), requestHostSave);
+            bind(ctrlShiftKey(monaco.KeyCode.KeyS), requestHostSave);
+            bind(ctrlKey(monaco.KeyCode.KeyN), () => post({ type: 'command', command: 'newFile' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyA), () => post({ type: 'command', command: 'newFile' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyN), () => post({ type: 'command', command: 'newProject' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyO), () => post({ type: 'command', command: 'openProject' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyB), () => post({ type: 'command', command: 'build' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyE), () => post({ type: 'command', command: 'export' }));
+            bind(monaco.KeyCode.F5, () => post({ type: 'command', command: 'run' }));
+            bind(Ctrl | monaco.KeyCode.F5, () => post({ type: 'command', command: 'run' }));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyW), () => post({ type: 'command', command: 'preview' }));
+
+            // Visual Studio：格式化、代码清理、注释及快速信息。
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyD)), () => runEditorAction('editor.action.formatDocument'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyF)), formatCurrentSelection);
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyE)), cleanupCurrentDocument);
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyC)), () => runEditorAction('editor.action.addCommentLine'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyU)), () => runEditorAction('editor.action.removeCommentLine'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyK), ctrlKey(monaco.KeyCode.KeyI)), () => runEditorAction('editor.action.showHover'));
+
+            // Visual Studio：折叠、括号跳转、空白及自动换行。
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyM)), () => runEditorAction('editor.toggleFold'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyA)), () => { allRegionsFolded = true; return runEditorAction('editor.foldAll'); });
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyO)), () => { allRegionsFolded = true; return runEditorAction('editor.foldAll'); });
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyX)), () => { allRegionsFolded = false; return runEditorAction('editor.unfoldAll'); });
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyS)), () => runEditorAction('editor.fold'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyE)), () => runEditorAction('editor.unfold'));
+            bind(chord(ctrlKey(monaco.KeyCode.KeyM), ctrlKey(monaco.KeyCode.KeyL)), toggleAllFolding);
+            bind(chord(ctrlKey(monaco.KeyCode.KeyE), ctrlKey(monaco.KeyCode.KeyW)), toggleWordWrap);
+            bind(chord(ctrlKey(monaco.KeyCode.KeyR), ctrlKey(monaco.KeyCode.KeyW)), toggleWhitespace);
+            bind(ctrlKey(monaco.KeyCode.BracketRight), () => runEditorAction('editor.action.jumpToBracket'));
+            bind(ctrlShiftKey(monaco.KeyCode.BracketRight), () => runEditorAction('editor.action.selectToBracket'));
+
+            // Visual Studio：补全、参数提示、大小写、重复行与插入行。
+            bind(ctrlKey(monaco.KeyCode.Space), () => runEditorAction('editor.action.triggerSuggest'));
+            bind(ctrlKey(monaco.KeyCode.KeyJ), () => runEditorAction('editor.action.triggerSuggest'));
+            bind(ctrlShiftKey(monaco.KeyCode.Space), () => runEditorAction('editor.action.triggerParameterHints'));
+            bind(ctrlKey(monaco.KeyCode.KeyD), () => runEditorAction('editor.action.duplicateSelection'));
+            bind(ctrlKey(monaco.KeyCode.KeyU), () => runEditorAction('editor.action.transformToLowercase'));
+            bind(ctrlShiftKey(monaco.KeyCode.KeyU), () => runEditorAction('editor.action.transformToUppercase'));
+            bind(ctrlKey(monaco.KeyCode.Enter), () => runEditorAction('editor.action.insertLineBefore'));
+            bind(ctrlShiftKey(monaco.KeyCode.Enter), () => runEditorAction('editor.action.insertLineAfter'));
+            bind(Shift | Alt | monaco.KeyCode.KeyT, () => runEditorAction('editor.action.transpose'));
+        }
+
+        function runEditorAction(actionId) {
+            const action = editor?.getAction(actionId);
+            if (action) return action.run();
+            editor?.trigger('xfe.visualStudioKeybindings', actionId, null);
+            return Promise.resolve();
+        }
+
+        async function cleanupCurrentDocument() {
+            await runEditorAction('editor.action.trimTrailingWhitespace');
+            await runEditorAction('editor.action.formatDocument');
+        }
+
+        function formatCurrentSelection() {
+            const model = editor?.getModel();
+            const selection = editor?.getSelection();
+            if (!model || !selection || selection.isEmpty()) return runEditorAction('editor.action.formatDocument');
+            const language = model.getLanguageId();
+            const selectedText = model.getValueInRange(selection);
+            const formatted = language === 'xml'
+                ? formatXml(selectedText)
+                : language === 'csharp'
+                    ? formatCSharp(selectedText)
+                    : selectedText;
+            if (formatted === selectedText) return;
+            editor.executeEdits('xfe.formatSelection', [{ range: selection, text: preserveSelectionIndentation(model, selection, formatted), forceMoveMarkers: true }]);
+        }
+
+        function preserveSelectionIndentation(model, selection, formatted) {
+            const line = model.getLineContent(selection.startLineNumber);
+            const baseIndent = line.slice(0, Math.max(0, selection.startColumn - 1)).match(/^\s*/)?.[0] || '';
+            return formatted.split('\n').map((value, index) => index === 0 || !value ? value : baseIndent + value).join('\n');
+        }
+
+        function toggleAllFolding() {
+            allRegionsFolded = !allRegionsFolded;
+            return runEditorAction(allRegionsFolded ? 'editor.foldAll' : 'editor.unfoldAll');
+        }
+
+        function toggleWordWrap() {
+            wordWrapEnabled = !wordWrapEnabled;
+            editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off' });
+        }
+
+        function toggleWhitespace() {
+            renderAllWhitespace = !renderAllWhitespace;
+            editor.updateOptions({ renderWhitespace: renderAllWhitespace ? 'all' : 'selection' });
+        }
 
         function languageFor(path) {
             const lower = path.toLowerCase();
