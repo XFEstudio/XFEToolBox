@@ -4,6 +4,7 @@ using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Windows;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
 
@@ -11,6 +12,8 @@ namespace XFEToolBox.Client.Utilities;
 
 internal static class ToolProjectWorkspaceService
 {
+    private const string DefaultToolIconRelativePath = "Assets/icon.png";
+    private const string DefaultToolIconResourcePath = "Resources/Image/default_tool_icon.png";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     public static string DefaultProjectsRoot => Path.Combine(AppPath.AppLocalData, "EditorWorkspaces");
@@ -32,9 +35,11 @@ internal static class ToolProjectWorkspaceService
         var viewsDirectory = Path.Combine(root, "Code", "Views");
         var modelsDirectory = Path.Combine(root, "Code", "Models");
         var viewModelsDirectory = Path.Combine(root, "Code", "ViewModels");
+        var assetsDirectory = Path.Combine(root, "Assets");
         Directory.CreateDirectory(viewsDirectory);
         Directory.CreateDirectory(modelsDirectory);
         Directory.CreateDirectory(viewModelsDirectory);
+        Directory.CreateDirectory(assetsDirectory);
 
         var safeId = new string(projectName.ToLowerInvariant()
             .Select(character => char.IsLetterOrDigit(character) ? character : '-')
@@ -58,6 +63,7 @@ internal static class ToolProjectWorkspaceService
                   "version": "1.0.0",
                   "description": "请在这里填写工具说明。",
                   "author": "XFEstudio",
+                  "icon": "{{DefaultToolIconRelativePath}}",
                   "category": "开发工具",
                   "tags": [ "WPF" ],
                   "entry": {
@@ -137,6 +143,8 @@ internal static class ToolProjectWorkspaceService
             Directory.CreateDirectory(Path.GetDirectoryName(output)!);
             await File.WriteAllTextAsync(output, content, new UTF8Encoding(false));
         }
+
+        await WriteDefaultToolIconAsync(Path.Combine(root, DefaultToolIconRelativePath));
 
         await RememberProjectAsync(root);
         return root;
@@ -230,6 +238,27 @@ internal static class ToolProjectWorkspaceService
     {
         Directory.CreateDirectory(DefaultProjectsRoot);
         await File.WriteAllTextAsync(HistoryPath, JsonSerializer.Serialize(items, JsonOptions), new UTF8Encoding(false));
+    }
+
+    private static async Task WriteDefaultToolIconAsync(string outputPath)
+    {
+        var assemblyName = typeof(ToolProjectWorkspaceService).Assembly.GetName().Name
+                           ?? throw new InvalidOperationException("无法确定客户端程序集名称。");
+        var resourceUri = new Uri(
+            $"pack://application:,,,/{assemblyName};component/{DefaultToolIconResourcePath}",
+            UriKind.Absolute);
+        var resource = Application.GetResourceStream(resourceUri)
+                       ?? throw new InvalidOperationException("无法读取内置的默认工具图标。");
+
+        await using var source = resource.Stream;
+        await using var destination = new FileStream(
+            outputPath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            81920,
+            FileOptions.Asynchronous);
+        await source.CopyToAsync(destination);
     }
 
     private static string GetLayoutPath(string projectPath)

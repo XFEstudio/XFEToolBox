@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -23,6 +23,7 @@
     <None Remove="Resources\Image\console.png" />
     <None Remove="Resources\Image\corner.png" />
     <None Remove="Resources\Image\download.png" />
+    <None Remove="Resources\Image\default_tool_icon.png" />
     <None Remove="Resources\Image\DownloadImage\cheat_engine.png" />
     <None Remove="Resources\Image\DownloadImage\steampp.png" />
     <None Remove="Resources\Image\DownloadImage\visualstudio.png" />
@@ -67,6 +68,7 @@
     <Resource Include="Resources\Image\console.png" />
     <Resource Include="Resources\Image\corner.png" />
     <Resource Include="Resources\Image\download.png" />
+    <Resource Include="Resources\Image\default_tool_icon.png" />
     <Resource Include="Resources\Image\DownloadImage\cheat_engine.png" />
     <Resource Include="Resources\Image\DownloadImage\steampp.png" />
     <Resource Include="Resources\Image\DownloadImage\visual_studio.png" />

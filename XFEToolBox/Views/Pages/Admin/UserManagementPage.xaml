@@ -58,16 +58,81 @@
                         </StackPanel>
                     </Border>
                 </Grid>
-                <controls:RoundedClipBorder Grid.Row="1" MinHeight="80" Background="White" BorderBrush="#E5E5F0" BorderThickness="1" CornerRadius="12">
-                    <DataGrid x:Name="UserGrid" Style="{StaticResource AdminDataGrid}" IsReadOnly="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="账号" Binding="{Binding UserName}" Width="*"/>
-                            <DataGridTextColumn Header="昵称" Binding="{Binding NickName}" Width="*"/>
-                            <DataGridTextColumn Header="角色" Binding="{Binding RoleText}" Width="105"/>
-                            <DataGridTextColumn Header="状态" Binding="{Binding StatusText}" Width="90"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </controls:RoundedClipBorder>
+                <Grid Grid.Row="1">
+                    <controls:RoundedClipBorder MinHeight="80" Background="White" BorderBrush="#E5E5F0" BorderThickness="1" CornerRadius="12">
+                        <DataGrid x:Name="UserGrid" Style="{StaticResource AdminDataGrid}" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="账号" SortMemberPath="UserName" Width="1.15*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="28" Height="28" CornerRadius="9" Background="#EEEEFC" VerticalAlignment="Center">
+                                                    <TextBlock Text="◎" Foreground="#7777C9" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding UserName}" Style="{StaticResource ToolBoxDataGridPrimaryTextStyle}"/>
+                                                    <TextBlock Text="{Binding Id}" Style="{StaticResource ToolBoxDataGridSecondaryTextStyle}" FontSize="8.5" Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="昵称" SortMemberPath="NickName" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding NickName}" Style="{StaticResource ToolBoxDataGridPrimaryTextStyle}" FontWeight="Normal"/></DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="角色" SortMemberPath="RoleText" Width="116" HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="RoleBadge" Padding="9,4" Background="#F2F2F8" CornerRadius="9" HorizontalAlignment="Center">
+                                                <TextBlock x:Name="RoleText" Text="普通用户" Foreground="#77778C" FontSize="9.5"/>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsAdministrator}" Value="True">
+                                                    <Setter TargetName="RoleBadge" Property="Background" Value="#ECECFC"/>
+                                                    <Setter TargetName="RoleText" Property="Text" Value="管理员"/>
+                                                    <Setter TargetName="RoleText" Property="Foreground" Value="#6666B2"/>
+                                                    <Setter TargetName="RoleText" Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="状态" SortMemberPath="StatusText" Width="100" HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="#D5848D" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="UserStatusText" Text="已禁用" Foreground="#A3656C" FontSize="9.5" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Enable}" Value="True">
+                                                    <Setter TargetName="StatusDot" Property="Fill" Value="#72CE9A"/>
+                                                    <Setter TargetName="UserStatusText" Property="Text" Value="正常"/>
+                                                    <Setter TargetName="UserStatusText" Property="Foreground" Value="#4F9069"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </controls:RoundedClipBorder>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers><DataTrigger Binding="{Binding HasItems, ElementName=UserGrid}" Value="False"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Border Width="44" Height="44" CornerRadius="14" Background="#F0EFFC" HorizontalAlignment="Center">
+                            <TextBlock Text="◎" Foreground="#8585D3" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="暂无用户数据" Foreground="#55556B" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,9,0,0"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 

@@ -203,6 +203,7 @@ public partial class ToolCodeEditorWindow : Window
                     PublishPackageMenuItem.IsEnabled = true;
                     EditorLoading.Visibility = Visibility.Collapsed;
                     await SendWorkspaceAsync();
+                    UpdateEditorWebViewVisibility();
                     SetHostStatus("Monaco 0.55.1 · IntelliSense 已就绪");
                     break;
                 case "changed":
@@ -297,11 +298,23 @@ public partial class ToolCodeEditorWindow : Window
         IReadOnlyDictionary<string, int> orderLookup)
     {
         var items = source.ToArray();
+        var itemLookup = items.ToDictionary(item => item.RelativePath, StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            item.LogicalParentPath = GetParentPath(item.RelativePath);
+            if (TryGetXamlPathForCodeBehind(item.RelativePath) is not { } xamlPath
+                || !itemLookup.TryGetValue(xamlPath, out var xamlItem)
+                || xamlItem.IsFolder)
+                continue;
 
-        IEnumerable<EditorExplorerItem> Visit(string parentPath)
+            item.LogicalParentPath = xamlPath;
+            xamlItem.HasNestedItems = true;
+        }
+
+        IEnumerable<EditorExplorerItem> Visit(string parentPath, int depth)
         {
             var children = items
-                .Where(item => GetParentPath(item.RelativePath).Equals(parentPath, StringComparison.OrdinalIgnoreCase))
+                .Where(item => item.LogicalParentPath.Equals(parentPath, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(item => item.RelativePath.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .ThenBy(item => orderLookup.ContainsKey(item.RelativePath) ? 0 : 1)
                 .ThenBy(item => orderLookup.GetValueOrDefault(item.RelativePath, int.MaxValue))
@@ -310,19 +323,25 @@ public partial class ToolCodeEditorWindow : Window
 
             foreach (var child in children)
             {
+                child.Depth = depth;
                 yield return child;
-                if (!child.IsFolder)
+                if (!child.CanExpand)
                     continue;
-                foreach (var descendant in Visit(child.RelativePath))
+                foreach (var descendant in Visit(child.RelativePath, depth + 1))
                     yield return descendant;
             }
         }
 
-        return Visit(string.Empty);
+        return Visit(string.Empty, 0);
     }
 
     private static string GetParentPath(string relativePath) =>
         Path.GetDirectoryName(relativePath)?.Replace('\\', '/') ?? string.Empty;
+
+    private static string? TryGetXamlPathForCodeBehind(string relativePath) =>
+        relativePath.EndsWith(".xaml.cs", StringComparison.OrdinalIgnoreCase)
+            ? relativePath[..^3]
+            : null;
 
     private async Task SaveFilesAsync(IReadOnlyCollection<EditorFileContent> files)
     {
@@ -892,10 +911,10 @@ public partial class ToolCodeEditorWindow : Window
           <style>
             :root { --main:#9292e7; --main-deep:#7272c8; --text:#414156; --muted:#77778b; --line:#e3e2ed; --soft:#f2f1fc; }
             * { box-sizing:border-box; }
-            ::-webkit-scrollbar { width:8px; height:8px; }
-            ::-webkit-scrollbar-track { background:transparent; }
-            ::-webkit-scrollbar-thumb { border-radius:999px; background:#9292e7; }
-            ::-webkit-scrollbar-thumb:hover { background:#7777cf; }
+            ::-webkit-scrollbar { width:12px; height:12px; }
+            ::-webkit-scrollbar-track { border-radius:6px; background:#ececfa; }
+            ::-webkit-scrollbar-thumb { border:2px solid #ececfa; border-radius:6px; background:#aaa9e9; }
+            ::-webkit-scrollbar-thumb:hover { background:#9292df; }
             html { background:#fff; }
             body { margin:0; padding:24px 26px 40px; color:var(--text); background:#fff; font:14px/1.72 "Segoe UI","Microsoft YaHei UI",system-ui,sans-serif; overflow-wrap:anywhere; }
             .markdown-body { max-width:920px; margin:0 auto; }
@@ -1188,6 +1207,7 @@ public partial class ToolCodeEditorWindow : Window
             await FlushManifestDesignerAsync();
 
         _activePath = path;
+        UpdateXamlRelatedFileButton(path);
         if (!isManifest)
         {
             _manifestSourceMode = false;
@@ -1356,6 +1376,61 @@ public partial class ToolCodeEditorWindow : Window
     private async void ManifestViewToggleButton_Click(object sender, RoutedEventArgs e) =>
         await ToggleManifestSourceModeAsync();
 
+    private async void XamlRelatedFileButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_editorReady || XamlRelatedFileButton.Tag is not string relatedPath)
+            return;
+
+        try
+        {
+            SelectExplorerItem(relatedPath);
+            await EditorWebView.ExecuteScriptAsync(
+                $"window.editorHost.activateFile({JsonSerializer.Serialize(relatedPath)})");
+        }
+        catch (Exception exception)
+        {
+            await ReportOperationFailureAsync("无法切换关联文件", exception);
+        }
+    }
+
+    private void UpdateXamlRelatedFileButton(string path)
+    {
+        string? relatedPath;
+        string buttonText;
+        string toolTip;
+        if (TryGetXamlPathForCodeBehind(path) is { } xamlPath)
+        {
+            relatedPath = xamlPath;
+            buttonText = "转到 XAML";
+            toolTip = "打开对应的 XAML 页面";
+        }
+        else if (path.EndsWith(".xaml", StringComparison.OrdinalIgnoreCase))
+        {
+            relatedPath = path + ".cs";
+            buttonText = "转到代码";
+            toolTip = "打开对应的代码后置文件";
+        }
+        else
+        {
+            relatedPath = null;
+            buttonText = string.Empty;
+            toolTip = string.Empty;
+        }
+
+        if (relatedPath is null || !_files.Any(file =>
+                file.RelativePath.Equals(relatedPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            XamlRelatedFileButton.Tag = null;
+            XamlRelatedFileButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        XamlRelatedFileButton.Tag = relatedPath;
+        XamlRelatedFileButton.Content = buttonText;
+        XamlRelatedFileButton.ToolTip = toolTip;
+        XamlRelatedFileButton.Visibility = Visibility.Visible;
+    }
+
     private async Task ToggleManifestSourceModeAsync()
     {
         if (_activePath?.Equals("manifest.json", StringComparison.OrdinalIgnoreCase) != true)
@@ -1386,6 +1461,8 @@ public partial class ToolCodeEditorWindow : Window
         _lastSurfacePath = null;
         ManifestDesignerPanel.Visibility = Visibility.Collapsed;
         ManifestViewToggleButton.Visibility = Visibility.Collapsed;
+        XamlRelatedFileButton.Visibility = Visibility.Collapsed;
+        XamlRelatedFileButton.Tag = null;
         UpdateEditorWebViewVisibility();
     }
 
@@ -1509,14 +1586,20 @@ public partial class ToolCodeEditorWindow : Window
         if (item is null)
             return;
 
-        var parentPath = GetParentPath(path);
+        var parentPath = item.LogicalParentPath;
         while (!string.IsNullOrWhiteSpace(parentPath))
         {
             var parent = _explorerItems.FirstOrDefault(entry =>
-                entry.IsFolder && entry.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
+                entry.CanExpand && entry.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
             if (parent is not null)
+            {
                 parent.IsExpanded = true;
-            parentPath = GetParentPath(parentPath);
+                parentPath = parent.LogicalParentPath;
+            }
+            else
+            {
+                parentPath = GetParentPath(parentPath);
+            }
         }
         _fileView?.Refresh();
 
@@ -1563,10 +1646,10 @@ public partial class ToolCodeEditorWindow : Window
 
     private void ExplorerExpander_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement { DataContext: EditorExplorerItem { IsFolder: true } folder })
+        if (sender is not FrameworkElement { DataContext: EditorExplorerItem { CanExpand: true } item })
             return;
 
-        folder.IsExpanded = !folder.IsExpanded;
+        item.IsExpanded = !item.IsExpanded;
         RefreshExplorerView();
         e.Handled = true;
     }
@@ -2102,21 +2185,35 @@ public partial class ToolCodeEditorWindow : Window
         if (!string.IsNullOrEmpty(query))
         {
             return file.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase)
-                   || file.IsFolder && _explorerItems.Any(candidate =>
-                       candidate.RelativePath.StartsWith(file.RelativePath.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)
-                       && candidate.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase));
+                   || file.CanExpand && _explorerItems.Any(candidate =>
+                       candidate.RelativePath.Contains(query, StringComparison.OrdinalIgnoreCase)
+                       && IsLogicalAncestorOf(file, candidate));
         }
 
-        var parentPath = GetParentPath(file.RelativePath);
+        var parentPath = file.LogicalParentPath;
         while (!string.IsNullOrWhiteSpace(parentPath))
         {
             var parent = _explorerItems.FirstOrDefault(candidate =>
-                candidate.IsFolder && candidate.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
+                candidate.CanExpand && candidate.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
             if (parent is { IsExpanded: false })
                 return false;
-            parentPath = GetParentPath(parentPath);
+            parentPath = parent?.LogicalParentPath ?? GetParentPath(parentPath);
         }
         return true;
+    }
+
+    private bool IsLogicalAncestorOf(EditorExplorerItem possibleAncestor, EditorExplorerItem item)
+    {
+        var parentPath = item.LogicalParentPath;
+        while (!string.IsNullOrWhiteSpace(parentPath))
+        {
+            if (parentPath.Equals(possibleAncestor.RelativePath, StringComparison.OrdinalIgnoreCase))
+                return true;
+            var parent = _explorerItems.FirstOrDefault(candidate =>
+                candidate.RelativePath.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
+            parentPath = parent?.LogicalParentPath ?? GetParentPath(parentPath);
+        }
+        return false;
     }
 
     private void RefreshExplorerView()
@@ -2448,7 +2545,7 @@ public partial class ToolCodeEditorWindow : Window
     private void UpdateEditorWebViewVisibility()
     {
         var dialogVisible = EditorDialogOverlay.Visibility == Visibility.Visible;
-        EditorWebView.Visibility = dialogVisible || _previewDocumentActive
+        EditorWebView.Visibility = !_editorReady || dialogVisible || _previewDocumentActive
             || ManifestDesignerPanel.Visibility == Visibility.Visible
             ? Visibility.Hidden
             : Visibility.Visible;
@@ -2498,7 +2595,11 @@ public partial class ToolCodeEditorWindow : Window
         public string IconBackground { get; } = iconBackground;
         public string IconForeground { get; } = iconForeground;
         public string DisplayName => System.IO.Path.GetFileName(RelativePath);
-        public Thickness Indent => new(RelativePath.Count(character => character == '/') * 14, 0, 0, 0);
+        public string LogicalParentPath { get; set; } = GetParentPath(relativePath);
+        public int Depth { get; set; } = relativePath.Count(character => character == '/');
+        public bool HasNestedItems { get; set; }
+        public bool CanExpand => IsFolder || HasNestedItems;
+        public Thickness Indent => new(Depth * 14, 0, 0, 0);
         public bool IsExpanded
         {
             get => _isExpanded;

@@ -433,7 +433,7 @@
                                                 <Style TargetType="Border">
                                                     <Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                        <DataTrigger Binding="{Binding CanExpand}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -543,6 +543,9 @@
                                 <Button x:Name="ClosePreviewDocumentTabButton" Content="×" Width="28" Height="28" MinWidth="28" Padding="0"
                                         Margin="4,0,0,0" FontSize="13" ToolTip="关闭预览选项卡" Click="ClosePreviewDocumentTabButton_Click"/>
                             </StackPanel>
+                            <Button x:Name="XamlRelatedFileButton" Content="转到代码" Height="30" MinWidth="0"
+                                    Margin="0,0,7,0" Padding="10,0" FontSize="9.5" Visibility="Collapsed"
+                                    Click="XamlRelatedFileButton_Click"/>
                             <Button x:Name="ManifestViewToggleButton" Content="编辑 JSON 源码" Height="30" MinWidth="0"
                                     Margin="0,0,7,0" Padding="10,0" FontSize="9.5" Visibility="Collapsed" Click="ManifestViewToggleButton_Click"/>
                             <Button Content="在资源管理器中显示" Height="30" MinWidth="0" Margin="0"
@@ -556,7 +559,8 @@
                                 <ColumnDefinition x:Name="PreviewSplitterColumn" Width="0"/>
                                 <ColumnDefinition x:Name="PreviewColumn" Width="0" MinWidth="0"/>
                             </Grid.ColumnDefinitions>
-                            <wv2:WebView2CompositionControl x:Name="EditorWebView" DefaultBackgroundColor="#FBFBFE"/>
+                            <!-- Monaco uses the HWND-backed control so text is rendered at the monitor's native pixel density. -->
+                            <wv2:WebView2 x:Name="EditorWebView" DefaultBackgroundColor="#FBFBFE"/>
                             <Border x:Name="EditorLoading" Background="#FBFBFE">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Border Width="58" Height="58" CornerRadius="18" Background="#EFEEFC" HorizontalAlignment="Center">
@@ -768,7 +772,7 @@
                                                 <ContentControl x:Name="PreviewContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                                             </Border>
                                         </ScrollViewer>
-                                        <wv2:WebView2CompositionControl x:Name="MarkdownPreviewWebView" DefaultBackgroundColor="#FFFFFF" Visibility="Collapsed"/>
+                                        <wv2:WebView2 x:Name="MarkdownPreviewWebView" DefaultBackgroundColor="#FFFFFF" Visibility="Collapsed"/>
                                         <StackPanel x:Name="PreviewErrorPanel" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" Visibility="Collapsed">
                                             <Border Width="48" Height="48" CornerRadius="15" Background="#FFF0F2" HorizontalAlignment="Center">
                                                 <TextBlock Text="!" Foreground="#C85E69" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
