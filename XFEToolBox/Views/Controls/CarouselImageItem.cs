@@ -11,6 +11,9 @@ public class CarouselImageItem : INotifyPropertyChanged
     private string title = string.Empty;
     public string Title { get => title; set { title = value; OnPropertyChanged(nameof(Title)); } }
 
+    private string badge = "精选内容";
+    public string Badge { get => badge; set { badge = value; OnPropertyChanged(nameof(Badge)); } }
+
     private bool isSelected = false;
     public bool IsSelected { get => isSelected; set { isSelected = value; OnPropertyChanged(nameof(IsSelected)); } }
 

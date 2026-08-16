@@ -118,7 +118,8 @@
         </Style>
         <!-- 软件卡片是选项卡式入口，保留独立模板，不套用普通 Button 外观。 -->
         <Style x:Key="SoftwareCardStyle" TargetType="Button">
-            <Setter Property="MinHeight" Value="142"/>
+            <!-- 与工具箱卡片保持完全一致的固定高度，避免软件较少时被 UniformGrid 拉伸。 -->
+            <Setter Property="Height" Value="142"/>
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -191,9 +192,10 @@
 
         <Border Grid.Row="1" Background="White" CornerRadius="18" Padding="7">
         <Grid>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="SoftwareCards">
-                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False" PanningMode="VerticalOnly">
+                <ItemsControl x:Name="SoftwareCards" VerticalAlignment="Top" Focusable="False">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" VerticalAlignment="Top"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Button Style="{StaticResource SoftwareCardStyle}"

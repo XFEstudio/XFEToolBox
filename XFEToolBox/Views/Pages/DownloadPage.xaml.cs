@@ -2,12 +2,14 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Profiles.CacheProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
@@ -18,9 +20,13 @@ namespace XFEToolBox.Client.Views.Pages;
 public partial class DownloadPage : Page
 {
     private static readonly HttpClient IconClient = CreateIconClient();
+    private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly ObservableCollection<SoftwareCardViewModel> _software = [];
+    private SoftwareCatalogResponse _cachedCatalog = new();
     private bool _updatingCategories;
-    private bool _isLoading;
+    private bool _cacheLoaded;
+    private bool _hasCachedCatalog;
+    private int _refreshGeneration;
 
     public static DownloadPage Current { get; private set; } = new();
 
@@ -33,8 +39,8 @@ public partial class DownloadPage : Page
         CategoryFilter.SelectedIndex = 0;
     }
 
-    private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync();
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
+    private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
     private async void SearchButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(updateCategories: false);
 
     private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -47,50 +53,172 @@ public partial class DownloadPage : Page
         if (!_updatingCategories && IsLoaded) await RefreshAsync(updateCategories: false);
     }
 
-    private async Task RefreshAsync(bool updateCategories = true)
+    private async Task RefreshAsync(bool updateCategories = true, bool refreshFullCatalog = false)
     {
-        if (_isLoading) return;
-        _isLoading = true;
+        EnsureCacheLoaded();
+        var query = SearchTextBox.Text.Trim();
+        var category = GetSelectedCategory();
+        if (_hasCachedCatalog)
+        {
+            if (updateCategories) UpdateCategories(_cachedCatalog.Categories, category);
+            category = GetSelectedCategory();
+            ApplySoftware(FilterCachedSoftware(query, category));
+            StatusText.Text = _software.Count == 0
+                ? "缓存中没有符合条件的软件，正在后台刷新…"
+                : "已显示本地缓存，正在后台刷新…";
+        }
+        else
+        {
+            StatusText.Text = "正在连接工具服务器…";
+        }
+
+        var refreshGeneration = ++_refreshGeneration;
         SearchButton.IsEnabled = RefreshButton.IsEnabled = false;
         CategoryFilter.IsEnabled = false;
-        StatusText.Text = "正在连接工具服务器…";
 
         try
         {
-            var category = CategoryFilter.SelectedIndex > 0 ? CategoryFilter.SelectedItem?.ToString() ?? string.Empty : string.Empty;
+            var requestQuery = refreshFullCatalog ? string.Empty : query;
+            var requestCategory = refreshFullCatalog ? string.Empty : category;
             var response = await ClientSession.Requester.Request<SoftwareCatalogResponse>(
-                "softwareCatalog", SearchTextBox.Text.Trim(), category);
+                "softwareCatalog", requestQuery, requestCategory);
+            if (refreshGeneration != _refreshGeneration) return;
             if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
             {
-                ShowEmptyResult(string.IsNullOrWhiteSpace(response.Message) ? "服务器没有返回软件下载目录。" : response.Message, connectionError: true);
+                ShowRefreshFailure(string.IsNullOrWhiteSpace(response.Message) ? "服务器没有返回软件下载目录。" : response.Message);
                 return;
             }
 
-            if (updateCategories) UpdateCategories(response.Result.Categories, category);
-            _software.Clear();
-            foreach (var item in response.Result.Items)
+            if (updateCategories)
             {
-                var card = new SoftwareCardViewModel(item, GetBundledIcon(item.Id));
-                _software.Add(card);
-                _ = LoadConfiguredIconAsync(card);
+                UpdateCategories(response.Result.Categories, category);
+                category = GetSelectedCategory();
+            }
+            IReadOnlyList<SoftwareCatalogItem> software = response.Result.Items;
+            if (refreshFullCatalog || string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(category))
+            {
+                _cachedCatalog = response.Result;
+                _hasCachedCatalog = true;
+                TrySaveCatalogCache(response.Result);
+                software = FilterCachedSoftware(query, category);
             }
 
-            EmptyState.Visibility = _software.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            EmptyTitle.Text = "暂时没有找到软件";
-            EmptyHint.Text = "可以换个关键词或分类，或稍后刷新再试";
-            SoftwareCountText.Text = $"{_software.Count} 个软件";
+            ApplySoftware(software);
             StatusText.Text = _software.Count == 0 ? "没有符合条件的软件。" : "点击卡片查看详情与获取方式。";
         }
         catch (Exception exception)
         {
-            ShowEmptyResult($"连接失败：{exception.Message}", connectionError: true);
+            if (refreshGeneration == _refreshGeneration)
+                ShowRefreshFailure($"连接失败：{exception.Message}");
         }
         finally
         {
-            _isLoading = false;
-            SearchButton.IsEnabled = RefreshButton.IsEnabled = true;
-            CategoryFilter.IsEnabled = true;
+            if (refreshGeneration == _refreshGeneration)
+            {
+                SearchButton.IsEnabled = RefreshButton.IsEnabled = true;
+                CategoryFilter.IsEnabled = true;
+            }
         }
+    }
+
+    private void EnsureCacheLoaded()
+    {
+        if (_cacheLoaded) return;
+        _cacheLoaded = true;
+        try
+        {
+            var json = AppCacheProfile.SoftwareCatalogJson;
+            if (string.IsNullOrWhiteSpace(json)) return;
+            _cachedCatalog = JsonSerializer.Deserialize<SoftwareCatalogResponse>(json, CacheJsonOptions) ?? new SoftwareCatalogResponse();
+            _cachedCatalog.Items ??= [];
+            _cachedCatalog.Categories ??= [];
+            _hasCachedCatalog = true;
+        }
+        catch
+        {
+            _cachedCatalog = new SoftwareCatalogResponse();
+            _hasCachedCatalog = false;
+        }
+    }
+
+    private SoftwareCatalogItem[] FilterCachedSoftware(string query, string category) =>
+        _cachedCatalog.Items.Where(item =>
+                (string.IsNullOrWhiteSpace(category) || string.Equals(item.Category, category, StringComparison.CurrentCultureIgnoreCase))
+                && (string.IsNullOrWhiteSpace(query)
+                    || Contains(item.Name, query)
+                    || Contains(item.Summary, query)
+                    || Contains(item.Description, query)
+                    || Contains(item.Publisher, query)
+                    || Contains(item.Category, query)
+                    || item.Tags?.Any(tag => Contains(tag, query)) == true))
+            .ToArray();
+
+    private void ApplySoftware(IReadOnlyList<SoftwareCatalogItem> software)
+    {
+        var desiredCards = software.Select(item =>
+        {
+            var existing = _software.FirstOrDefault(card =>
+                string.Equals(card.Id, item.Id, StringComparison.OrdinalIgnoreCase)
+                && SoftwareItemsEquivalent(card.Software, item));
+            if (existing is not null) return existing;
+            var card = new SoftwareCardViewModel(item, GetBundledIcon(item.Id));
+            _ = LoadConfiguredIconAsync(card);
+            return card;
+        }).ToArray();
+
+        ReconcileCollection(_software, desiredCards);
+        EmptyState.Visibility = _software.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        EmptyTitle.Text = "暂时没有找到软件";
+        EmptyHint.Text = "可以换个关键词或分类，或稍后刷新再试";
+        SoftwareCountText.Text = $"{_software.Count} 个软件";
+    }
+
+    private void ShowRefreshFailure(string message)
+    {
+        if (_hasCachedCatalog)
+        {
+            EmptyState.Visibility = _software.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            SoftwareCountText.Text = $"{_software.Count} 个软件";
+            StatusText.Text = $"后台刷新失败，当前显示本地缓存：{message}";
+            return;
+        }
+
+        ShowEmptyResult(message, connectionError: true);
+    }
+
+    private static void TrySaveCatalogCache(SoftwareCatalogResponse catalog)
+    {
+        try
+        {
+            AppCacheProfile.SoftwareCatalogJson = JsonSerializer.Serialize(catalog, CacheJsonOptions);
+        }
+        catch
+        {
+            // 缓存写入失败不应影响已成功获取的在线目录。
+        }
+    }
+
+    private static bool Contains(string? value, string query) =>
+        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
+
+    private static bool SoftwareItemsEquivalent(SoftwareCatalogItem left, SoftwareCatalogItem right) =>
+        JsonSerializer.Serialize(left, CacheJsonOptions) == JsonSerializer.Serialize(right, CacheJsonOptions);
+
+    private static void ReconcileCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> desired)
+        where T : class
+    {
+        for (var index = 0; index < desired.Count; index++)
+        {
+            var item = desired[index];
+            var currentIndex = target.IndexOf(item);
+            if (currentIndex < 0)
+                target.Insert(index, item);
+            else if (currentIndex != index)
+                target.Move(currentIndex, index);
+        }
+
+        while (target.Count > desired.Count)
+            target.RemoveAt(target.Count - 1);
     }
 
     private void UpdateCategories(IEnumerable<string> categories, string selectedCategory)
@@ -104,6 +232,9 @@ public partial class DownloadPage : Page
         if (CategoryFilter.SelectedIndex < 0) CategoryFilter.SelectedIndex = 0;
         _updatingCategories = false;
     }
+
+    private string GetSelectedCategory() =>
+        CategoryFilter.SelectedIndex > 0 ? CategoryFilter.SelectedItem?.ToString() ?? string.Empty : string.Empty;
 
     private void ShowEmptyResult(string message, bool connectionError)
     {

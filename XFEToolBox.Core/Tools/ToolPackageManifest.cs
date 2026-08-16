@@ -13,6 +13,12 @@ public sealed class ToolPackageManifest
 
     public required string Name { get; init; }
 
+    /// <summary>
+    /// Optional short subtitle shown below the tool name in the standalone window title bar.
+    /// When omitted, the host falls back to the package description.
+    /// </summary>
+    public string? Subtitle { get; init; }
+
     public required string Version { get; init; }
 
     public required string Description { get; init; }
@@ -49,10 +55,10 @@ public sealed class ToolPackageManifest
 
 public sealed class ToolWindowManifest
 {
-    public const double DefaultWidth = 980;
-    public const double DefaultHeight = 700;
-    public const double DefaultMinWidth = 560;
-    public const double DefaultMinHeight = 420;
+    public const double DefaultWidth = 760;
+    public const double DefaultHeight = 560;
+    public const double DefaultMinWidth = 420;
+    public const double DefaultMinHeight = 300;
 
     public double Width { get; init; } = DefaultWidth;
 

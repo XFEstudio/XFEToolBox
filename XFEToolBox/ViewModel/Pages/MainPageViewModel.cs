@@ -17,6 +17,11 @@ namespace XFEToolBox.Client.ViewModel.Pages;
 public partial class MainPageViewModel : ObservableObject
 {
     private const int MaximumAttempts = 3;
+    private const int CoverDownloadAttempts = 2;
+    private const int PopularVideoCount = 3;
+    private const int LatestVideoCount = 2;
+    private const int TutorialVideoCount = 2;
+    private const int ExpectedCarouselItemCount = PopularVideoCount + LatestVideoCount + TutorialVideoCount;
     private Task? loadingTask;
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
@@ -126,57 +131,127 @@ public partial class MainPageViewModel : ObservableObject
         var carousel = MainPage.mainCarousel;
         carousel.IsLoading = true;
         carousel.CanRetry = false;
-        carousel.StatusMessage = "正在获取精选内容…";
+        carousel.StatusMessage = "正在获取 B 站热门与最新视频…";
 
+        try
+        {
+            var groups = await Task.WhenAll(
+                LoadVideoGroupAsync(
+                    "B站热门",
+                    PopularVideoCount,
+                    () => BilibiliHelper.GetPopularVideoListAsync(8)),
+                LoadVideoGroupAsync(
+                    "我的最新",
+                    LatestVideoCount,
+                    () => BilibiliHelper.GetLatestCreatorVideoListAsync(8)),
+                LoadVideoGroupAsync(
+                    "芝士 C#",
+                    TutorialVideoCount,
+                    () => BilibiliHelper.GetSeasonVideoListAsync(pageSize: 10)));
+
+            foreach (var group in groups.Where(group => group.Videos.Count < group.RequiredCount))
+            {
+                Debug.WriteLine(
+                    $"轮播分组“{group.Badge}”仅获取到 {group.Videos.Count}/{group.RequiredCount} 项：{group.LastException?.Message}");
+            }
+
+            var candidates = ComposeOrderedVideos(groups);
+            if (candidates.Count == 0)
+                throw new HttpRequestException("Bilibili 内容源暂时没有返回可展示的视频");
+
+            var downloadedCovers = await Task.WhenAll(candidates.Select(DownloadCoverAsync));
+            var carouselItems = new List<CarouselImageItem>(downloadedCovers.Length);
+
+            foreach (var downloadedCover in downloadedCovers.OfType<DownloadedCover>())
+            {
+                var image = CreateBitmapImage(downloadedCover.ImageBytes);
+                var video = downloadedCover.Candidate.Video;
+                var videoUrl = $"https://www.bilibili.com/video/{video.Bvid}";
+                carouselItems.Add(new CarouselImageItem
+                {
+                    Image = image,
+                    Title = video.Title,
+                    Badge = downloadedCover.Candidate.Badge,
+                    Action = () => OpenExternalLink(videoUrl)
+                });
+            }
+
+            if (carouselItems.Count == 0)
+                throw new HttpRequestException("轮播封面图片全部下载失败");
+
+            carousel.SetItems(carouselItems);
+            carousel.StatusMessage = carouselItems.Count == ExpectedCarouselItemCount
+                ? string.Empty
+                : $"已加载 {carouselItems.Count}/{ExpectedCarouselItemCount} 项内容";
+            carousel.CanRetry = carouselItems.Count < ExpectedCarouselItemCount;
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"主页轮播内容加载失败：{exception}");
+            carousel.StatusMessage = "网络连接失败，请稍后重新加载";
+            carousel.CanRetry = true;
+        }
+        finally
+        {
+            carousel.IsLoading = false;
+        }
+    }
+
+    private static async Task<VideoGroupResult> LoadVideoGroupAsync(
+        string badge,
+        int requiredCount,
+        Func<Task<IReadOnlyList<BilibiliVideoInfo>>> loadAsync)
+    {
+        IReadOnlyList<BilibiliVideoInfo> bestResult = [];
         Exception? lastException = null;
 
         for (var attempt = 1; attempt <= MaximumAttempts; attempt++)
         {
             try
             {
-                var videoInfoList = await BilibiliHelper.GetSeasonVideoList();
-                var downloadTasks = videoInfoList.Select(DownloadCoverAsync).ToArray();
-                var downloadedCovers = await Task.WhenAll(downloadTasks);
-                var carouselItems = new List<CarouselImageItem>(downloadedCovers.Length);
+                var videos = await loadAsync();
+                if (videos.Count > bestResult.Count)
+                    bestResult = videos;
+                if (bestResult.Count >= requiredCount)
+                    break;
 
-                foreach (var downloadedCover in downloadedCovers.OfType<DownloadedCover>())
-                {
-                    var image = CreateBitmapImage(downloadedCover.ImageBytes);
-                    var videoUrl = $"https://www.bilibili.com/video/{downloadedCover.Video.Bvid}";
-                    carouselItems.Add(new CarouselImageItem
-                    {
-                        Image = image,
-                        Title = downloadedCover.Video.Title,
-                        Action = () => OpenExternalLink(videoUrl)
-                    });
-                }
-
-                if (videoInfoList.Count > 0 && carouselItems.Count == 0)
-                    throw new HttpRequestException("封面图片全部下载失败");
-
-                carousel.SetItems(carouselItems);
-                carousel.StatusMessage = carouselItems.Count == 0
-                    ? "内容源暂时没有返回可展示的项目"
-                    : string.Empty;
-                carousel.CanRetry = carouselItems.Count == 0;
-                carousel.IsLoading = false;
-                return;
+                lastException = new HttpRequestException(
+                    $"内容源仅返回 {bestResult.Count}/{requiredCount} 项视频");
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                lastException = ex;
-                if (attempt < MaximumAttempts)
-                {
-                    carousel.StatusMessage = $"连接不稳定，正在重试（{attempt}/{MaximumAttempts - 1}）…";
-                    await Task.Delay(TimeSpan.FromMilliseconds(1000 * attempt));
-                }
+                lastException = exception;
+            }
+
+            if (attempt < MaximumAttempts)
+                await Task.Delay(TimeSpan.FromMilliseconds(750 * attempt));
+        }
+
+        return new VideoGroupResult(badge, requiredCount, bestResult, lastException);
+    }
+
+    private static IReadOnlyList<CarouselVideoCandidate> ComposeOrderedVideos(
+        IEnumerable<VideoGroupResult> groups)
+    {
+        var result = new List<CarouselVideoCandidate>(ExpectedCarouselItemCount);
+        var usedBvids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in groups)
+        {
+            var addedCount = 0;
+            foreach (var video in group.Videos)
+            {
+                if (!usedBvids.Add(video.Bvid))
+                    continue;
+
+                result.Add(new CarouselVideoCandidate(video, group.Badge));
+                addedCount++;
+                if (addedCount >= group.RequiredCount)
+                    break;
             }
         }
 
-        Debug.WriteLine($"主页轮播内容加载失败：{lastException}");
-        carousel.StatusMessage = "网络连接失败，请稍后重新加载";
-        carousel.CanRetry = true;
-        carousel.IsLoading = false;
+        return result;
     }
 
     private static void OpenExternalLink(string url)
@@ -188,18 +263,24 @@ public partial class MainPageViewModel : ObservableObject
         });
     }
 
-    private static async Task<DownloadedCover?> DownloadCoverAsync(BilibiliVideoInfo video)
+    private static async Task<DownloadedCover?> DownloadCoverAsync(CarouselVideoCandidate candidate)
     {
-        try
+        for (var attempt = 1; attempt <= CoverDownloadAttempts; attempt++)
         {
-            var imageBytes = await BilibiliHelper.GetImageBytesAsync(video.PictureUrl);
-            return imageBytes.Length == 0 ? null : new DownloadedCover(video, imageBytes);
+            try
+            {
+                var imageBytes = await BilibiliHelper.GetImageBytesAsync(candidate.Video.PictureUrl);
+                if (imageBytes.Length > 0)
+                    return new DownloadedCover(candidate, imageBytes);
+            }
+            catch (Exception exception)
+            {
+                if (attempt == CoverDownloadAttempts)
+                    Debug.WriteLine($"轮播封面下载失败（{candidate.Video.Bvid}）：{exception.Message}");
+            }
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"轮播封面下载失败（{video.Bvid}）：{ex.Message}");
-            return null;
-        }
+
+        return null;
     }
 
     private static BitmapImage CreateBitmapImage(byte[] imageBytes)
@@ -229,5 +310,13 @@ public partial class MainPageViewModel : ObservableObject
         return value.TotalDays >= 1 ? $"{(int)value.TotalDays} 天 {value.Hours} 小时" : $"{value.Hours} 小时 {value.Minutes} 分";
     }
 
-    private sealed record DownloadedCover(BilibiliVideoInfo Video, byte[] ImageBytes);
+    private sealed record VideoGroupResult(
+        string Badge,
+        int RequiredCount,
+        IReadOnlyList<BilibiliVideoInfo> Videos,
+        Exception? LastException);
+
+    private sealed record CarouselVideoCandidate(BilibiliVideoInfo Video, string Badge);
+
+    private sealed record DownloadedCover(CarouselVideoCandidate Candidate, byte[] ImageBytes);
 }

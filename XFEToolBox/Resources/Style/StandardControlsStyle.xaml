@@ -212,14 +212,23 @@
     <Style TargetType="RadioButton" BasedOn="{StaticResource ToolBoxRadioButtonStyle}"/>
 
     <Style x:Key="ToolBoxComboBoxItemStyle" TargetType="ComboBoxItem">
-        <Setter Property="Padding" Value="11,7"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="9,7"/><Setter Property="Margin" Value="0,1"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/><Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem">
-            <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" CornerRadius="8"><ContentPresenter/></Border>
+            <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                    BorderBrush="Transparent" BorderThickness="1" CornerRadius="8">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="3"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Border x:Name="SelectedMark" Width="3" Height="14" Background="Transparent" CornerRadius="2" VerticalAlignment="Center"/>
+                    <ContentPresenter Grid.Column="1" Margin="8,0,2,0" VerticalAlignment="Center"
+                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                </Grid>
+            </Border>
             <ControlTemplate.Triggers>
-                <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/></Trigger>
-                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/><Setter Property="Foreground" Value="{DynamicResource MainColor}"/></Trigger>
+                <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolDividerBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolControlHoverBorderBrush}"/><Setter TargetName="SelectedMark" Property="Background" Value="{DynamicResource MainColor}"/><Setter Property="Foreground" Value="{DynamicResource MainColor}"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
@@ -383,6 +392,37 @@
     <Style TargetType="ListViewItem" BasedOn="{StaticResource ToolBoxListViewItemStyle}"/>
     <Style TargetType="ListView" BasedOn="{StaticResource ToolBoxListViewStyle}"/>
 
+    <!-- DataGrid 单元格中的控件变体。内置列与模板列都复用这些样式。 -->
+    <Style x:Key="ToolBoxDataGridButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+        <Setter Property="Height" Value="32"/><Setter Property="MinWidth" Value="58"/><Setter Property="Padding" Value="12,0"/>
+        <Setter Property="FontSize" Value="10.5"/><Setter Property="controls:ButtonAssist.CornerRadius" Value="9"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridToggleButtonStyle" TargetType="ToggleButton" BasedOn="{StaticResource ToolBoxToggleButtonStyle}">
+        <Setter Property="Height" Value="32"/><Setter Property="MinWidth" Value="58"/><Setter Property="Padding" Value="12,0"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource ToolBoxTextBoxStyle}">
+        <Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="9,5"/><Setter Property="Margin" Value="6,4"/>
+        <Setter Property="FontSize" Value="10.5"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridEditingComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource ToolBoxComboBoxStyle}">
+        <Setter Property="MinHeight" Value="32"/><Setter Property="Padding" Value="9,0,6,0"/><Setter Property="Margin" Value="6,4"/>
+        <Setter Property="FontSize" Value="10.5"/><Setter Property="IsSynchronizedWithCurrentItem" Value="False"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource ToolBoxDataGridEditingComboBoxStyle}">
+        <Setter Property="IsHitTestVisible" Value="False"/><Setter Property="Focusable" Value="False"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxGridCheckBoxStyle}">
+        <Setter Property="IsHitTestVisible" Value="False"/><Setter Property="Focusable" Value="False"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridEditingCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ToolBoxGridCheckBoxStyle}"/>
+    <Style x:Key="ToolBoxDataGridRadioButtonStyle" TargetType="RadioButton" BasedOn="{StaticResource ToolBoxRadioButtonStyle}">
+        <Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="ToolBoxDataGridTextElementStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
     <!-- 数据表格。管理页仅保留语义别名，不再复制模板。 -->
     <Style x:Key="ToolBoxDataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
         <Setter Property="Height" Value="44"/><Setter Property="Padding" Value="16,0"/>
@@ -439,6 +479,15 @@
             <Border x:Name="CellSurface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                     SnapsToDevicePixels="True">
+                <Border.Resources>
+                    <!-- 模板列直接放入的控件会就近取得这些隐式样式。 -->
+                    <Style TargetType="Button" BasedOn="{StaticResource ToolBoxDataGridButtonStyle}"/>
+                    <Style TargetType="ToggleButton" BasedOn="{StaticResource ToolBoxDataGridToggleButtonStyle}"/>
+                    <Style TargetType="TextBox" BasedOn="{StaticResource ToolBoxDataGridTextBoxStyle}"/>
+                    <Style TargetType="ComboBox" BasedOn="{StaticResource ToolBoxDataGridEditingComboBoxStyle}"/>
+                    <Style TargetType="CheckBox" BasedOn="{StaticResource ToolBoxDataGridEditingCheckBoxStyle}"/>
+                    <Style TargetType="RadioButton" BasedOn="{StaticResource ToolBoxDataGridRadioButtonStyle}"/>
+                </Border.Resources>
                 <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}" SnapsToDevicePixels="True"/>
             </Border>
@@ -479,6 +528,13 @@
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource ToolBoxDataGridColumnHeaderStyle}"/>
         <Setter Property="CellStyle" Value="{StaticResource ToolBoxDataGridCellStyle}"/>
         <Setter Property="RowStyle" Value="{StaticResource ToolBoxDataGridRowStyle}"/>
+        <Setter Property="controls:DataGridAssist.ComboBoxElementStyle" Value="{StaticResource ToolBoxDataGridComboBoxStyle}"/>
+        <Setter Property="controls:DataGridAssist.ComboBoxEditingStyle" Value="{StaticResource ToolBoxDataGridEditingComboBoxStyle}"/>
+        <Setter Property="controls:DataGridAssist.CheckBoxElementStyle" Value="{StaticResource ToolBoxDataGridCheckBoxStyle}"/>
+        <Setter Property="controls:DataGridAssist.CheckBoxEditingStyle" Value="{StaticResource ToolBoxDataGridEditingCheckBoxStyle}"/>
+        <Setter Property="controls:DataGridAssist.TextElementStyle" Value="{StaticResource ToolBoxDataGridTextElementStyle}"/>
+        <Setter Property="controls:DataGridAssist.TextEditingStyle" Value="{StaticResource ToolBoxDataGridTextBoxStyle}"/>
+        <Setter Property="controls:DataGridAssist.UseUnifiedCellControls" Value="True"/>
         <Setter Property="RowHeaderWidth" Value="0"/><Setter Property="HorizontalGridLinesBrush" Value="Transparent"/>
         <Setter Property="VerticalGridLinesBrush" Value="Transparent"/><Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>

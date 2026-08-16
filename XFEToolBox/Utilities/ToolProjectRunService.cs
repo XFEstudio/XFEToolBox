@@ -224,8 +224,14 @@ internal static class ToolProjectRunService
         string? toolIconPath)
     {
         var window = NormalizeWindowSettings(manifest.Window);
+        var toolId = JsonSerializer.Serialize(manifest.Id.Trim());
         var viewClass = JsonSerializer.Serialize(manifest.Entry.ViewClass);
         var title = JsonSerializer.Serialize(windowTitle);
+        var displayTitle = JsonSerializer.Serialize(manifest.Name.Trim());
+        var subtitle = JsonSerializer.Serialize(
+            string.IsNullOrWhiteSpace(manifest.Subtitle)
+                ? manifest.Description.Trim()
+                : manifest.Subtitle.Trim());
         var iconPath = JsonSerializer.Serialize(toolIconPath);
         var themeResourceUri = JsonSerializer.Serialize(
             $"pack://application:,,,/{hostAssemblyName};component/Resources/Style/ToolThemeResources.xaml");
@@ -248,7 +254,9 @@ internal static class ToolProjectRunService
                  using System.Windows.Controls;
                  using System.Windows.Media;
                  using System.Windows.Media.Imaging;
+                 using System.Windows.Threading;
                  using XFEToolBox.Client.Views.Controls;
+                 using XFEToolBox.Core.Tools;
 
                  namespace XFEToolBox.RuntimeHost;
 
@@ -268,6 +276,7 @@ internal static class ToolProjectRunService
                          });
                          try
                          {
+                             ToolDataStore.Initialize({{toolId}});
                              var viewType = Assembly.GetExecutingAssembly().GetType({{viewClass}}, throwOnError: true)!;
                              var instance = Activator.CreateInstance(viewType)
                                             ?? throw new InvalidOperationException("无法创建入口视图实例。");
@@ -298,29 +307,99 @@ internal static class ToolProjectRunService
 
                      private static void ConfigureWindow(Application application, Window window, object content)
                      {
+                         var savedPlacement = ToolDataStore.ReadWindowPlacement();
                          window.Title = {{title}};
-                         window.Width = {{width}};
-                         window.Height = {{height}};
                          window.MinWidth = {{minWidth}};
                          window.MinHeight = {{minHeight}};
+                         window.Width = NormalizePlacementDimension(savedPlacement?.Width, {{width}}, window.MinWidth);
+                         window.Height = NormalizePlacementDimension(savedPlacement?.Height, {{height}}, window.MinHeight);
                          window.SizeToContent = SizeToContent.Manual;
                          window.WindowState = WindowState.Normal;
-                         window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                         if (savedPlacement is not null && IsPlacementVisible(savedPlacement))
+                         {
+                             window.WindowStartupLocation = WindowStartupLocation.Manual;
+                             window.Left = savedPlacement.Left;
+                             window.Top = savedPlacement.Top;
+                         }
+                         else
+                         {
+                             window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                         }
                          window.WindowStyle = WindowStyle.None;
                          window.AllowsTransparency = true;
                          window.ResizeMode = {{allowResize}} ? ResizeMode.CanResize : ResizeMode.NoResize;
                          window.Background = Brushes.Transparent;
                          window.Foreground = (Brush)application.FindResource("ToolTextPrimaryBrush");
-                         window.Icon = LoadWindowIcon();
+                         var windowIcon = LoadWindowIcon();
+                         window.Icon = windowIcon;
 
                          var captionBar = new WindowCaptionBar
                          {
+                             Height = 25,
+                             VerticalAlignment = VerticalAlignment.Top,
                              AllowMaximize = {{allowResize}} && {{allowMaximize}},
                              DragHandleVisibility = Visibility.Visible,
                              MinimizeButtonVisibility = {{showMinimizeButton}} ? Visibility.Visible : Visibility.Collapsed,
                              CloseButtonVisibility = {{showCloseButton}} ? Visibility.Visible : Visibility.Collapsed
                          };
                          Grid.SetRow(captionBar, 0);
+
+                         var titleIcon = new Image
+                         {
+                             Source = windowIcon,
+                             Width = 28,
+                             Height = 28,
+                             Stretch = Stretch.Uniform,
+                             HorizontalAlignment = HorizontalAlignment.Center,
+                             VerticalAlignment = VerticalAlignment.Center
+                         };
+                         var titleIconSurface = new Border
+                         {
+                             Width = 42,
+                             Height = 42,
+                             CornerRadius = new CornerRadius(12),
+                             Background = Brushes.White,
+                             Child = titleIcon
+                         };
+                         var titleText = new TextBlock
+                         {
+                             Text = {{displayTitle}},
+                             Foreground = Brushes.White,
+                             FontSize = 16,
+                             FontWeight = FontWeights.SemiBold,
+                             TextTrimming = TextTrimming.CharacterEllipsis
+                         };
+                         var subtitleText = new TextBlock
+                         {
+                             Text = {{subtitle}},
+                             Foreground = Brushes.White,
+                             FontSize = 10.5,
+                             Opacity = 0.82,
+                             Margin = new Thickness(0, 2, 0, 0),
+                             TextTrimming = TextTrimming.CharacterEllipsis
+                         };
+                         var titleTextPanel = new StackPanel
+                         {
+                             Margin = new Thickness(11, 0, 0, 0),
+                             VerticalAlignment = VerticalAlignment.Center
+                         };
+                         titleTextPanel.Children.Add(titleText);
+                         titleTextPanel.Children.Add(subtitleText);
+
+                         var titleIdentity = new Grid
+                         {
+                             Margin = new Thickness(18, 9, 100, 9),
+                             HorizontalAlignment = HorizontalAlignment.Stretch,
+                             VerticalAlignment = VerticalAlignment.Center,
+                             IsHitTestVisible = false
+                         };
+                         titleIdentity.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                         titleIdentity.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                         Grid.SetColumn(titleIconSurface, 0);
+                         Grid.SetColumn(titleTextPanel, 1);
+                         titleIdentity.Children.Add(titleIconSurface);
+                         titleIdentity.Children.Add(titleTextPanel);
+                         Grid.SetRow(titleIdentity, 0);
 
                          var contentPresenter = new ContentControl
                          {
@@ -331,15 +410,16 @@ internal static class ToolProjectRunService
                          var contentSurface = new Border
                          {
                              Background = (Brush)application.FindResource("ToolSurfaceBrush"),
-                             CornerRadius = new CornerRadius(0, 0, 17, 17),
+                             CornerRadius = new CornerRadius(16, 16, 17, 17),
                              Child = contentPresenter
                          };
                          Grid.SetRow(contentSurface, 1);
 
                          var layout = new Grid();
-                         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(25) });
+                         layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(64) });
                          layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                          layout.Children.Add(captionBar);
+                         layout.Children.Add(titleIdentity);
                          layout.Children.Add(contentSurface);
 
                          var windowSurface = new RoundedClipBorder
@@ -359,6 +439,94 @@ internal static class ToolProjectRunService
                              });
                          }
                          window.Content = windowRoot;
+                         AttachWindowPlacementPersistence(window, savedPlacement);
+                     }
+
+                     private static double NormalizePlacementDimension(double? value, double fallback, double minimum)
+                     {
+                         if (value is not { } candidate || !double.IsFinite(candidate) || candidate <= 0)
+                             return fallback;
+                         return Math.Max(minimum, candidate);
+                     }
+
+                     private static bool IsPlacementVisible(ToolWindowPlacement placement)
+                     {
+                         if (!double.IsFinite(placement.Left) || !double.IsFinite(placement.Top) ||
+                             !double.IsFinite(placement.Width) || !double.IsFinite(placement.Height) ||
+                             placement.Width <= 0 || placement.Height <= 0)
+                             return false;
+
+                         const double visibleEdge = 72;
+                         var virtualLeft = SystemParameters.VirtualScreenLeft;
+                         var virtualTop = SystemParameters.VirtualScreenTop;
+                         var virtualRight = virtualLeft + SystemParameters.VirtualScreenWidth;
+                         var virtualBottom = virtualTop + SystemParameters.VirtualScreenHeight;
+                         return placement.Left + placement.Width >= virtualLeft + visibleEdge &&
+                                placement.Top + visibleEdge <= virtualBottom &&
+                                placement.Left + visibleEdge <= virtualRight &&
+                                placement.Top + placement.Height >= virtualTop + visibleEdge;
+                     }
+
+                     private static void AttachWindowPlacementPersistence(Window window, ToolWindowPlacement? savedPlacement)
+                     {
+                         var lastVisibleState = string.Equals(
+                             savedPlacement?.LastVisibleState,
+                             nameof(WindowState.Maximized),
+                             StringComparison.Ordinal)
+                                 ? WindowState.Maximized
+                                 : WindowState.Normal;
+                         var saveTimer = new DispatcherTimer(DispatcherPriority.Background)
+                         {
+                             Interval = TimeSpan.FromMilliseconds(350)
+                         };
+
+                         void SavePlacement()
+                         {
+                             saveTimer.Stop();
+                             var state = window.WindowState;
+                             if (state != WindowState.Minimized)
+                                 lastVisibleState = state == WindowState.Maximized ? WindowState.Maximized : WindowState.Normal;
+
+                             var bounds = state == WindowState.Normal
+                                 ? new Rect(window.Left, window.Top, window.ActualWidth, window.ActualHeight)
+                                 : window.RestoreBounds;
+                             if (!double.IsFinite(bounds.Left) || !double.IsFinite(bounds.Top) ||
+                                 !double.IsFinite(bounds.Width) || !double.IsFinite(bounds.Height) ||
+                                 bounds.Width <= 0 || bounds.Height <= 0)
+                                 return;
+
+                             ToolDataStore.WriteWindowPlacement(new ToolWindowPlacement(
+                                 bounds.Left,
+                                 bounds.Top,
+                                 bounds.Width,
+                                 bounds.Height,
+                                 state.ToString(),
+                                 lastVisibleState.ToString(),
+                                 state == WindowState.Minimized,
+                                 DateTimeOffset.UtcNow));
+                         }
+
+                         void QueueSave()
+                         {
+                             saveTimer.Stop();
+                             saveTimer.Start();
+                         }
+
+                         saveTimer.Tick += (_, _) => SavePlacement();
+                         window.SizeChanged += (_, _) => QueueSave();
+                         window.LocationChanged += (_, _) => QueueSave();
+                         window.StateChanged += (_, _) => QueueSave();
+                         window.Closing += (_, _) => SavePlacement();
+                         window.Loaded += (_, _) =>
+                         {
+                             // 记录最小化状态，但启动时恢复到最后一个可见状态，避免用户误以为工具没有打开。
+                             var restoreMaximized = {{allowResize}} && {{allowMaximize}} &&
+                                 (string.Equals(savedPlacement?.State, nameof(WindowState.Maximized), StringComparison.Ordinal) ||
+                                  string.Equals(savedPlacement?.State, nameof(WindowState.Minimized), StringComparison.Ordinal) &&
+                                  string.Equals(savedPlacement?.LastVisibleState, nameof(WindowState.Maximized), StringComparison.Ordinal));
+                             if (restoreMaximized)
+                                 window.WindowState = WindowState.Maximized;
+                         };
                      }
 
                      private static ImageSource LoadWindowIcon()
@@ -392,9 +560,9 @@ internal static class ToolProjectRunService
     {
         settings ??= new ToolWindowManifest();
         var minWidth = NormalizeDimension(settings.MinWidth, ToolWindowManifest.DefaultMinWidth, 320, 3840);
-        var minHeight = NormalizeDimension(settings.MinHeight, ToolWindowManifest.DefaultMinHeight, 240, 2160);
+        var minHeight = NormalizeDimension(settings.MinHeight, ToolWindowManifest.DefaultMinHeight, 220, 2160);
         var width = Math.Max(minWidth, NormalizeDimension(settings.Width, ToolWindowManifest.DefaultWidth, 320, 3840));
-        var height = Math.Max(minHeight, NormalizeDimension(settings.Height, ToolWindowManifest.DefaultHeight, 240, 2160));
+        var height = Math.Max(minHeight, NormalizeDimension(settings.Height, ToolWindowManifest.DefaultHeight, 220, 2160));
         return new NormalizedWindowSettings(
             width,
             height,

@@ -139,7 +139,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="加速下载线程数量：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                                    <controls:TextEditor Grid.Column="1" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="10,0,0,0" Padding="5" HintText="9" MinWidth="30" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
+                                    <controls:TextEditor Grid.Column="1" Height="38" Width="64" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="9" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.DownloadThread" VerticalAlignment="Center"/>
                                 </Grid>
                                 <controls:SwitchButton Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.DownloadProfile.AutoRunWhenComplete">
                                     <TextBlock Text="下载完成后自动运行下载的文件（仅限exe）"/>

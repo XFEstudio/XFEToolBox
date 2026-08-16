@@ -1377,6 +1377,7 @@ public partial class ToolCodeEditorWindow : Window
             ManifestPackageFormatText.Text = manifest.PackageFormatVersion.ToString();
             ManifestIdBox.Text = manifest.Id;
             ManifestNameBox.Text = manifest.Name;
+            ManifestSubtitleBox.Text = manifest.Subtitle ?? string.Empty;
             ManifestVersionBox.Text = manifest.Version;
             ManifestDescriptionBox.Text = manifest.Description;
             ManifestAuthorBox.Text = manifest.Author;
@@ -1458,6 +1459,7 @@ public partial class ToolCodeEditorWindow : Window
             PackageFormatVersion = ToolPackageManifest.CurrentPackageFormatVersion,
             Id = ManifestIdBox.Text.Trim(),
             Name = ManifestNameBox.Text.Trim(),
+            Subtitle = NullIfWhiteSpace(ManifestSubtitleBox.Text),
             Version = ManifestVersionBox.Text.Trim(),
             Description = ManifestDescriptionBox.Text.Trim(),
             Author = ManifestAuthorBox.Text.Trim(),

@@ -57,6 +57,7 @@ base64-generator.xfetool
   "packageFormatVersion": 1,
   "id": "base64-generator",
   "name": "Base64 生成器",
+  "subtitle": "文本与 Base64 快速互转",
   "version": "1.0.0",
   "description": "文本与 Base64 的相互转换。",
   "author": "XFEstudio",
@@ -73,10 +74,10 @@ base64-generator.xfetool
     "viewModelClass": "XFEToolBox.Tools.Base64.MainPageViewModel"
   },
   "window": {
-    "width": 980,
-    "height": 700,
-    "minWidth": 560,
-    "minHeight": 420,
+    "width": 760,
+    "height": 560,
+    "minWidth": 420,
+    "minHeight": 300,
     "allowResize": true,
     "allowMaximize": true,
     "showMinimizeButton": true,
@@ -90,12 +91,35 @@ base64-generator.xfetool
 
 - `id`：稳定不变的工具标识，长度为 1–64，只允许小写字母、数字、`.` 和 `-`，并以字母开头。
 - `version`、`minimumHostVersion`：使用 SemVer，例如 `1.2.0` 或 `2.0.0-beta.1`。
+- `subtitle`：可选的窗口标题栏副标题；留空时自动使用 `description`，建议保持简短。
 - `icon`：可选的包内 PNG、JPEG、GIF、BMP 或 ICO，文件必须存在且不超过 512 KiB。
 - `viewXaml`、`viewClass`、`viewCodeBehind`：必填；两个文件路径必须存在，扩展名分别为 `.xaml` 和 `.cs`。
 - `viewModel`、`viewModelClass`：可选；声明 ViewModel 源文件时文件必须存在。
 - `window`：可选；省略时使用示例中的默认尺寸与按钮设置。`allowMaximize` 控制双击顶部拖拽区是否可最大化，不会额外显示最大化按钮。
 - `tags`：最多 20 个，每项 1–40 个字符。
 - `requestedPermissions`：最多 32 项，每项不超过 64 个字符。它只是能力声明，宿主仍需自行决定是否授权。
+
+## 工具数据存储
+
+工具启动时，XFEToolBox 会用 `manifest.json` 中稳定的 `id` 初始化独立数据上下文。工具无需自行拼接 AppData 路径，直接使用 `XFEToolBox.Core.Tools.ToolDataStore`：
+
+```csharp
+using XFEToolBox.Core.Tools;
+
+var settings = ToolDataStore.Read("settings", new ToolSettings("默认值"));
+ToolDataStore.Write("settings", settings with { Value = "新值" });
+
+// 非 JSON 数据也必须通过工具自己的隔离目录取得路径。
+var cachePath = ToolDataStore.GetFilePath("cache/index.bin", createParentDirectory: true);
+
+public sealed record ToolSettings(string Value);
+```
+
+- 每个工具的数据位于 `%LOCALAPPDATA%\XFEToolBox\CrossVersion\ToolData\<工具 ID>`，不同工具之间互不混用。
+- `Read` / `Write` 按 JSON 文件读写，写入使用同目录临时文件后原子替换；`GetFilePath` 会拒绝绝对路径和目录穿越。
+- 宿主自动保存 `.host/window-placement.json`，记录上次普通窗口尺寸、位置以及最大化/最小化状态。若工具在最小化状态退出，下次会恢复到最后一个可见状态，避免启动后看不到窗口。
+- 工具箱页面可右键工具卡片并选择“清除该工具的数据”，同时清除工具设置和宿主窗口状态。正在运行的工具在关闭时可能重新写入状态，应先关闭后再清除。
+- 密钥、口令、输入正文、临时下载签名等敏感内容不应仅为方便恢复而写入普通设置 JSON；确有需要时应先采用系统凭据保护能力。
 
 ## 启动与配置服务端
 

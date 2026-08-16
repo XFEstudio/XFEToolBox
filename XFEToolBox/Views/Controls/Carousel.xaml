@@ -134,9 +134,9 @@
                           VerticalAlignment="Bottom"
                           Visibility="{Binding HasItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel VerticalAlignment="Bottom">
-                            <Border Width="74" Height="23" HorizontalAlignment="Left" Margin="0,0,0,7"
+                            <Border MinWidth="74" Height="23" Padding="12,0" HorizontalAlignment="Left" Margin="0,0,0,7"
                                     Background="#389898E7" BorderBrush="#66FFFFFF" BorderThickness="1" CornerRadius="11.5">
-                                <TextBlock Text="精选教程" Foreground="#F2FFFFFF" FontSize="10.5"
+                                <TextBlock Text="{Binding CurrentBadge, RelativeSource={RelativeSource AncestorType=UserControl}}" Foreground="#F2FFFFFF" FontSize="10.5"
                                            FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Text="{Binding CurrentTitle, RelativeSource={RelativeSource AncestorType=UserControl}}"

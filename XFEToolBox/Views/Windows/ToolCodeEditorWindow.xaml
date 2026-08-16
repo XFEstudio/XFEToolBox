@@ -638,14 +638,16 @@
                                             <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
                                                 <StackPanel>
                                                     <TextBlock Text="窗口外观与行为" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="工具启动时由工具箱统一创建窗口。顶部始终复用工具箱拖动条，右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
-                                                    <Grid>
+                                                    <TextBlock Text="工具启动时由工具箱统一创建带图标、标题和副标题的窗口；右侧不会显示独立的最大化按钮。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <TextBlock Text="标题栏副标题" Style="{StaticResource ManifestFieldLabel}"/>
+                                                    <controls:TextEditor x:Name="ManifestSubtitleBox" Style="{StaticResource ManifestTextEditor}" HintText="简短说明工具用途；留空时使用工具说明" TextChanged="ManifestDesignerField_TextChanged"/>
+                                                    <Grid Margin="0,12,0,0">
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="12"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="980" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="700" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel><TextBlock Text="默认宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="760" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Column="2"><TextBlock Text="默认高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="560" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2"><TextBlock Text="最小宽度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinWidthBox" Style="{StaticResource ManifestTextEditor}" HintText="420" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
+                                                        <StackPanel Grid.Row="2" Grid.Column="2"><TextBlock Text="最小高度" Style="{StaticResource ManifestFieldLabel}"/><controls:TextEditor x:Name="ManifestWindowMinHeightBox" Style="{StaticResource ManifestTextEditor}" HintText="300" TextChanged="ManifestDesignerField_TextChanged"/></StackPanel>
                                                     </Grid>
                                                     <TextBlock Text="窗口行为" Style="{StaticResource ManifestFieldLabel}" Margin="2,14,0,7"/>
                                                     <Border Padding="10,10,2,2" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">

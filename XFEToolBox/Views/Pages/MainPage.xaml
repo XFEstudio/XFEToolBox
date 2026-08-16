@@ -15,7 +15,7 @@
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Center"
                                    IsLoading="True"
-                                   StatusMessage="正在获取精选内容…"
+                                   StatusMessage="正在获取 B 站内容…"
                                    Interval="0:0:6"
                                    RetryRequested="MainCarousel_RetryRequested"/>
 
