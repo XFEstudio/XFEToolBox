@@ -7,7 +7,7 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <Border CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}"
+        <Border x:Name="DragSurface" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}"
                 Visibility="{Binding DragHandleVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 MouseLeftButtonDown="DragSurface_MouseLeftButtonDown"
                 MouseMove="DragSurface_MouseMove">

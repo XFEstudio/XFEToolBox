@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Utilities;
 
 namespace XFEToolBox.Client.Views.Windows;
 
@@ -20,6 +21,7 @@ public partial class PopupWindow : Window
     {
         DataContext = ViewModel = new(this);
         InitializeComponent();
+        WindowWorkAreaHelper.Attach(this);
     }
 
     /// <summary>

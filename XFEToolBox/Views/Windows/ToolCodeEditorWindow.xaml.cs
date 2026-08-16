@@ -119,6 +119,7 @@ public partial class ToolCodeEditorWindow : Window
             throw new ArgumentException("必须指定工具项目目录。", nameof(workspaceRoot));
         _workspaceRoot = Path.GetFullPath(workspaceRoot);
         InitializeComponent();
+        WindowWorkAreaHelper.Attach(this);
         Owner = MainWindow.Current;
 
         _fileView = CollectionViewSource.GetDefaultView(_explorerItems);

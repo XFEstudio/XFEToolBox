@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Shell;
 using System.Windows.Threading;
 using XFEToolBox.Client.Utilities;
 
@@ -9,6 +12,78 @@ namespace XFEToolBox.Client.Wpf.Test;
 
 public class Program
 {
+    [Test]
+    public static void FramelessMaximizedWindowStaysInsideMonitorWorkArea()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                var window = new Window
+                {
+                    Width = 1_000,
+                    Height = 700,
+                    MinWidth = 640,
+                    MinHeight = 480,
+                    WindowStyle = WindowStyle.None,
+                    ResizeMode = ResizeMode.CanResize,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    ShowInTaskbar = false,
+                    ShowActivated = false,
+                    Opacity = 0.01
+                };
+                WindowChrome.SetWindowChrome(window, new WindowChrome
+                {
+                    CaptionHeight = 0,
+                    CornerRadius = new CornerRadius(18),
+                    GlassFrameThickness = new Thickness(0),
+                    ResizeBorderThickness = new Thickness(6),
+                    UseAeroCaptionButtons = false
+                });
+                WindowWorkAreaHelper.Attach(window);
+                window.Show();
+                window.WindowState = WindowState.Maximized;
+
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+
+                var handle = new WindowInteropHelper(window).Handle;
+                Ensure(GetWindowRect(handle, out var windowRect), "无法读取最大化窗口边界。");
+                var monitor = MonitorFromWindow(handle, MonitorDefaultToNearest);
+                var monitorInfo = MonitorInfo.Create();
+                Ensure(monitor != IntPtr.Zero && GetMonitorInfo(monitor, ref monitorInfo), "无法读取显示器工作区。");
+
+                const int tolerance = 1;
+                Ensure(Math.Abs(windowRect.Left - monitorInfo.WorkArea.Left) <= tolerance,
+                    $"窗口左边界越界：{windowRect.Left} != {monitorInfo.WorkArea.Left}。");
+                Ensure(Math.Abs(windowRect.Top - monitorInfo.WorkArea.Top) <= tolerance,
+                    $"窗口上边界越界：{windowRect.Top} != {monitorInfo.WorkArea.Top}。");
+                Ensure(Math.Abs(windowRect.Right - monitorInfo.WorkArea.Right) <= tolerance,
+                    $"窗口右边界越界：{windowRect.Right} != {monitorInfo.WorkArea.Right}。");
+                Ensure(Math.Abs(windowRect.Bottom - monitorInfo.WorkArea.Bottom) <= tolerance,
+                    $"窗口下边界越界：{windowRect.Bottom} != {monitorInfo.WorkArea.Bottom}。");
+
+                window.Close();
+                dispatcher.InvokeShutdown();
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        })
+        {
+            IsBackground = true
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(15)), "无边框窗口最大化测试超时。");
+        if (failure is not null)
+            throw new InvalidOperationException("无边框窗口没有正确限制在显示器工作区。", failure);
+    }
+
     [SMTest]
     public static void BufferedConsoleRendererKeepsUiTreeBoundedUnderLoad()
     {
@@ -126,5 +201,48 @@ public class Program
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private static void PumpDispatcher(Dispatcher dispatcher)
+    {
+        var frame = new DispatcherFrame();
+        _ = dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
+        Dispatcher.PushFrame(frame);
+    }
+
+    private const uint MonitorDefaultToNearest = 0x00000002;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo monitorInfo);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct MonitorInfo
+    {
+        public int Size;
+        public NativeRect MonitorArea;
+        public NativeRect WorkArea;
+        public uint Flags;
+
+        public static MonitorInfo Create() => new()
+        {
+            Size = Marshal.SizeOf<MonitorInfo>()
+        };
     }
 }

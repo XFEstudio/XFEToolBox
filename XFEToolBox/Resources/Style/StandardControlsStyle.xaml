@@ -668,6 +668,95 @@
         </ControlTemplate></Setter.Value></Setter>
     </Style>
 
+    <Style x:Key="TopTabViewItemStyle" TargetType="TabItem">
+        <Setter Property="Padding" Value="13,8"/><Setter Property="MinHeight" Value="38"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/><Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
+            <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,2" CornerRadius="8,8,0,0">
+                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+
+    <Style TargetType="controls:TopTabView">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/><Setter Property="TabStripPlacement" Value="Top"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource TopTabViewItemStyle}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:TopTabView">
+            <Grid ClipToBounds="True">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                <ScrollViewer x:Name="HeaderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                              CanContentScroll="False" PanningMode="HorizontalOnly" Focusable="False">
+                    <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1"/>
+                </ScrollViewer>
+                <Border Grid.Row="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Border>
+            </Grid>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+
+    <Style x:Key="LeftNavigationTabItemStyle" TargetType="TabItem">
+        <Setter Property="Padding" Value="14,11"/><Setter Property="Margin" Value="0,0,0,5"/>
+        <Setter Property="MinHeight" Value="42"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
+            <Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="11">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="4"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Border x:Name="SelectedMark" Width="3" Height="22" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Background="Transparent" CornerRadius="2"/>
+                    <ContentPresenter Grid.Column="1" ContentSource="Header" Margin="{TemplateBinding Padding}"
+                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter TargetName="SelectedMark" Property="Background" Value="{DynamicResource MainColor}"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+
+    <Style TargetType="controls:LeftNavigationTabView">
+        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/><Setter Property="TabStripPlacement" Value="Left"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource LeftNavigationTabItemStyle}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:LeftNavigationTabView">
+            <Grid ClipToBounds="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{Binding NavigationWidth, RelativeSource={RelativeSource TemplatedParent}}"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Background="{DynamicResource ToolSurfaceBrush}" BorderBrush="{DynamicResource ToolControlBorderBrush}"
+                        BorderThickness="1" CornerRadius="15" Padding="7">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                  CanContentScroll="True" PanningMode="VerticalOnly" Focusable="False">
+                        <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1"/>
+                    </ScrollViewer>
+                </Border>
+                <Border Grid.Column="2" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                </Border>
+            </Grid>
+        </ControlTemplate></Setter.Value></Setter>
+    </Style>
+
     <Style TargetType="TabControl"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/><Setter Property="BorderThickness" Value="0"/></Style>
     <Style TargetType="TabItem">
         <Setter Property="Padding" Value="13,8"/><Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>

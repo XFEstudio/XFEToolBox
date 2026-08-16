@@ -40,6 +40,11 @@ public partial class SystemProfile : XFEProfile
     /// </summary>
     [ProfileProperty]
     private string loginSession = string.Empty;
+    /// <summary>
+    /// 是否已经完成或主动跳过主窗口首次使用教程。
+    /// </summary>
+    [ProfileProperty]
+    private bool mainTutorialCompleted = false;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

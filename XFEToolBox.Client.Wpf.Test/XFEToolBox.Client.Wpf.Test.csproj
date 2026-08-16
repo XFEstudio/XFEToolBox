@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="..\XFEToolBox\Utilities\BufferedConsoleRenderer.cs" Link="Utilities\BufferedConsoleRenderer.cs" />
+    <Compile Include="..\XFEToolBox\Utilities\WindowWorkAreaHelper.cs" Link="Utilities\WindowWorkAreaHelper.cs" />
   </ItemGroup>
 
 </Project>

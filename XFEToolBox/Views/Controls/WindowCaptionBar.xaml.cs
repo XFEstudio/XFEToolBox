@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using XFEToolBox.Client.Utilities;
 
 namespace XFEToolBox.Client.Views.Controls;
 
@@ -19,7 +20,15 @@ public partial class WindowCaptionBar : UserControl
     public static readonly DependencyProperty AllowMaximizeProperty = DependencyProperty.Register(
         nameof(AllowMaximize), typeof(bool), typeof(WindowCaptionBar), new PropertyMetadata(true));
 
-    public WindowCaptionBar() => InitializeComponent();
+    public WindowCaptionBar()
+    {
+        InitializeComponent();
+        Loaded += (_, _) =>
+        {
+            if (Window.GetWindow(this) is { } window)
+                WindowWorkAreaHelper.Attach(window);
+        };
+    }
 
     public Visibility DragHandleVisibility
     {
@@ -44,6 +53,11 @@ public partial class WindowCaptionBar : UserControl
         get => (bool)GetValue(AllowMaximizeProperty);
         set => SetValue(AllowMaximizeProperty, value);
     }
+
+    /// <summary>
+    /// 提供给交互教程等外部功能的真实拖动区域，不包含最小化和关闭按钮。
+    /// </summary>
+    public FrameworkElement DragSurfaceElement => DragSurface;
 
     public event EventHandler? MinimizeRequested;
     public event EventHandler? CloseRequested;

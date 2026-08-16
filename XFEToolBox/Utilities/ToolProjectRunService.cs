@@ -255,6 +255,7 @@ internal static class ToolProjectRunService
                  using System.Windows.Media;
                  using System.Windows.Media.Imaging;
                  using System.Windows.Threading;
+                 using XFEToolBox.Client.Utilities;
                  using XFEToolBox.Client.Views.Controls;
                  using XFEToolBox.Core.Tools;
 
@@ -328,6 +329,7 @@ internal static class ToolProjectRunService
                          window.WindowStyle = WindowStyle.None;
                          window.AllowsTransparency = true;
                          window.ResizeMode = {{allowResize}} ? ResizeMode.CanResize : ResizeMode.NoResize;
+                         WindowWorkAreaHelper.Attach(window);
                          window.Background = Brushes.Transparent;
                          window.Foreground = (Brush)application.FindResource("ToolTextPrimaryBrush");
                          var windowIcon = LoadWindowIcon();

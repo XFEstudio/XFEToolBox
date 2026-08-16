@@ -73,7 +73,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="TutorialHost">
         <controls:RoundedClipBorder x:Name="MainSurface" CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5">
             <Grid>
             <Grid.ColumnDefinitions>
@@ -96,7 +96,7 @@
                     <Border x:Name="backTabBorder" CornerRadius="10" Style="{StaticResource TabBorderStyle}" Visibility="Collapsed" MouseLeftButtonUp="BackTabBorder_MouseLeftButtonUp">
                         <Image HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4" Source="/Resources/Image/back.png"/>
                     </Border>
-                    <controls:WindowCaptionBar Grid.Column="1" Grid.ColumnSpan="3" CloseRequested="CaptionBar_CloseRequested"/>
+                    <controls:WindowCaptionBar x:Name="CaptionBar" Grid.Column="1" Grid.ColumnSpan="3" CloseRequested="CaptionBar_CloseRequested"/>
                 </Grid>
             </Border>
             <Border Grid.Column="0" Grid.Row="0" Background="Transparent">
@@ -113,28 +113,28 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="首页"/>
                     </Grid>
                 </controls:NavigationButton>
-                <controls:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
+                <controls:NavigationButton x:Name="toolBoxButton" Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Image Source="/Resources/Image/toolbox.png" Margin="7"/>
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具箱"/>
                     </Grid>
                 </controls:NavigationButton>
-                <controls:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="console">
+                <controls:NavigationButton x:Name="consoleButton" Command="{Binding NavigateToPageCommand}" CommandParameter="console">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Image Source="/Resources/Image/console.png" Margin="7"/>
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="C#控制台"/>
                     </Grid>
                 </controls:NavigationButton>
-                <controls:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="download">
+                <controls:NavigationButton x:Name="downloadButton" Command="{Binding NavigateToPageCommand}" CommandParameter="download">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Image Source="/Resources/Image/download.png" Margin="7"/>
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="下载专区"/>
                     </Grid>
                 </controls:NavigationButton>
-                <controls:NavigationButton Command="{Binding NavigateToPageCommand}" CommandParameter="setting">
+                <controls:NavigationButton x:Name="settingButton" Command="{Binding NavigateToPageCommand}" CommandParameter="setting">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <Image Source="/Resources/Image/setting.png" Margin="7"/>
@@ -142,7 +142,7 @@
                     </Grid>
                 </controls:NavigationButton>
 
-                <controls:NavigationButton Visibility="{Binding AdministratorVisibility}" Command="{Binding NavigateToPageCommand}" CommandParameter="serverManagement">
+                <controls:NavigationButton x:Name="serverManagementButton" Visibility="{Binding AdministratorVisibility}" Command="{Binding NavigateToPageCommand}" CommandParameter="serverManagement">
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Image Source="/Resources/Image/wrench.png" Margin="7"/><TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="服务器管理"/></Grid>
                 </controls:NavigationButton>
             </StackPanel>
