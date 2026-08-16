@@ -304,14 +304,15 @@
                     <MenuItem Header="文件" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
                         <MenuItem Header="新建工程" InputGestureText="Ctrl+Shift+N" Click="NewProjectButton_Click"/>
-                        <MenuItem Header="打开工程" InputGestureText="Ctrl+O" Click="OpenFolderButton_Click"/>
-                        <MenuItem Header="新建项" InputGestureText="Ctrl+N" Click="NewFileButton_Click"/>
+                        <MenuItem Header="打开工程" InputGestureText="Ctrl+Shift+O" Click="OpenFolderButton_Click"/>
+                        <MenuItem Header="新建项" InputGestureText="Ctrl+Shift+A" Click="NewFileButton_Click"/>
                         <Separator Style="{StaticResource EditorMenuSeparator}"/>
-                        <MenuItem x:Name="SaveButton" Header="保存全部" InputGestureText="Ctrl+S" Click="SaveButton_Click"/>
+                        <MenuItem x:Name="SaveButton" Header="保存全部" InputGestureText="Ctrl+Shift+S" Click="SaveButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="代码" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
-                        <MenuItem Header="格式化当前文件" InputGestureText="Shift+Alt+F" Click="FormatButton_Click"/>
+                        <MenuItem Header="格式化文档" InputGestureText="Ctrl+K, Ctrl+D" Click="FormatButton_Click"/>
+                        <MenuItem Header="生成工程" InputGestureText="Ctrl+Shift+B" Click="BuildProjectButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="工具包" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
@@ -320,10 +321,10 @@
                     </MenuItem>
                 </Menu>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+F5）">
+                    <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+Shift+W）">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="◫" FontSize="15" Margin="0,0,6,0"/><TextBlock Text="预览" VerticalAlignment="Center"/></StackPanel>
                     </Button>
-                    <Button x:Name="RunButton" controls:ButtonAssist.IsPrimary="True" Margin="0,0,8,0" Click="RunButton_Click" ToolTip="完整编译并运行工具（F5）">
+                    <Button x:Name="RunButton" controls:ButtonAssist.IsPrimary="True" Margin="0,0,8,0" Click="RunButton_Click" ToolTip="完整编译并运行工具（F5 / Ctrl+F5）">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="▶" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="运行" VerticalAlignment="Center"/></StackPanel>
                     </Button>
                     <Button x:Name="EditorThemeButton" Content="◐" Width="38" MinWidth="38" Padding="0" Margin="0,0,8,0" ToolTip="切换代码区明暗主题" Click="ToggleThemeButton_Click"/>
@@ -492,7 +493,7 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
                         <StackPanel x:Name="EmptyExplorer" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
-                            <TextBlock Text="暂无可编辑文件" Foreground="#88889A" FontSize="10.5" HorizontalAlignment="Center"/>
+                            <TextBlock Text="暂无工程文件" Foreground="#88889A" FontSize="10.5" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
 

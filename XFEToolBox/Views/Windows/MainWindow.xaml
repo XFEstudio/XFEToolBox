@@ -167,11 +167,7 @@
             </Grid>
         </controls:RoundedClipBorder>
 
-        <!-- 拖拽角素材绘制到圆角裁剪层之外，避免其贴边像素被截断。 -->
-        <Image Source="/Resources/Image/corner.png" Width="25" Height="25" Margin="0,0,5,5"
-               HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"
-               IsHitTestVisible="False"/>
-        <Border x:Name="cornerBorder" Style="{StaticResource CornerBorderStyle}" Margin="0,0,5,5"
-                MouseDown="CornerBorder_MouseDown"/>
+        <!-- 与工具运行窗口复用同一个白色圆角拖动控件。 -->
+        <controls:WindowResizeGrip Margin="0,0,5,5" ResizeCompleted="WindowResizeGrip_ResizeCompleted"/>
     </Grid>
 </Window>

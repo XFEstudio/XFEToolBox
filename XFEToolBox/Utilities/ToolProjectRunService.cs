@@ -16,6 +16,20 @@ internal static class ToolProjectRunService
     private const long MaximumExtractedPackageBytes = 128L * 1024 * 1024;
     private static readonly JsonSerializerOptions ManifestJsonOptions = new(JsonSerializerDefaults.Web);
 
+    public static async Task<ToolRunResult> BuildAsync(
+        string workspaceRoot,
+        ToolPackageManifest manifest,
+        CancellationToken cancellationToken = default)
+    {
+        return await BuildAndRunCoreAsync(
+            workspaceRoot,
+            manifest,
+            $"{manifest.Name} · 生成验证",
+            temporaryWorkspaceRoot: null,
+            launchAfterBuild: false,
+            cancellationToken);
+    }
+
     public static async Task<ToolRunResult> BuildAndRunAsync(
         string workspaceRoot,
         ToolPackageManifest manifest,
@@ -26,6 +40,7 @@ internal static class ToolProjectRunService
             manifest,
             $"{manifest.Name} · 运行预览",
             temporaryWorkspaceRoot: null,
+            launchAfterBuild: true,
             cancellationToken);
     }
 
@@ -57,6 +72,7 @@ internal static class ToolProjectRunService
                 manifest,
                 manifest.Name,
                 packageWorkspaceRoot,
+                launchAfterBuild: true,
                 cancellationToken);
         }
         catch (Exception exception)
@@ -71,6 +87,7 @@ internal static class ToolProjectRunService
         ToolPackageManifest manifest,
         string windowTitle,
         string? temporaryWorkspaceRoot,
+        bool launchAfterBuild,
         CancellationToken cancellationToken)
     {
         var runtimeRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox", "CodeStudioRuns", Guid.NewGuid().ToString("N"));
@@ -127,6 +144,14 @@ internal static class ToolProjectRunService
             var runtimeAssembly = Path.Combine(outputRoot, assemblyName + ".dll");
             if (!File.Exists(runtimeAssembly))
                 throw new FileNotFoundException("编译成功，但没有找到工具运行程序集。", runtimeAssembly);
+
+            if (!launchAfterBuild)
+            {
+                TryDeleteDirectory(runtimeRoot);
+                if (temporaryWorkspaceRoot is not null)
+                    TryDeleteDirectory(temporaryWorkspaceRoot);
+                return new ToolRunResult(true, "工具工程已成功生成。", null);
+            }
 
             var runInfo = new ProcessStartInfo("dotnet")
             {
@@ -317,13 +342,23 @@ internal static class ToolProjectRunService
                          layout.Children.Add(captionBar);
                          layout.Children.Add(contentSurface);
 
-                         window.Content = new RoundedClipBorder
+                         var windowSurface = new RoundedClipBorder
                          {
                              Margin = new Thickness(5),
                              CornerRadius = new CornerRadius(19),
                              Background = (Brush)application.FindResource("MainColor"),
                              Child = layout
                          };
+                         var windowRoot = new Grid();
+                         windowRoot.Children.Add(windowSurface);
+                         if ({{allowResize}})
+                         {
+                             windowRoot.Children.Add(new WindowResizeGrip
+                             {
+                                 Margin = new Thickness(0, 0, 5, 5)
+                             });
+                         }
+                         window.Content = windowRoot;
                      }
 
                      private static ImageSource LoadWindowIcon()

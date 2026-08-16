@@ -15,7 +15,6 @@ namespace XFEToolBox.Client.ViewModel.Windows;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private bool isDragMouseDown = false;
     private bool isDoubleClickMouseDown = false;
     private int mouseOriginalX = 0;
     private int mouseOriginalY = 0;
@@ -80,45 +79,6 @@ public partial class MainWindowViewModel : ObservableObject
         var mousePosition = InputSimulator.GetMousePosition();
         mouseOriginalX = mousePosition.X;
         mouseOriginalY = mousePosition.Y;
-    }
-    /// <summary>
-    /// 初始化调整窗体参数
-    /// </summary>
-    public void InitializeToResize()
-    {
-        isDragMouseDown = true;
-        InitMousePosition();
-        _ = Task.Run(Resize);
-    }
-    /// <summary>
-    /// 调整窗体大小
-    /// </summary>
-    public void Resize()
-    {
-        while (isDragMouseDown && InputSimulator.GetMouseDown(MouseButton.Left))
-        {
-            var nowMousePoint = InputSimulator.GetMousePosition();
-            ViewPage.Dispatcher.Invoke(() =>
-            {
-                double newWidth = ViewPage.Width + (nowMousePoint.X - mouseOriginalX) / SystemProfile.CurrentWindowDPIScale;
-                double newHeight = ViewPage.Height + (nowMousePoint.Y - mouseOriginalY) / SystemProfile.CurrentWindowDPIScale;
-                if (newWidth > ViewPage.MinWidth)
-                    ViewPage.Width = newWidth;
-                else
-                    ViewPage.Width = ViewPage.MinWidth;
-                if (newHeight > ViewPage.MinHeight)
-                    ViewPage.Height = newHeight;
-                else
-                    ViewPage.Height = ViewPage.MinHeight;
-            });
-            mouseOriginalX = nowMousePoint.X;
-            mouseOriginalY = nowMousePoint.Y;
-        }
-        ViewPage.Dispatcher.Invoke(() =>
-        {
-            SystemProfile.MainWindowWidth = ViewPage.Width;
-            SystemProfile.MainWindowHeight = ViewPage.Height;
-        });
     }
     /// <summary>
     /// 判断是否双击

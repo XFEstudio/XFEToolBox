@@ -52,7 +52,11 @@ public partial class MainWindow : Window
         storyboard.Begin();
     }
 
-    private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
+    private void WindowResizeGrip_ResizeCompleted(object? sender, EventArgs e)
+    {
+        SystemProfile.MainWindowWidth = Width;
+        SystemProfile.MainWindowHeight = Height;
+    }
 
     private void BackTabBorder_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => NavigationCenter.GoBack();
 
