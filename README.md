@@ -67,11 +67,12 @@ dotnet run --project .\XFEToolBox.Client.Wpf.Test\XFEToolBox.Client.Wpf.Test.csp
 | 路径 | 说明 |
 | --- | --- |
 | `XFEToolBox/` | WPF 桌面客户端与 Code Studio |
+| `XFEToolBox.WpfCore/` | 客户端、安装器与源码工具共享的 WPF 控件、主题、行为和窗口适配 |
 | `XFEToolBox.Client.Core/` | 客户端可复用的非 WPF 基础能力 |
 | `XFEToolBox.Core/` | 客户端与服务端共享的模型、契约和目录客户端 |
 | `XFEToolBox.Server/` | 服务端入口、用户体系、目录与管理接口 |
 | `XFEToolBox.Server.Core/` | 工具包校验、语义化版本与文件仓库实现 |
-| `XFEToolBoxInstaller/` | WPF 安装器项目 |
+| `XFEToolBox.Client.Installer/` | WPF 安装器项目 |
 | `XFEToolBox.Test/` | 客户端核心测试 |
 | `XFEToolBox.Server.Test/` | 服务端核心测试 |
 | `XFEToolBox.Client.Wpf.Test/` | WPF 渲染与性能测试 |

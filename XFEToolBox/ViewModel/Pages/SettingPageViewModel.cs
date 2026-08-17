@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,7 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using XFEExtension.NetCore.FileExtension;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
@@ -29,19 +29,48 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     string totalProfileSize = "计算中...";
     [ObservableProperty]
     string downloadDirectory = "目标下载目录：";
+    [ObservableProperty]
+    string upgradeStatus = "可手动检查更新，也可在启动时自动检测新版本。";
+    [ObservableProperty]
+    string ignoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckUpgradeCommand))]
+    bool isCheckingForUpdates;
     bool ignoreNextScroll = false;
     public SettingPage ViewPage { get; set; } = viewPage;
+    public string CurrentApplicationVersion => $"当前版本 {UpgradeHelper.DisplayVersion}";
 
     public static void LoadSettingProfile(DependencyObject parent)
     {
         if (parent is null)
             return;
+        LoadSettingProfile(parent, []);
+    }
+
+    private static void LoadSettingProfile(DependencyObject parent, HashSet<DependencyObject> visited)
+    {
+        if (!visited.Add(parent))
+            return;
+
+        ChildFound(parent);
+        if (parent is SettingsExpander settingsExpander)
+        {
+            if (settingsExpander.Content is DependencyObject headerContent)
+                LoadSettingProfile(headerContent, visited);
+            foreach (var item in settingsExpander.Items)
+                if (item is DependencyObject settingsItem)
+                    LoadSettingProfile(settingsItem, visited);
+        }
+        else if (parent is SettingsCard { Content: DependencyObject cardContent })
+        {
+            LoadSettingProfile(cardContent, visited);
+        }
+
         int childrenCount = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < childrenCount; i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            ChildFound(child);
-            LoadSettingProfile(child);
+            LoadSettingProfile(child, visited);
         }
     }
 
@@ -248,5 +277,39 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
             ViewPage.scrollViewer.ScrollToVerticalOffset(ViewPage.scrollViewer.VerticalOffset + textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y - 20);
         }
     }
+
+    private bool CanCheckUpgrade() => !IsCheckingForUpdates;
+
+    [RelayCommand(CanExecute = nameof(CanCheckUpgrade))]
+    async Task CheckUpgrade()
+    {
+        IsCheckingForUpdates = true;
+        UpgradeStatus = "正在连接升级服务器...";
+        try
+        {
+            var result = await UpgradeService.CheckForUpdatesAsync(
+                userInitiated: true,
+                owner: Window.GetWindow(ViewPage));
+            UpgradeStatus = result.Message;
+            IgnoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    [RelayCommand]
+    void ClearIgnoredUpgradeVersion()
+    {
+        SystemProfile.IgnoredUpgradeVersion = string.Empty;
+        IgnoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+        UpgradeStatus = "已清除忽略记录，后续检查会再次提示所有新版本。";
+    }
+
+    private static string GetIgnoredUpgradeVersionDisplay() =>
+        string.IsNullOrWhiteSpace(SystemProfile.IgnoredUpgradeVersion)
+            ? "未忽略任何版本"
+            : $"已忽略 {SystemProfile.IgnoredUpgradeVersion}";
     #endregion
 }

@@ -132,11 +132,20 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
                 var versionRoot = GetVersionRoot(metadata.Manifest.Id, metadata.Manifest.Version);
                 var packagePath = Path.Combine(versionRoot, PackageFileName);
                 var metadataPath = Path.Combine(versionRoot, MetadataFileName);
-                if (!overwrite && (File.Exists(packagePath) || File.Exists(metadataPath)))
-                    throw new ToolPackageConflictException($"工具 {metadata.Manifest.Id} 的 {metadata.Manifest.Version} 版本已经存在。");
+                if (File.Exists(packagePath) || File.Exists(metadataPath))
+                    throw CreateVersionConflictException(metadata);
 
                 Directory.CreateDirectory(versionRoot);
-                File.Move(incomingPath, packagePath, overwrite);
+                try
+                {
+                    // 版本号是不可变的发布标识。即使旧客户端传入 overwrite=true，
+                    // 服务端也绝不允许覆盖已经发布过的同一版本。
+                    File.Move(incomingPath, packagePath, overwrite: false);
+                }
+                catch (IOException) when (File.Exists(packagePath))
+                {
+                    throw CreateVersionConflictException(metadata);
+                }
                 await WriteMetadataAtomicallyAsync(metadataPath, metadata, cancellationToken);
             }
             finally
@@ -151,6 +160,9 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
             if (File.Exists(incomingPath)) File.Delete(incomingPath);
         }
     }
+
+    private static ToolPackageConflictException CreateVersionConflictException(StoredToolPackage package) =>
+        new($"服务器已存在工具 {package.Manifest.Id} 的 {package.Manifest.Version} 版本，不允许覆盖发布。请修改 manifest.json 中的 version 后重试。");
 
     public async Task<StoredToolPackage> SetPublishedAsync(
         string toolId,

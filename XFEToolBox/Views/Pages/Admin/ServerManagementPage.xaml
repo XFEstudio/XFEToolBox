@@ -1,28 +1,42 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.Admin.ServerManagementPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       Background="Transparent" Title="">
     <Page.Resources>
         <Style x:Key="CardTitle" TargetType="TextBlock"><Setter Property="Foreground" Value="#3E3E54"/><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
         <Style x:Key="CardDescription" TargetType="TextBlock"><Setter Property="Foreground" Value="#9292A5"/><Setter Property="FontSize" Value="9.5"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="Margin" Value="0,5,0,0"/></Style>
+        <Style x:Key="ManagementCardStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="Height" Value="86"/>
+            <Setter Property="Margin" Value="6,5"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Background" Value="#FAFAFE"/>
+            <Setter Property="BorderBrush" Value="#E1E1EF"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="controls:ButtonAssist.CornerRadius" Value="15"/>
+            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#F5F5FD"/>
+            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#BDBDEB"/>
+            <Setter Property="controls:ButtonAssist.PressedBackground" Value="#EEEEFA"/>
+        </Style>
     </Page.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="14,10,14,12">
-            <UniformGrid Columns="2">
-                <Button Tag="serverOverview" Height="Auto" Margin="6" Padding="17" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Click="ManagementCard_Click">
+            <StackPanel VerticalAlignment="Top">
+                <Button Tag="serverOverview" Style="{StaticResource ManagementCardStyle}" Click="ManagementCard_Click">
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="42" Height="42" CornerRadius="13" Background="#ECECFA"><Image Source="/Resources/Image/grid.png" Margin="10"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="服务器概览" Style="{StaticResource CardTitle}"/><TextBlock Text="查看运行状态、CPU、内存、会话和存储占用" Style="{StaticResource CardDescription}"/></StackPanel></Grid>
                 </Button>
-                <Button Tag="userManagement" Height="Auto" Margin="6" Padding="17" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Click="ManagementCard_Click">
+                <Button Tag="userManagement" Style="{StaticResource ManagementCardStyle}" Click="ManagementCard_Click">
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="42" Height="42" CornerRadius="13" Background="#ECECFA"><Image Source="/Resources/Image/setting.png" Margin="10"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="用户与权限" Style="{StaticResource CardTitle}"/><TextBlock Text="创建用户、重置密码并配置管理员权限" Style="{StaticResource CardDescription}"/></StackPanel></Grid>
                 </Button>
-                <Button Tag="toolManagement" Height="Auto" Margin="6" Padding="17" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Click="ManagementCard_Click">
+                <Button Tag="toolManagement" Style="{StaticResource ManagementCardStyle}" Click="ManagementCard_Click">
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="42" Height="42" CornerRadius="13" Background="#ECECFA"><Image Source="/Resources/Image/toolbox.png" Margin="10"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="工具发布" Style="{StaticResource CardTitle}"/><TextBlock Text="上传、审核并发布 XAML 与 C# 工具包" Style="{StaticResource CardDescription}"/></StackPanel></Grid>
                 </Button>
-                <Button Tag="softwareManagement" Height="Auto" Margin="6" Padding="17" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Click="ManagementCard_Click">
+                <Button Tag="softwareManagement" Style="{StaticResource ManagementCardStyle}" Click="ManagementCard_Click">
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Border Width="42" Height="42" CornerRadius="13" Background="#ECECFA"><Image Source="/Resources/Image/download.png" Margin="10"/></Border><StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="软件发布" Style="{StaticResource CardTitle}"/><TextBlock Text="编辑软件信息、下载渠道并上传安装文件" Style="{StaticResource CardDescription}"/></StackPanel></Grid>
                 </Button>
-            </UniformGrid>
+            </StackPanel>
         </Grid>
     </ScrollViewer>
 </Page>

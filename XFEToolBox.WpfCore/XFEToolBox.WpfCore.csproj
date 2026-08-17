@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>XFEToolBox.WpfCore</AssemblyName>
+    <RootNamespace>XFEToolBox.WpfCore</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Image\check.png" />
+    <None Remove="Resources\Image\close.png" />
+    <None Remove="Resources\Image\corner.png" />
+    <None Remove="Resources\Image\invisible.png" />
+    <None Remove="Resources\Image\min.png" />
+    <None Remove="Resources\Image\tabline.png" />
+    <None Remove="Resources\Image\visible.png" />
+    <None Remove="Resources\Image\wrench_tool.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Image\check.png" />
+    <Resource Include="Resources\Image\close.png" />
+    <Resource Include="Resources\Image\corner.png" />
+    <Resource Include="Resources\Image\invisible.png" />
+    <Resource Include="Resources\Image\min.png" />
+    <Resource Include="Resources\Image\tabline.png" />
+    <Resource Include="Resources\Image\visible.png" />
+    <Resource Include="Resources\Image\wrench_tool.png" />
+  </ItemGroup>
+
+</Project>

@@ -6,6 +6,8 @@ namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class SoftwareCardViewModel(SoftwareCatalogItem software, ImageSource iconSource) : ObservableObject
 {
+    private int _iconLoadStarted;
+
     public SoftwareCatalogItem Software { get; } = software;
 
     public string Id => Software.Id;
@@ -18,4 +20,6 @@ public partial class SoftwareCardViewModel(SoftwareCatalogItem software, ImageSo
 
     [ObservableProperty]
     private ImageSource iconSource = iconSource;
+
+    public bool TryBeginIconLoad() => Interlocked.Exchange(ref _iconLoadStarted, 1) == 0;
 }

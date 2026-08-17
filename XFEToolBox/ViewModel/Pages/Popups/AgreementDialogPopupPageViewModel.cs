@@ -1,6 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Views.Pages.Popups;
 

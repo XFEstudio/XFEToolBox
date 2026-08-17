@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Diagnostics;
 using System.Net;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -27,6 +26,7 @@ public partial class ConsolePageViewModel : ObservableObject
     private readonly BufferedConsoleRenderer outputRenderer;
     public ConsolePage ViewPage { get; set; }
     public XFEConsoleTerminalServer? TerminalServer { get; set; }
+    public XFEConsoleTerminalClient? TerminalClient { get; set; }
 
     public ConsolePageViewModel(ConsolePage viewPage)
     {
@@ -48,18 +48,63 @@ public partial class ConsolePageViewModel : ObservableObject
         TerminalServer.Disconnected += TerminalServer_Disconnected;
         TerminalServer.MessageReceived += TerminalServer_MessageReceived;
         TerminalServer.ErrorOccurred += TerminalServer_ErrorOccurred;
-        await TerminalServer.StartServer();
+        await TerminalServer.StartAsync();
     }
 
-    public void ShutDownServer()
+    public async Task StartRemoteConsoleClient()
     {
-        try
+        if (TerminalClient is not null)
+            await TerminalClient.DisposeAsync();
+        TerminalClient = new XFEConsoleTerminalClient(
+            NormalizeRemoteAddress(ConsoleProfile.RemoteServerAddress),
+            ConsoleProfile.RemoteServerPassword,
+            Environment.MachineName,
+            $"XFEToolBox-{Environment.ProcessId}");
+        TerminalClient.Connected += TerminalClient_Connected;
+        TerminalClient.Disconnected += TerminalClient_Disconnected;
+        TerminalClient.MessageReceived += TerminalClient_MessageReceived;
+        TerminalClient.ErrorOccurred += TerminalClient_ErrorOccurred;
+        if (!await TerminalClient.ConnectAsync())
+            throw new UnauthorizedAccessException(TerminalClient.AuthenticationFailureReason ?? "远程调试服务器拒绝了连接密码。");
+    }
+
+    public Task StartConsoleEndpoint() => ConsoleProfile.ConnectToRemoteServer
+        ? StartRemoteConsoleClient()
+        : StartConsoleServer();
+
+    public async Task ShutDownEndpoint()
+    {
+        var terminalClient = TerminalClient;
+        TerminalClient = null;
+        if (terminalClient is not null)
         {
-            TerminalServer?.Server.Server.Close();
-            TerminalServer?.Server.Server.Abort();
+            await terminalClient.DisconnectAsync();
+            await terminalClient.DisposeAsync();
         }
-        catch { }
+
+        var terminalServer = TerminalServer;
         TerminalServer = null;
+        if (terminalServer is not null)
+            await terminalServer.StopAsync();
+    }
+
+    private static string NormalizeRemoteAddress(string? address)
+    {
+        var normalized = string.IsNullOrWhiteSpace(address)
+            ? $"ws://localhost:{ConsoleProfile.ConsolePort}/"
+            : address.Trim();
+        if (!normalized.Contains("://", StringComparison.Ordinal))
+            normalized = $"ws://{normalized}";
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out var uri))
+        {
+            var builder = new UriBuilder(uri);
+            if (builder.Scheme == Uri.UriSchemeHttp)
+                builder.Scheme = "ws";
+            else if (builder.Scheme == Uri.UriSchemeHttps)
+                builder.Scheme = "wss";
+            return builder.Uri.ToString();
+        }
+        return normalized;
     }
 
     private void TerminalServer_ErrorOccurred(XFEConsoleClientInfo sender, Exception e)
@@ -96,6 +141,40 @@ public partial class ConsolePageViewModel : ObservableObject
     {
         ShowMessageWithTimeLine($"控制台服务器已在端口：[hyperlink color: #05ff00 link: http://localhost:{ConsoleProfile.ConsolePort}/ text: {ConsoleProfile.ConsolePort}] 上运行");
     }
+
+    private void TerminalClient_Connected(XFEConsoleTerminalClient sender)
+    {
+        var programName = string.IsNullOrWhiteSpace(sender.RemoteProgramName) ? sender.ServerAddress : sender.RemoteProgramName;
+        ShowMessageWithTimeLine($"[color #9898e7]已连接远程调试程序 [color white]{programName}");
+    }
+
+    private void TerminalClient_Disconnected(XFEConsoleTerminalClient sender)
+    {
+        ShowMessageWithTimeLine("[color #9898e7]远程调试程序已断开连接");
+        ViewPage.Dispatcher.BeginInvoke(() =>
+        {
+            CanStartServer = true;
+            CanStopServer = false;
+            CanRestartServer = false;
+        });
+    }
+
+    private void TerminalClient_MessageReceived(XFEConsoleTerminalClient sender, string message)
+    {
+        var dictionary = new XFEDictionary(message);
+        var isLine = dictionary["IsLine"] == "true";
+        var textMessage = dictionary["Text"] ?? string.Empty;
+        var programName = string.IsNullOrWhiteSpace(sender.RemoteProgramName) ? "远程程序" : sender.RemoteProgramName;
+        outputRenderer.Append(
+            startsNewLine => startsNewLine
+                ? $"[{DateTime.Now:HH:mm:ss}] {programName}> {textMessage}"
+                : textMessage,
+            Colors.White,
+            isLine);
+    }
+
+    private void TerminalClient_ErrorOccurred(XFEConsoleTerminalClient sender, Exception exception)
+        => ShowMessageWithTimeLine($"[foldblock color: white #ff0000 title: 远程连接错误：{exception.Message} text: {exception}]");
 
     internal void ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
@@ -155,14 +234,17 @@ public partial class ConsolePageViewModel : ObservableObject
         CanStartServer = false;
         try
         {
-            await ShowMessageWithTimeLineAsync("[color yellow]正在启动服务器...");
-            _ = StartConsoleServer();
+            await ShowMessageWithTimeLineAsync(ConsoleProfile.ConnectToRemoteServer
+                ? "[color yellow]正在连接远程调试服务器..."
+                : "[color yellow]正在启动控制台服务器...");
+            await StartConsoleEndpoint();
             CanStopServer = true;
             CanRestartServer = true;
         }
         catch (Exception ex)
         {
-            await ShowMessageWithTimeLineAsync($"[color red]无法启动服务器：{ex}");
+            await ShutDownEndpoint();
+            await ShowMessageWithTimeLineAsync($"[color red]无法建立调试连接：{ex.Message}");
             CanRestartServer = false;
             CanStopServer = false;
             CanStartServer = true;
@@ -175,22 +257,16 @@ public partial class ConsolePageViewModel : ObservableObject
         CanStopServer = false;
         try
         {
-            ShutDownServer();
+            await ShutDownEndpoint();
             CanStartServer = true;
-            await ShowMessageWithTimeLineAsync("[color yellow]服务器已关闭");
+            await ShowMessageWithTimeLineAsync("[color yellow]调试连接已关闭");
         }
         catch (Exception ex)
         {
-            await ShowMessageWithTimeLineAsync($"[color red]关闭服务器时出现错误：{ex}");
-            if (TerminalServer is not null && TerminalServer.Server.Server.IsListening)
-            {
-                CanRestartServer = true;
-                CanStopServer = true;
-            }
-            else
-            {
-                CanStartServer = true;
-            }
+            await ShowMessageWithTimeLineAsync($"[color red]关闭调试连接时出现错误：{ex}");
+            CanStartServer = TerminalServer is null && TerminalClient is null;
+            CanRestartServer = !CanStartServer;
+            CanStopServer = !CanStartServer;
         }
     }
     [RelayCommand]
@@ -201,29 +277,22 @@ public partial class ConsolePageViewModel : ObservableObject
         CanStopServer = false;
         try
         {
-            ShutDownServer();
-            await ShowMessageWithTimeLineAsync("[color yellow]服务器已关闭");
-            _ = StartConsoleServer();
+            await ShutDownEndpoint();
+            await ShowMessageWithTimeLineAsync("[color yellow]调试连接已关闭");
+            await StartConsoleEndpoint();
             CanStartServer = false;
             CanStopServer = true;
             CanRestartServer = true;
-            await ShowMessageWithTimeLineAsync("[color yellow]服务器重启完成");
+            await ShowMessageWithTimeLineAsync(ConsoleProfile.ConnectToRemoteServer
+                ? "[color yellow]远程调试服务器重连完成"
+                : "[color yellow]控制台服务器重启完成");
         }
         catch (Exception ex)
         {
             await ShowMessageWithTimeLineAsync($"[color red]重启服务器时出现错误：{ex}");
-            if (TerminalServer is not null && TerminalServer.Server.Server.IsListening)
-            {
-                CanRestartServer = true;
-                CanStopServer = true;
-                CanStartServer = false;
-            }
-            else
-            {
-                CanRestartServer = false;
-                CanStopServer = false;
-                CanStartServer = true;
-            }
+            CanStartServer = TerminalServer is null && TerminalClient is null;
+            CanRestartServer = !CanStartServer;
+            CanStopServer = !CanStartServer;
         }
     }
     [RelayCommand]

@@ -15,6 +15,7 @@
             --border: #e6e5f0;
             --text: #4a4a60;
             --muted: #9292a4;
+            --soft-wrap-marker: #7777c9;
         }
         html, body {
             width: 100%; height: 100%; margin: 0; overflow: hidden;
@@ -61,6 +62,20 @@
         .tab:hover .close, .tab.active .close { opacity: 1; }
         .tab .close:hover { background: #deddf2; color: #3f3f55; }
         #editor { min-width: 0; min-height: 0; }
+        #editor .view-line.xfe-soft-wrap-break::after {
+            content: "↩";
+            position: absolute;
+            top: 0;
+            right: 5px;
+            z-index: 2;
+            padding-left: 5px;
+            color: var(--soft-wrap-marker);
+            background: linear-gradient(90deg, transparent, var(--surface) 38%);
+            font-family: "Segoe UI Symbol", "Segoe UI", sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            pointer-events: none;
+        }
         #status {
             display: flex; align-items: center; justify-content: flex-end; gap: 0;
             padding: 0 12px; font-size: 10px; background: #f1f0fa; color: #67677e;
@@ -82,7 +97,7 @@
 
         body.dark {
             --surface: #202033; --surface-subtle: #1b1b2b; --surface-hover: #2a2a40;
-            --border: #34344a; --text: #deddec; --muted: #85859b;
+            --border: #34344a; --text: #deddec; --muted: #85859b; --soft-wrap-marker: #b6b6f1;
         }
         body.dark #tabs { background: #1b1b2b; }
         body.dark #tabs::-webkit-scrollbar-track { background: #2d2d45; }
@@ -125,6 +140,8 @@
         let renderAllWhitespace = false;
         let wordWrapEnabled = false;
         let allRegionsFolded = false;
+        let softWrapMarkerFrame = 0;
+        let softWrapObserver;
 
         require.config({ paths: { vs: './monaco/vs' } });
         require(['vs/editor/editor.main'], function () {
@@ -301,6 +318,7 @@
                 autoClosingBrackets: 'always', autoClosingQuotes: 'always', autoSurround: 'languageDefined',
                 matchBrackets: 'always', selectionHighlight: true, occurrencesHighlight: 'singleFile',
                 renderLineHighlight: 'all', renderWhitespace: 'selection', renderControlCharacters: true, scrollBeyondLastLine: false,
+                wordWrap: 'off', wrappingIndent: 'none',
                 folding: true, foldingHighlight: true, showFoldingControls: 'mouseover', links: true, colorDecorators: true,
                 stickyScroll: { enabled: true, maxLineCount: 4 }, scrollbar: { verticalScrollbarSize: 12, horizontalScrollbarSize: 12 }
             });
@@ -309,6 +327,10 @@
             registerLanguageHints();
             registerFormatters();
             editor.onDidChangeCursorPosition(updateStatus);
+            editor.onDidChangeModel(scheduleSoftWrapMarkers);
+            editor.onDidChangeModelDecorations(scheduleSoftWrapMarkers);
+            editor.onDidLayoutChange(scheduleSoftWrapMarkers);
+            editor.onDidScrollChange(scheduleSoftWrapMarkers);
             editor.onDidChangeModelContent(() => {
                 if (suppressChange || !activePath) return;
                 const state = states.get(activePath);
@@ -318,7 +340,13 @@
                 validateModel(editor.getModel());
                 post({ type: 'changed', path: activePath });
             });
+            const viewLines = editor.getDomNode()?.querySelector('.view-lines');
+            if (viewLines) {
+                softWrapObserver = new MutationObserver(scheduleSoftWrapMarkers);
+                softWrapObserver.observe(viewLines, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+            }
             registerVisualStudioKeybindings();
+            scheduleSoftWrapMarkers();
             post({ type: 'ready' });
         });
 
@@ -417,7 +445,41 @@
 
         function toggleWordWrap() {
             wordWrapEnabled = !wordWrapEnabled;
-            editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off' });
+            editor.updateOptions({ wordWrap: wordWrapEnabled ? 'on' : 'off', wrappingIndent: 'none' });
+            scheduleSoftWrapMarkers();
+        }
+
+        function scheduleSoftWrapMarkers() {
+            if (softWrapMarkerFrame) cancelAnimationFrame(softWrapMarkerFrame);
+            softWrapMarkerFrame = requestAnimationFrame(() => {
+                softWrapMarkerFrame = 0;
+                renderSoftWrapMarkers();
+            });
+        }
+
+        function renderSoftWrapMarkers() {
+            const viewLines = document.querySelectorAll('#editor .view-lines > .view-line');
+            viewLines.forEach(line => line.classList.remove('xfe-soft-wrap-break'));
+            if (!wordWrapEnabled || !editor || !viewLines.length) return;
+
+            const viewModel = editor._getViewModel?.();
+            const viewLayout = viewModel?.viewLayout;
+            const converter = viewModel?.coordinatesConverter;
+            if (!viewLayout || !converter) return;
+
+            const viewLineCount = viewModel.getLineCount();
+            viewLines.forEach(line => {
+                const top = Number.parseFloat(line.style.top);
+                if (!Number.isFinite(top)) return;
+
+                const viewLineNumber = viewLayout.getLineNumberAtVerticalOffset(top + 1);
+                if (viewLineNumber < 1 || viewLineNumber >= viewLineCount) return;
+
+                const current = converter.convertViewPositionToModelPosition(new monaco.Position(viewLineNumber, 1));
+                const next = converter.convertViewPositionToModelPosition(new monaco.Position(viewLineNumber + 1, 1));
+                if (current.lineNumber === next.lineNumber)
+                    line.classList.add('xfe-soft-wrap-break');
+            });
         }
 
         function toggleWhitespace() {

@@ -1,0 +1,31 @@
+<UserControl x:Class="XFEToolBox.WpfCore.Controls.CommandPreviewBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinHeight="58">
+    <Border Padding="14,9" Background="#242437" CornerRadius="13">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Border Width="30" Height="30" CornerRadius="9" Background="#393954" VerticalAlignment="Center">
+                <TextBlock Text="$" Foreground="#BFC0FF" FontFamily="Consolas" FontSize="15" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Foreground="#A8A8BE" FontSize="9.5"/>
+                <TextBlock x:Name="CommandTextBlock"
+                           ToolTip="{Binding CommandText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Foreground="White" FontFamily="Consolas" FontSize="11.5"
+                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,3,0,0"/>
+            </StackPanel>
+            <Button Grid.Column="4" Content="{Binding CopyButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    MinWidth="58" Height="32" Padding="11,0" VerticalAlignment="Center"
+                    Click="CopyButton_Click"/>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,272 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls">
+
+    <Style TargetType="{x:Type controls:SettingsCard}">
+        <Setter Property="MinHeight" Value="68"/>
+        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="Padding" Value="16,12"/>
+        <Setter Property="Background" Value="{DynamicResource ToolSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:SettingsCard}">
+                    <Border x:Name="Surface" Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12"
+                            SnapsToDevicePixels="True">
+                        <Grid x:Name="LayoutRoot">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="IconSurface" Width="34" Height="34" Margin="0,0,13,0"
+                                    Grid.RowSpan="2" CornerRadius="10" Background="{DynamicResource ToolAccentSoftBrush}"
+                                    VerticalAlignment="Center">
+                                <ContentPresenter Content="{TemplateBinding HeaderIcon}"
+                                                  ContentTemplate="{TemplateBinding HeaderIconTemplate}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  TextElement.Foreground="{DynamicResource MainColor}"/>
+                            </Border>
+                            <StackPanel x:Name="TextArea" Grid.Column="1" VerticalAlignment="Center">
+                                <ContentPresenter x:Name="HeaderPresenter" Content="{TemplateBinding Header}"
+                                                  ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                                  TextElement.FontWeight="SemiBold"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                <ContentPresenter x:Name="DescriptionPresenter" Margin="0,3,0,0"
+                                                  Content="{TemplateBinding Description}"
+                                                  ContentTemplate="{TemplateBinding DescriptionTemplate}"
+                                                  TextElement.FontSize="11"
+                                                  TextElement.Foreground="{DynamicResource ToolTextSecondaryBrush}"/>
+                            </StackPanel>
+                            <ContentPresenter x:Name="ContentHost" Grid.Column="2" Grid.RowSpan="2" Margin="18,0,0,0"
+                                              Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HeaderIcon" Value="{x:Null}">
+                            <Setter TargetName="IconSurface" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="Description" Value="{x:Null}">
+                            <Setter TargetName="DescriptionPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="Header" Value="{x:Null}">
+                            <Setter TargetName="HeaderPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="ContentAlignment" Value="{x:Static controls:SettingsCardContentAlignment.Vertical}">
+                            <Setter TargetName="ContentHost" Property="Grid.Row" Value="1"/>
+                            <Setter TargetName="ContentHost" Property="Grid.Column" Value="1"/>
+                            <Setter TargetName="ContentHost" Property="Grid.ColumnSpan" Value="2"/>
+                            <Setter TargetName="ContentHost" Property="Grid.RowSpan" Value="1"/>
+                            <Setter TargetName="ContentHost" Property="Margin" Value="0,12,0,0"/>
+                            <Setter TargetName="TextArea" Property="Grid.ColumnSpan" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="ContentAlignment" Value="{x:Static controls:SettingsCardContentAlignment.Left}">
+                            <Setter TargetName="IconSurface" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="TextArea" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="ContentHost" Property="Grid.Column" Value="0"/>
+                            <Setter TargetName="ContentHost" Property="Grid.ColumnSpan" Value="3"/>
+                            <Setter TargetName="ContentHost" Property="Margin" Value="0"/>
+                            <Setter TargetName="ContentHost" Property="HorizontalAlignment" Value="Left"/>
+                        </Trigger>
+                        <Trigger Property="IsClickEnabled" Value="True">
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Focusable" Value="True"/>
+                            <Setter Property="IsTabStop" Value="True"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsClickEnabled" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/>
+                            <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolControlHoverBorderBrush}"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsClickEnabled" Value="True"/>
+                                <Condition Property="IsKeyboardFocusWithin" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlDisabledBrush}"/>
+                            <Setter TargetName="Surface" Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SettingsExpanderHeaderToggleStyle" TargetType="ToggleButton">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="ToggleSurface" Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}" CornerRadius="10">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource ToolControlPressedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Cursor" Value="Arrow"/>
+                            <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.65"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type controls:SettingsExpander}">
+        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="Background" Value="{DynamicResource ToolSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:SettingsExpander}">
+                    <Border x:Name="Surface" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid MinHeight="72" Margin="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ToggleButton Style="{StaticResource SettingsExpanderHeaderToggleStyle}"
+                                              Padding="10,6" IsHitTestVisible="{TemplateBinding IsHeaderClickEnabled}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="IconSurface" Width="34" Height="34" Margin="0,0,13,0"
+                                                CornerRadius="10" Background="{DynamicResource ToolAccentSoftBrush}"
+                                                VerticalAlignment="Center">
+                                            <ContentPresenter Content="{TemplateBinding HeaderIcon}"
+                                                              ContentTemplate="{TemplateBinding HeaderIconTemplate}"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              TextElement.Foreground="{DynamicResource MainColor}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <ContentPresenter Content="{TemplateBinding Header}"
+                                                              ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                                              TextElement.FontWeight="SemiBold"
+                                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                            <ContentPresenter x:Name="DescriptionPresenter" Margin="0,3,0,0"
+                                                              Content="{TemplateBinding Description}"
+                                                              ContentTemplate="{TemplateBinding DescriptionTemplate}"
+                                                              TextElement.FontSize="11"
+                                                              TextElement.Foreground="{DynamicResource ToolTextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ToggleButton>
+                                <ContentPresenter Grid.Column="1" Margin="12,0,10,0"
+                                                  Content="{TemplateBinding Content}"
+                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                  VerticalAlignment="Center"/>
+                                <ToggleButton x:Name="ExpandToggle" Grid.Column="2" Width="34" Height="34" Margin="0,0,6,0"
+                                              Style="{StaticResource SettingsExpanderHeaderToggleStyle}"
+                                              IsHitTestVisible="{TemplateBinding IsHeaderClickEnabled}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                    <Border Width="26" Height="26" CornerRadius="8" Background="{DynamicResource ToolAccentSoftBrush}">
+                                        <Path x:Name="Arrow" Width="7" Height="11" Data="M 1,1 L 6,5.5 L 1,10"
+                                              Stretch="Fill" Stroke="{DynamicResource MainColor}" StrokeThickness="1.6"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              RenderTransformOrigin="0.5,0.5">
+                                            <Path.RenderTransform>
+                                                <RotateTransform Angle="0"/>
+                                            </Path.RenderTransform>
+                                        </Path>
+                                    </Border>
+                                </ToggleButton>
+                            </Grid>
+                            <Border x:Name="ItemsSite" Grid.Row="1" Padding="10,6,10,10"
+                                    BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="0,1,0,0"
+                                    Visibility="Collapsed" Opacity="0">
+                                <StackPanel>
+                                    <ContentPresenter x:Name="ItemsHeaderPresenter" Content="{TemplateBinding ItemsHeader}"/>
+                                    <ItemsPresenter/>
+                                    <ContentPresenter x:Name="ItemsFooterPresenter" Content="{TemplateBinding ItemsFooter}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="HeaderIcon" Value="{x:Null}">
+                            <Setter TargetName="IconSurface" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="Description" Value="{x:Null}">
+                            <Setter TargetName="DescriptionPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="ItemsHeader" Value="{x:Null}">
+                            <Setter TargetName="ItemsHeaderPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="ItemsFooter" Value="{x:Null}">
+                            <Setter TargetName="ItemsFooterPresenter" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsExpanded" Value="True">
+                            <Setter TargetName="ItemsSite" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="ItemsSite" Property="Opacity" Value="1"/>
+                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                <Setter.Value><RotateTransform Angle="90"/></Setter.Value>
+                            </Setter>
+                            <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolControlHoverBorderBrush}"/>
+                        </Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="ExpandToggle" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlDisabledBrush}"/>
+                            <Setter TargetName="Surface" Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

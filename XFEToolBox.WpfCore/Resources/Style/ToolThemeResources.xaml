@@ -1,0 +1,11 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 工具箱与外部工具共同加载的主题入口；工具作者无需显式引用任何 Style。 -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/Theme/LightTheme.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/StandardControlsStyle.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/UnifiedControlsStyle.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/SettingsControlsStyle.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/MyControlsStyle.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+</ResourceDictionary>

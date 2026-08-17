@@ -1,7 +1,7 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.DownloadInfoPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+      xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       Background="White" Title="软件下载详情">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="24,20,24,24">
@@ -45,7 +45,7 @@
                             <TextBlock Text="可选择不同来源" Foreground="#A0A0B1" FontSize="8.5" Margin="0,2,0,0"/>
                         </StackPanel>
                         <ComboBox Grid.Column="1" Height="38" ItemsSource="{Binding Channels}" SelectedItem="{Binding SelectedChannel}"
-                                  DisplayMemberPath="Name"/>
+                                  DisplayMemberPath="Name" TextSearch.TextPath="Name"/>
                     </Grid>
                 </StackPanel>
             </Border>

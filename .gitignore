@@ -356,6 +356,9 @@ healthchecksdb
 # XFEToolBox server runtime package storage
 XFEToolBox.Server/Data/
 
+# Local validation build outputs
+.BuildValidation/final-*-release/
+
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 

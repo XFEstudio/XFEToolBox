@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -20,8 +19,11 @@ namespace XFEToolBox.Client.Views.Pages;
 public partial class DownloadPage : Page
 {
     private static readonly HttpClient IconClient = CreateIconClient();
+    private static readonly SemaphoreSlim IconLoadGate = new(4);
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly ObservableCollection<SoftwareCardViewModel> _software = [];
+    private readonly List<SoftwareCardViewModel> _software = [];
+    private SoftwareCatalogRowViewModel[] _softwareRows = [];
+    private int _visibleCategoryCount;
     private SoftwareCatalogResponse _cachedCatalog = new();
     private bool _updatingCategories;
     private bool _cacheLoaded;
@@ -34,7 +36,6 @@ public partial class DownloadPage : Page
     {
         Current = this;
         InitializeComponent();
-        SoftwareCards.ItemsSource = _software;
         CategoryFilter.Items.Add("全部分类");
         CategoryFilter.SelectedIndex = 0;
     }
@@ -155,30 +156,70 @@ public partial class DownloadPage : Page
 
     private void ApplySoftware(IReadOnlyList<SoftwareCatalogItem> software)
     {
+        var existingById = _software
+            .GroupBy(card => card.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         var desiredCards = software.Select(item =>
         {
-            var existing = _software.FirstOrDefault(card =>
-                string.Equals(card.Id, item.Id, StringComparison.OrdinalIgnoreCase)
-                && SoftwareItemsEquivalent(card.Software, item));
-            if (existing is not null) return existing;
-            var card = new SoftwareCardViewModel(item, GetBundledIcon(item.Id));
-            _ = LoadConfiguredIconAsync(card);
-            return card;
+            if (existingById.TryGetValue(item.Id, out var existing)
+                && SoftwareItemsEquivalent(existing.Software, item)) return existing;
+            return new SoftwareCardViewModel(item, GetBundledIcon(item.Id));
         }).ToArray();
 
-        ReconcileCollection(_software, desiredCards);
+        _software.Clear();
+        _software.AddRange(desiredCards);
+        RebuildCatalogRows();
         EmptyState.Visibility = _software.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         EmptyTitle.Text = "暂时没有找到软件";
         EmptyHint.Text = "可以换个关键词或分类，或稍后刷新再试";
-        SoftwareCountText.Text = $"{_software.Count} 个软件";
+        SoftwareCountText.Text = FormatSoftwareCount();
     }
+
+    private void RebuildCatalogRows()
+    {
+        var categoryOrder = CategoryFilter.Items.Cast<object>()
+            .Skip(1)
+            .Select((item, index) => (Name: item?.ToString() ?? string.Empty, Index: index))
+            .Where(item => !string.IsNullOrWhiteSpace(item.Name))
+            .GroupBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Min(item => item.Index), StringComparer.CurrentCultureIgnoreCase);
+
+        var groups = _software
+            .GroupBy(card => NormalizeCategory(card.Category), StringComparer.CurrentCultureIgnoreCase)
+            .Select(group => (Name: group.Key, Items: (IReadOnlyList<SoftwareCardViewModel>)group.ToArray()))
+            .OrderBy(group => categoryOrder.TryGetValue(group.Name, out var index) ? index : int.MaxValue)
+            .ThenBy(group => group.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToArray();
+
+        var rows = new List<SoftwareCatalogRowViewModel>(_software.Count / 2 + groups.Length * 2);
+        foreach (var group in groups)
+        {
+            rows.Add(SoftwareCatalogRowViewModel.Header(
+                new SoftwareCategoryGroupViewModel(group.Name, group.Items.Count)));
+            for (var index = 0; index < group.Items.Count; index += 2)
+                rows.Add(SoftwareCatalogRowViewModel.Cards(
+                    group.Items[index],
+                    index + 1 < group.Items.Count ? group.Items[index + 1] : null));
+        }
+
+        _visibleCategoryCount = groups.Length;
+        _softwareRows = rows.ToArray();
+        SoftwareCards.ItemsSource = _softwareRows;
+    }
+
+    private string FormatSoftwareCount() => _software.Count == 0
+        ? "0 个软件"
+        : $"{_software.Count} 个软件 · {_visibleCategoryCount} 个分类";
+
+    private static string NormalizeCategory(string? category) =>
+        string.IsNullOrWhiteSpace(category) ? "其他软件" : category.Trim();
 
     private void ShowRefreshFailure(string message)
     {
         if (_hasCachedCatalog)
         {
             EmptyState.Visibility = _software.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            SoftwareCountText.Text = $"{_software.Count} 个软件";
+            SoftwareCountText.Text = FormatSoftwareCount();
             StatusText.Text = $"后台刷新失败，当前显示本地缓存：{message}";
             return;
         }
@@ -204,23 +245,6 @@ public partial class DownloadPage : Page
     private static bool SoftwareItemsEquivalent(SoftwareCatalogItem left, SoftwareCatalogItem right) =>
         JsonSerializer.Serialize(left, CacheJsonOptions) == JsonSerializer.Serialize(right, CacheJsonOptions);
 
-    private static void ReconcileCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> desired)
-        where T : class
-    {
-        for (var index = 0; index < desired.Count; index++)
-        {
-            var item = desired[index];
-            var currentIndex = target.IndexOf(item);
-            if (currentIndex < 0)
-                target.Insert(index, item);
-            else if (currentIndex != index)
-                target.Move(currentIndex, index);
-        }
-
-        while (target.Count > desired.Count)
-            target.RemoveAt(target.Count - 1);
-    }
-
     private void UpdateCategories(IEnumerable<string> categories, string selectedCategory)
     {
         _updatingCategories = true;
@@ -239,6 +263,9 @@ public partial class DownloadPage : Page
     private void ShowEmptyResult(string message, bool connectionError)
     {
         _software.Clear();
+        _softwareRows = [];
+        _visibleCategoryCount = 0;
+        SoftwareCards.ItemsSource = _softwareRows;
         EmptyState.Visibility = Visibility.Visible;
         EmptyTitle.Text = connectionError ? "无法读取软件下载目录" : "暂时没有找到软件";
         EmptyHint.Text = connectionError ? "请检查网络连接与服务状态，然后点击刷新" : "可以换个关键词或分类再试";
@@ -249,6 +276,75 @@ public partial class DownloadPage : Page
     private void SoftwareCard_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { CommandParameter: SoftwareCardViewModel card }) return;
+        ShowSoftwareDetails(card);
+    }
+
+    private async void SoftwareCard_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: SoftwareCardViewModel card } && card.TryBeginIconLoad())
+            await LoadConfiguredIconAsync(card);
+    }
+
+    /// <summary>
+    /// 供主页最近使用卡片调用。目录缓存不存在时会从当前服务器重新解析软件信息。
+    /// </summary>
+    public async Task<bool> OpenSoftwareByIdAsync(string softwareId)
+    {
+        if (string.IsNullOrWhiteSpace(softwareId)) return false;
+        EnsureCacheLoaded();
+
+        var card = _software.FirstOrDefault(item => string.Equals(item.Id, softwareId, StringComparison.OrdinalIgnoreCase));
+        var software = card?.Software ?? _cachedCatalog.Items.FirstOrDefault(item =>
+            string.Equals(item.Id, softwareId, StringComparison.OrdinalIgnoreCase));
+        if (software is null)
+        {
+            try
+            {
+                StatusText.Text = "正在更新软件下载目录…";
+                var response = await ClientSession.Requester.Request<SoftwareCatalogResponse>(
+                    "softwareCatalog", string.Empty, string.Empty);
+                if (response.StatusCode == HttpStatusCode.OK && response.Result is not null)
+                {
+                    _cachedCatalog = response.Result;
+                    _cachedCatalog.Items ??= [];
+                    _cachedCatalog.Categories ??= [];
+                    _hasCachedCatalog = true;
+                    TrySaveCatalogCache(_cachedCatalog);
+                    software = _cachedCatalog.Items.FirstOrDefault(item =>
+                        string.Equals(item.Id, softwareId, StringComparison.OrdinalIgnoreCase));
+                }
+                else
+                {
+                    StatusText.Text = string.IsNullOrWhiteSpace(response.Message)
+                        ? "无法更新软件下载目录。"
+                        : response.Message;
+                }
+            }
+            catch (Exception exception)
+            {
+                StatusText.Text = $"更新软件下载目录失败：{exception.Message}";
+            }
+        }
+
+        if (software is null)
+        {
+            StatusText.Text = "该软件已下架或当前服务器不再提供。";
+            return false;
+        }
+
+        if (card is null)
+        {
+            card = new SoftwareCardViewModel(software, GetBundledIcon(software.Id));
+            if (card.TryBeginIconLoad()) await LoadConfiguredIconAsync(card);
+        }
+
+        ShowSoftwareDetails(card);
+        return true;
+    }
+
+    private static void ShowSoftwareDetails(SoftwareCardViewModel card)
+    {
+        RecentUsageService.RecordSoftware(card.Software);
         PopupHelper.ShowDialog(new DownloadInfoPage(card.Software, card.IconSource), new PopupWindowOptions
         {
             Title = card.Name,
@@ -262,6 +358,7 @@ public partial class DownloadPage : Page
     private static async Task LoadConfiguredIconAsync(SoftwareCardViewModel card)
     {
         if (string.IsNullOrWhiteSpace(card.Software.IconUrl)) return;
+        await IconLoadGate.WaitAsync();
         try
         {
             var icon = await ReadIconAsync(card.Software.IconUrl);
@@ -270,6 +367,10 @@ public partial class DownloadPage : Page
         catch
         {
             // 无法读取服务端配置的图标时保留内置或默认图标。
+        }
+        finally
+        {
+            IconLoadGate.Release();
         }
     }
 

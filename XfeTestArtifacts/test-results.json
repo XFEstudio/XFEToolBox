@@ -1,9 +1,32 @@
 {
-  "startedAt": "2026-08-16T00:45:51.8506137+00:00",
-  "duration": "00:00:00.0031663",
-  "results": [],
-  "total": 0,
-  "passed": 0,
+  "startedAt": "2026-08-17T21:40:51.2224379+00:00",
+  "duration": "00:00:01.2041096",
+  "results": [
+    {
+      "id": "XFEToolBox.Client.Wpf.Test.Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea#0",
+      "displayName": "Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea",
+      "outcome": 0,
+      "bodyDuration": "00:00:00.3877852",
+      "totalDuration": "00:00:00.3879686",
+      "attempts": 1,
+      "message": null,
+      "stackTrace": null,
+      "output": ""
+    },
+    {
+      "id": "XFEToolBox.Client.Wpf.Test.Program.TabAndNavigationOutlinesStayInsideTheirLayoutBounds#0",
+      "displayName": "Program.TabAndNavigationOutlinesStayInsideTheirLayoutBounds",
+      "outcome": 0,
+      "bodyDuration": "00:00:00.8030758",
+      "totalDuration": "00:00:00.8043573",
+      "attempts": 1,
+      "message": null,
+      "stackTrace": null,
+      "output": ""
+    }
+  ],
+  "total": 2,
+  "passed": 2,
   "failed": 0,
   "skipped": 0
 }
