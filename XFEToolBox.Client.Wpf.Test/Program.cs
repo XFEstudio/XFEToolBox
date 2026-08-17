@@ -4,15 +4,169 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.WpfCore.Windowing;
 
 namespace XFEToolBox.Client.Wpf.Test;
 
 public class Program
 {
+    [Test]
+    public static void TabAndNavigationOutlinesStayInsideTheirLayoutBounds()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                var tabView = new TabView { Width = 420, Height = 210, SelectedIndex = 0 };
+                tabView.Items.Add(new TabItem { Header = "概览", Content = new TextBlock { Text = "概览内容" } });
+                tabView.Items.Add(new TabItem { Header = "日志", Content = new TextBlock { Text = "日志内容" } });
+                tabView.Items.Add(new TabItem { Header = "设置", Content = new TextBlock { Text = "设置内容" } });
+
+                var navigationView = new NavigationView
+                {
+                    Width = 420,
+                    Height = 230,
+                    NavigationWidth = new GridLength(160),
+                    SelectedIndex = 0
+                };
+                navigationView.Items.Add(new TabItem { Header = "常规", Content = new TextBlock { Text = "常规设置" } });
+                navigationView.Items.Add(new TabItem { Header = "网络", Content = new TextBlock { Text = "网络设置" } });
+                navigationView.Items.Add(new TabItem { Header = "高级", Content = new TextBlock { Text = "高级设置" } });
+                navigationView.Items.Add(new TabItem { Header = "外观", Content = new TextBlock { Text = "外观设置" } });
+                navigationView.Items.Add(new TabItem { Header = "通知", Content = new TextBlock { Text = "通知设置" } });
+                navigationView.Items.Add(new TabItem { Header = "隐私", Content = new TextBlock { Text = "隐私设置" } });
+
+                var panel = new StackPanel();
+                panel.Children.Add(tabView);
+                panel.Children.Add(navigationView);
+                var window = new Window
+                {
+                    Width = 480,
+                    Height = 500,
+                    Left = -10_000,
+                    Top = -10_000,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Content = panel
+                };
+                window.Resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri("/XFEToolBox.WpfCore;component/Resources/Style/ToolThemeResources.xaml", UriKind.Relative)
+                });
+                window.Show();
+                PumpDispatcher(dispatcher);
+
+                for (var index = 0; index < tabView.Items.Count; index++)
+                {
+                    tabView.SelectedIndex = index;
+                    PumpDispatcher(dispatcher);
+                    window.UpdateLayout();
+
+                    var item = (TabItem)tabView.Items[index];
+                    item.ApplyTemplate();
+                    var outline = (Border?)item.Template.FindName("SelectedOutline", item);
+                    var headerContent = (ContentPresenter?)item.Template.FindName("HeaderContent", item);
+                    var connector = (Border?)item.Template.FindName("ContentConnector", item);
+
+                    Ensure(outline is { Visibility: Visibility.Visible, ActualWidth: >= 1 }, $"第 {index + 1} 个页签轮廓没有显示。");
+                    Ensure(outline!.BorderThickness == new Thickness(1, 1, 1, 0), $"第 {index + 1} 个页签轮廓缺少侧边框。");
+                    Ensure(connector is { Visibility: Visibility.Visible }, $"第 {index + 1} 个页签没有与内容面板连接。");
+
+                    var itemRight = item.TranslatePoint(new Point(item.ActualWidth, 0), window).X;
+                    var edgeRight = outline!.TranslatePoint(new Point(outline.ActualWidth, 0), window).X;
+                    Ensure(edgeRight <= itemRight - 4,
+                        $"第 {index + 1} 个页签右边框仍位于可裁剪边界：{edgeRight:N2} >= {itemRight:N2}。");
+                    Ensure(headerContent is not null, $"第 {index + 1} 个页签缺少标题内容。");
+                    var outlineLeft = outline.TranslatePoint(new Point(0, 0), window).X;
+                    var headerLeft = headerContent!.TranslatePoint(new Point(0, 0), window).X;
+                    var outlineCenter = outlineLeft + outline.ActualWidth / 2;
+                    var headerCenter = headerLeft + headerContent.ActualWidth / 2;
+                    Ensure(Math.Abs(outlineCenter - headerCenter) <= 0.5,
+                        $"第 {index + 1} 个页签标题没有居中：{headerCenter:N2} != {outlineCenter:N2}。");
+                }
+
+                tabView.SelectedIndex = 0;
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+                var firstItem = (TabItem)tabView.Items[0];
+                var firstOutline = (Border?)firstItem.Template.FindName("SelectedOutline", firstItem);
+                var contentFrame = (Border?)tabView.Template.FindName("ContentFrame", tabView);
+                Ensure(firstOutline is not null && contentFrame is not null, "TabView 缺少用于对齐的轮廓或内容面板。");
+                var firstOutlineLeft = firstOutline!.TranslatePoint(new Point(0, 0), window).X;
+                var contentFrameLeft = contentFrame!.TranslatePoint(new Point(0, 0), window).X;
+                Ensure(Math.Abs(firstOutlineLeft - contentFrameLeft) <= 0.5,
+                    $"首个页签与内容面板左侧没有对齐：{firstOutlineLeft:N2} != {contentFrameLeft:N2}。");
+
+                navigationView.ApplyTemplate();
+                window.UpdateLayout();
+                var navigationFrameHost = (Grid?)navigationView.Template.FindName("NavigationFrameHost", navigationView);
+                var navigationClip = (UniformRoundedBorder?)navigationView.Template.FindName("NavigationClip", navigationView);
+                var navigationFrame = (Border?)navigationView.Template.FindName("NavigationFrame", navigationView);
+                Ensure(navigationFrameHost is not null && navigationClip is not null && navigationFrame is not null,
+                    "NavigationView 缺少独立的圆角裁剪层或描边层。");
+                Ensure(navigationFrame!.ActualWidth > 0 && navigationFrame.ActualHeight > 0, "NavigationView 导航边框没有完成布局。");
+                Ensure(navigationFrame.BorderThickness == new Thickness(1), "NavigationView 四侧边框厚度不完整。");
+                Ensure(navigationFrame.CornerRadius == new CornerRadius(15), "NavigationView 四角没有保持统一圆角。");
+                Ensure(navigationFrameHost!.Margin == new Thickness(2), "NavigationView 边框没有保留防裁剪间距。");
+                Ensure(navigationClip!.CornerRadius == navigationFrame.CornerRadius,
+                    "NavigationView 裁剪层与描边层的圆角半径不一致。");
+                Ensure(Math.Abs(navigationClip.ActualWidth - navigationFrame.ActualWidth) <= 0.5 &&
+                       Math.Abs(navigationClip.ActualHeight - navigationFrame.ActualHeight) <= 0.5,
+                    "NavigationView 裁剪层与描边层的尺寸不一致。");
+                Ensure(navigationFrame is UniformRoundedBorder && navigationClip.Clip is RectangleGeometry,
+                    "NavigationView 没有使用圆角裁剪，内部内容可能覆盖下半部圆角。");
+                EnsureVerticallyMirroredCorners(navigationFrame, 18);
+                for (var index = 0; index < navigationView.Items.Count; index++)
+                {
+                    var item = (TabItem)navigationView.Items[index];
+                    item.ApplyTemplate();
+                    var surface = (Border?)item.Template.FindName("Surface", item);
+                    var headerContent = (ContentPresenter?)item.Template.FindName("HeaderContent", item);
+                    Ensure(surface is not null && headerContent is not null, $"第 {index + 1} 个导航项缺少表面或标题内容。");
+                    var surfaceLeft = surface!.TranslatePoint(new Point(0, 0), item).X;
+                    var headerLeft = headerContent!.TranslatePoint(new Point(0, 0), item).X;
+                    var surfaceCenter = surfaceLeft + surface.ActualWidth / 2;
+                    var headerCenter = headerLeft + headerContent.ActualWidth / 2;
+                    Ensure(Math.Abs(surfaceCenter - headerCenter) <= 0.5,
+                        $"第 {index + 1} 个导航项标题没有居中：{headerCenter:N2} != {surfaceCenter:N2}。");
+                }
+                var navigationScroller = (ScrollViewer?)navigationView.Template.FindName("NavigationScroller", navigationView);
+                Ensure(navigationScroller is not null, "NavigationView 缺少独立导航滚动区域。");
+                navigationScroller!.ScrollToEnd();
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+                Ensure(navigationScroller.VerticalOffset > 0, "NavigationView 滚动状态没有被覆盖测试。");
+                Ensure(navigationClip.Clip is RectangleGeometry, "NavigationView 滚动后丢失圆角裁剪。");
+
+                window.Close();
+                dispatcher.InvokeShutdown();
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        })
+        {
+            IsBackground = true
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(15)), "页签与导航边框测试超时。");
+        if (failure is not null)
+        {
+            Console.WriteLine(failure);
+            throw new InvalidOperationException("页签或导航边框可能再次被裁剪。", failure);
+        }
+    }
+
     [Test]
     public static void FramelessMaximizedWindowStaysInsideMonitorWorkArea()
     {
@@ -209,6 +363,62 @@ public class Program
         var frame = new DispatcherFrame();
         _ = dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
         Dispatcher.PushFrame(frame);
+    }
+
+    private static void EnsureVerticallyMirroredCorners(FrameworkElement element, int sampleSize)
+    {
+        var width = Math.Max(1, (int)Math.Ceiling(element.ActualWidth));
+        var height = Math.Max(1, (int)Math.Ceiling(element.ActualHeight));
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(element);
+
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
+        bitmap.CopyPixels(pixels, stride, 0);
+        var size = Math.Min(sampleSize, Math.Min(width, height) / 2);
+        var maximumDifference = 0;
+        var differenceLocation = string.Empty;
+        var differenceValues = string.Empty;
+
+        for (var y = 0; y < size; y++)
+        {
+            for (var x = 0; x < size; x++)
+            {
+                var leftDifference = PixelDifference(pixels, stride, x, y, x, height - 1 - y);
+                if (leftDifference > maximumDifference)
+                {
+                    maximumDifference = leftDifference;
+                    differenceLocation = $"left ({x},{y})/({x},{height - 1 - y})";
+                    differenceValues = $"{PixelValue(pixels, stride, x, y)}/{PixelValue(pixels, stride, x, height - 1 - y)}";
+                }
+                var rightDifference = PixelDifference(pixels, stride, width - 1 - x, y, width - 1 - x, height - 1 - y);
+                if (rightDifference > maximumDifference)
+                {
+                    maximumDifference = rightDifference;
+                    differenceLocation = $"right ({width - 1 - x},{y})/({width - 1 - x},{height - 1 - y})";
+                    differenceValues = $"{PixelValue(pixels, stride, width - 1 - x, y)}/{PixelValue(pixels, stride, width - 1 - x, height - 1 - y)}";
+                }
+            }
+        }
+
+        Ensure(maximumDifference <= 1,
+            $"NavigationView 上下圆角的像素差异过大：{maximumDifference}，位置 {differenceLocation}，像素 {differenceValues}，布局 {element.ActualWidth:N3}×{element.ActualHeight:N3}，位图 {width}×{height}。");
+    }
+
+    private static int PixelDifference(byte[] pixels, int stride, int firstX, int firstY, int secondX, int secondY)
+    {
+        var first = firstY * stride + firstX * 4;
+        var second = secondY * stride + secondX * 4;
+        var difference = 0;
+        for (var channel = 0; channel < 4; channel++)
+            difference = Math.Max(difference, Math.Abs(pixels[first + channel] - pixels[second + channel]));
+        return difference;
+    }
+
+    private static string PixelValue(byte[] pixels, int stride, int x, int y)
+    {
+        var offset = y * stride + x * 4;
+        return $"[{pixels[offset]},{pixels[offset + 1]},{pixels[offset + 2]},{pixels[offset + 3]}]";
     }
 
     private const uint MonitorDefaultToNearest = 0x00000002;

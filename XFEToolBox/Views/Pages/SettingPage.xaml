@@ -81,7 +81,7 @@
                             <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
                             <StackPanel Grid.Row="1">
                                 <controls:SwitchButton Margin="0,14,0,4" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConnectToRemoteServer">
-                                    <TextBlock Text="第二调试模式：工具箱主动连接调试程序服务器"/>
+                                    <TextBlock Text="远程调试模式（连接调试程序服务器）"/>
                                 </controls:SwitchButton>
                                 <Grid Margin="0,8,0,4">
                                     <Grid.ColumnDefinitions>

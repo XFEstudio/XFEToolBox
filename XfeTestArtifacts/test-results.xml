@@ -1,3 +1,4 @@
-<testsuite name="XFEExtension.NetCore.XUnit" tests="1" failures="0" skipped="0" time="0.710914">
-  <testcase name="Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea" time="0.702017" />
+<testsuite name="XFEExtension.NetCore.XUnit" tests="2" failures="0" skipped="0" time="1.204110">
+  <testcase name="Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea" time="0.387969" />
+  <testcase name="Program.TabAndNavigationOutlinesStayInsideTheirLayoutBounds" time="0.804357" />
 </testsuite>
