@@ -57,7 +57,7 @@ public partial class ConsolePageViewModel : ObservableObject
             await TerminalClient.DisposeAsync();
         TerminalClient = new XFEConsoleTerminalClient(
             NormalizeRemoteAddress(ConsoleProfile.RemoteServerAddress),
-            ConsoleProfile.ConsolePassword,
+            ConsoleProfile.RemoteServerPassword,
             Environment.MachineName,
             $"XFEToolBox-{Environment.ProcessId}");
         TerminalClient.Connected += TerminalClient_Connected;

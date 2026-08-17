@@ -63,10 +63,8 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
-        <Style x:Key="GalleryCodeBoxStyle" TargetType="TextBox">
-            <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="AcceptsReturn" Value="True"/>
-            <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Style x:Key="GalleryCodeBoxStyle" TargetType="controls:XamlCodeViewer"
+               BasedOn="{StaticResource ToolBoxXamlCodeViewerStyle}">
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
             <Setter Property="Padding" Value="16"/>
@@ -265,7 +263,9 @@
                                             Padding="13,6" Click="CopyCodeButton_Click"/>
                                 </Grid>
                                 <controls:RoundedClipBorder Grid.Row="1" CornerRadius="12">
-                                    <TextBox x:Name="CodeTextBox" Height="178" Style="{StaticResource GalleryCodeBoxStyle}"/>
+                                    <controls:XamlCodeViewer x:Name="CodeTextBox" Height="178"
+                                                             IsSyntaxHighlightingEnabled="True"
+                                                             Style="{StaticResource GalleryCodeBoxStyle}"/>
                                 </controls:RoundedClipBorder>
                             </Grid>
                         </Border>

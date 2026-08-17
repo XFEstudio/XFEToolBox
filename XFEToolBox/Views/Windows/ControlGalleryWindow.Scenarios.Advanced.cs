@@ -335,6 +335,28 @@ public partial class ControlGalleryWindow
             TextParameter("CopyButtonText", preview.CopyButtonText, value => preview.CopyButtonText = value)));
     }
 
+    private static ScenarioPreviewResult BuildXamlCodeViewerScenarios()
+    {
+        var viewer = new ToolControls.XamlCodeViewer
+        {
+            Height = 150,
+            Text = """
+                   <!-- 工具页面标题 -->
+                   <Grid Margin="16">
+                       <TextBlock Text="XFE 工具页面" FontWeight="SemiBold" />
+                   </Grid>
+                   """,
+            IsSyntaxHighlightingEnabled = true
+        };
+
+        return Scenarios(Scenario(
+            "只读 XAML 示例",
+            "切换语法着色或替换示例文本，验证标签、属性、字符串和注释的颜色层次。",
+            ScenarioPreviewStack(viewer),
+            TextParameter("Text", viewer.Text, value => viewer.Text = value),
+            ToggleParameter("IsSyntaxHighlightingEnabled", true, value => viewer.IsSyntaxHighlightingEnabled = value)));
+    }
+
     private static ScenarioPreviewResult BuildScrollTextScenarios()
     {
         var status = ScenarioStatus("长路径会在溢出时滚动");

@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <AssemblyTitle>XFEToolBox</AssemblyTitle>
     <AssemblyName>XFEToolBox</AssemblyName>
   </PropertyGroup>

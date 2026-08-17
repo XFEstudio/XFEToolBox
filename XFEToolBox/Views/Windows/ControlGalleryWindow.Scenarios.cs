@@ -35,6 +35,7 @@ public partial class ControlGalleryWindow
         "tab-view" => BuildTabViewScenarios(),
         "navigation-view" => BuildNavigationViewScenarios(),
         "command-preview" => BuildCommandPreviewScenarios(),
+        "xaml-code-viewer" => BuildXamlCodeViewerScenarios(),
         "scroll-text" => BuildScrollTextScenarios(),
         "mini-tool-button" => BuildMiniToolButtonScenarios(),
         _ => new ScenarioPreviewResult(

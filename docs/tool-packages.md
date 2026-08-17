@@ -672,6 +672,28 @@ CarouselControl.SetItems(new[]
 
 执行外部命令时必须使用 `ProcessStartInfo.ArgumentList` 等结构化参数 API，不要把预览文本交给 Shell 二次解析。
 
+### `XamlCodeViewer`
+
+用于文档、控件示例和诊断界面中的只读 XAML 展示，继承自 `RichTextBox`。控件会区分元素名称、属性、字符串、注释、CDATA、实体与标签括号，同时保留文本选择、`Ctrl+C` 复制及水平/垂直滚动能力；它不会解析或执行显示的 XAML。
+
+| 属性 | 类型 | 默认值 |
+| --- | --- | --- |
+| `Text` | `string` | 空字符串 |
+| `IsSyntaxHighlightingEnabled` | `bool` | `true` |
+
+```xml
+<controls:XamlCodeViewer Height="180"
+                         IsSyntaxHighlightingEnabled="True">
+    <controls:XamlCodeViewer.Text><![CDATA[
+<Grid Margin="16">
+    <TextBlock Text="XFE 工具页面" />
+</Grid>
+    ]]></controls:XamlCodeViewer.Text>
+</controls:XamlCodeViewer>
+```
+
+该控件只适合代码预览，不应代替工具代码编辑器。关闭 `IsSyntaxHighlightingEnabled` 后仍保持只读、可选择和可复制行为。
+
 ### `TabView`
 
 顶部页签式分页控件，继承自 `TabControl`。选中页签与内容面板共用背景和边界，形成连贯的当前页面；页签标题拥有独立的横向滚动区域。

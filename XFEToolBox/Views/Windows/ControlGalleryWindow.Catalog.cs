@@ -355,6 +355,24 @@ public partial class ControlGalleryWindow
             ["命令", "command", "copy", "终端"]),
 
         Item(
+            "xaml-code-viewer", "XamlCodeViewer", "controls:XamlCodeViewer", "工具增强", "</>",
+            "只读展示带语法颜色的 XAML 代码。",
+            "XamlCodeViewer 用于文档、预览和诊断界面，保留文本选择、键盘复制及双向滚动能力，但不会编辑、解析或执行显示的 XAML。",
+            """
+            <controls:XamlCodeViewer Height="180"
+                                     IsSyntaxHighlightingEnabled="True">
+                <controls:XamlCodeViewer.Text><![CDATA[
+            <Grid Margin="16">
+                <TextBlock Text="XFE 工具页面" />
+            </Grid>
+                ]]></controls:XamlCodeViewer.Text>
+            </controls:XamlCodeViewer>
+            """,
+            [P("Text", "string", "要展示的 XAML 文本"), P("IsSyntaxHighlightingEnabled", "bool", "是否启用 XAML 语法着色")],
+            ["适合只读示例，不替代代码编辑器", "Ctrl+C 会复制当前选区，完整示例可由外部按钮复制"],
+            ["XAML", "代码预览", "syntax", "highlight", "viewer"]),
+
+        Item(
             "scroll-text", "ScrollTextBlock", "controls:ScrollTextBlock", "工具增强", "↔",
             "单行溢出时自动或悬停滚动的文本。",
             "ScrollTextBlock 默认用省略号显示长文本，悬停或设置 AutoRolling 后平滑滚动，适合工具名称、路径和窄卡片标题。",

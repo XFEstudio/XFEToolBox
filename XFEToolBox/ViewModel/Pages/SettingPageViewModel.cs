@@ -36,12 +36,33 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     {
         if (parent is null)
             return;
+        LoadSettingProfile(parent, []);
+    }
+
+    private static void LoadSettingProfile(DependencyObject parent, HashSet<DependencyObject> visited)
+    {
+        if (!visited.Add(parent))
+            return;
+
+        ChildFound(parent);
+        if (parent is SettingsExpander settingsExpander)
+        {
+            if (settingsExpander.Content is DependencyObject headerContent)
+                LoadSettingProfile(headerContent, visited);
+            foreach (var item in settingsExpander.Items)
+                if (item is DependencyObject settingsItem)
+                    LoadSettingProfile(settingsItem, visited);
+        }
+        else if (parent is SettingsCard { Content: DependencyObject cardContent })
+        {
+            LoadSettingProfile(cardContent, visited);
+        }
+
         int childrenCount = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < childrenCount; i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            ChildFound(child);
-            LoadSettingProfile(child);
+            LoadSettingProfile(child, visited);
         }
     }
 

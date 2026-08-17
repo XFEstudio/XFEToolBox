@@ -31,6 +31,11 @@ public partial class ConsoleProfile : XFEProfile
     [ProfileProperty]
     private string remoteServerAddress = "ws://localhost:3280/";
     /// <summary>
+    /// 远程调试模式下用于连接调试程序服务器的密码
+    /// </summary>
+    [ProfileProperty]
+    private string remoteServerPassword = "";
+    /// <summary>
     /// 最大行数
     /// </summary>
     [ProfileProperty]

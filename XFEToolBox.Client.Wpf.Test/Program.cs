@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -15,6 +17,143 @@ namespace XFEToolBox.Client.Wpf.Test;
 
 public class Program
 {
+    [Test]
+    public static void TimePickerIncrementOneKeepsTheWholeScrollTrackUsable()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                var picker = new TimePicker
+                {
+                    Width = 300,
+                    MinuteIncrement = 1,
+                    SecondIncrement = 1,
+                    ShowSecond = true,
+                    SelectedTime = new TimeSpan(12, 24, 30),
+                    IsDropDownOpen = true
+                };
+                var window = new Window
+                {
+                    Width = 420,
+                    Height = 360,
+                    Left = -10_000,
+                    Top = -10_000,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Content = picker
+                };
+                window.Resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri("/XFEToolBox.WpfCore;component/Resources/Style/ToolThemeResources.xaml", UriKind.Relative)
+                });
+                window.Show();
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+
+                picker.ApplyTemplate();
+                var minuteList = (ListBox?)picker.Template.FindName("PART_MinuteList", picker);
+                Ensure(minuteList is not null && minuteList.Items.Count == 60,
+                    "步长为 1 时分钟列没有生成完整的 60 个候选值。");
+                minuteList!.ApplyTemplate();
+                window.UpdateLayout();
+
+                var scrollViewer = FindVisualDescendant<ScrollViewer>(minuteList);
+                var scrollBar = FindVisualDescendants<ScrollBar>(minuteList)
+                    .FirstOrDefault(candidate => candidate.Orientation == Orientation.Vertical && candidate.Visibility == Visibility.Visible);
+                Ensure(scrollViewer is not null && scrollBar is not null,
+                    "步长为 1 时分钟列没有显示纵向滚动条。");
+
+                scrollBar!.ApplyTemplate();
+                var track = (Track?)scrollBar.Template.FindName("PART_Track", scrollBar);
+                Ensure(track is not null, "滚动条模板缺少 PART_Track，ScrollBar 无法同步完整滚动范围。");
+                Ensure(track!.ActualHeight > 0 && track.Thumb.ActualHeight > 0,
+                    "滚动轨道或滑块没有完成布局。");
+
+                scrollViewer!.ScrollToEnd();
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+                Ensure(scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight - 0.5,
+                    "分钟列无法滚动到最后一个候选值。");
+                Ensure(Math.Abs(track.Value - track.Maximum) <= 0.5,
+                    $"滑块没有到达滚动范围底部：{track.Value:N2} / {track.Maximum:N2}。");
+                var thumbBottom = track.Thumb.TranslatePoint(
+                    new Point(0, track.Thumb.ActualHeight), track).Y;
+                Ensure(thumbBottom <= track.ActualHeight + 0.5 && thumbBottom >= track.ActualHeight - 0.5,
+                    $"滑块下半部被裁切或未到达轨道底部：{thumbBottom:N2} / {track.ActualHeight:N2}。");
+
+                scrollViewer.ScrollToTop();
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+                var thumbTop = track.Thumb.TranslatePoint(new Point(0, 0), track).Y;
+                Ensure(Math.Abs(track.Value - track.Minimum) <= 0.5 && Math.Abs(thumbTop) <= 0.5,
+                    "滑块无法返回滚动范围顶部。");
+
+                window.Close();
+                dispatcher.InvokeShutdown();
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        })
+        {
+            IsBackground = true
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(15)), "TimePicker 步长 1 的滚动测试超时。");
+        if (failure is not null)
+        {
+            Console.WriteLine(failure);
+            throw new InvalidOperationException("TimePicker 步长为 1 时滚动范围不完整。", failure);
+        }
+    }
+
+    [Test]
+    public static void XamlCodeViewerRendersDistinctSyntaxTokens()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var viewer = new XamlCodeViewer
+                {
+                    Text = "<!-- 示例 -->\n<controls:CommandPreviewBox Label=\"等价命令\" IsSyntaxHighlightingEnabled=\"True\" />"
+                };
+                var paragraph = viewer.Document.Blocks.OfType<Paragraph>().Single();
+                var runs = paragraph.Inlines.OfType<Run>().ToArray();
+                var distinctColors = runs
+                    .Select(run => (run.Foreground as SolidColorBrush)?.Color)
+                    .Where(color => color.HasValue)
+                    .Distinct()
+                    .Count();
+
+                Ensure(runs.Any(run => run.Text == "controls:CommandPreviewBox"), "XAML 元素名称没有被独立分词。");
+                Ensure(runs.Any(run => run.Text == "Label"), "XAML 属性名称没有被独立分词。");
+                Ensure(runs.Any(run => run.Text == "\"等价命令\""), "XAML 属性值没有被独立分词。");
+                Ensure(distinctColors >= 5, $"XAML 语法颜色不足：仅检测到 {distinctColors} 种颜色。");
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        })
+        {
+            IsBackground = true
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(10)), "XAML 代码查看器测试超时。");
+        if (failure is not null)
+            throw new InvalidOperationException("XAML 代码查看器没有正确渲染语法颜色。", failure);
+    }
+
     [Test]
     public static void TabAndNavigationOutlinesStayInsideTheirLayoutBounds()
     {
@@ -363,6 +502,22 @@ public class Program
         var frame = new DispatcherFrame();
         _ = dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
         Dispatcher.PushFrame(frame);
+    }
+
+    private static T? FindVisualDescendant<T>(DependencyObject root) where T : DependencyObject
+        => FindVisualDescendants<T>(root).FirstOrDefault();
+
+    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+        {
+            var child = VisualTreeHelper.GetChild(root, index);
+            if (child is T match)
+                yield return match;
+
+            foreach (var descendant in FindVisualDescendants<T>(child))
+                yield return descendant;
+        }
     }
 
     private static void EnsureVerticallyMirroredCorners(FrameworkElement element, int sampleSize)
