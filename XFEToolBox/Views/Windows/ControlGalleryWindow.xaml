@@ -1,7 +1,7 @@
 <Window x:Class="XFEToolBox.Client.Views.Windows.ControlGalleryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+        xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="XFEToolBox 控件画廊"
         Width="1260" Height="820" MinWidth="960" MinHeight="640"
@@ -201,7 +201,7 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="CategoryText" Foreground="#7777C5" FontSize="10" FontWeight="SemiBold"/>
-                                    <TextBlock Text="  /  XFEToolBox.Controls" Foreground="#A2A2B3" FontSize="10"/>
+                                    <TextBlock Text="  /  XFEToolBox.WpfCore" Foreground="#A2A2B3" FontSize="10"/>
                                 </StackPanel>
                                 <TextBlock x:Name="NameText" Foreground="#3E3E54" FontSize="25" FontWeight="Bold" Margin="0,7,0,0"/>
                                 <TextBlock x:Name="SummaryText" Foreground="#77778D" FontSize="11" Margin="0,6,0,0"

@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 与主界面一致的右下角窗口缩放控件。

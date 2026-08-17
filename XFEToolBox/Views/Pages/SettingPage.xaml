@@ -1,4 +1,4 @@
-﻿<Page x:Class="XFEToolBox.Client.Views.Pages.SettingPage"
+<Page x:Class="XFEToolBox.Client.Views.Pages.SettingPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -7,7 +7,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:XFEToolBox.Client.Views.Pages"
       xmlns:pages="clr-namespace:XFEToolBox.Client.ViewModel.Pages"
-      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+      xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="SettingPage" d:DataContext="{d:DesignInstance Type=pages:SettingPageViewModel}" Loaded="Page_Loaded">
@@ -80,6 +80,17 @@
                             <TextBlock x:Name="consoleSettingBlock" VerticalAlignment="Center" Text="控制台" Style="{StaticResource TabUnderLineText}"/>
                             <Border Background="{DynamicResource MainColor}" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Height="1"/>
                             <StackPanel Grid.Row="1">
+                                <controls:SwitchButton Margin="0,14,0,4" Command="{Binding SwitchedCommand}" CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.ConnectToRemoteServer">
+                                    <TextBlock Text="第二调试模式：工具箱主动连接调试程序服务器"/>
+                                </controls:SwitchButton>
+                                <Grid Margin="0,8,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="远程服务器地址：" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <controls:TextEditor Grid.Column="1" Height="38" CaretBrush="{DynamicResource MainColor}" SelectionBrush="{DynamicResource MainColor}" Margin="14,0,0,0" Padding="10,0" HintText="ws://服务器地址:3280/" Width="260" HorizontalAlignment="Left" TextChanged="TextEditor_TextChanged" Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.ConsoleProfile.RemoteServerAddress" VerticalAlignment="Center"/>
+                                </Grid>
                                 <Grid Margin="0,12,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>

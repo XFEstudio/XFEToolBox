@@ -6,7 +6,7 @@ using System.Windows.Media.Animation;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities.Server;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client.Views.Pages.Popups;

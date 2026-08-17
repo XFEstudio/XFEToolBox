@@ -1,4 +1,4 @@
-<UserControl x:Class="XFEToolBox.Client.Views.Controls.CommandPreviewBox"
+<UserControl x:Class="XFEToolBox.WpfCore.Controls.CommandPreviewBox"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              MinHeight="58">

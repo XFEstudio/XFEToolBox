@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 
-namespace XFEToolBox.Client.Utilities.Tutorial;
+namespace XFEToolBox.WpfCore.Tutorial;
 
 /// <summary>
 /// 教程控件的生命周期管理器。调用方只负责提供挂载容器和步骤。

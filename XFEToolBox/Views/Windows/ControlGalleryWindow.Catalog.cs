@@ -374,7 +374,7 @@ public partial class ControlGalleryWindow
             "MiniToolButton 组合工具图标、滚动名称和可选进度条，支持 ICommand，可用于工具内部的快捷操作面板。",
             """
             <controls:MiniToolButton ToolName="局域网文件传输"
-                                     IconSource="/Resources/Image/wrench_tool.png"
+                                     IconSource="/XFEToolBox.WpfCore;component/Resources/Image/wrench_tool.png"
                                      ProgressVisibility="Visible"
                                      ProgressValue="64"
                                      Command="{Binding OpenToolCommand}"/>

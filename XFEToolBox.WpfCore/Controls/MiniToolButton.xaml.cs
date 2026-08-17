@@ -1,10 +1,10 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// ToolButton.xaml 的交互逻辑
@@ -35,7 +35,7 @@ public partial class MiniToolButton : UserControl
         "IconSource",
         typeof(ImageSource),
         typeof(MiniToolButton),
-        new PropertyMetadata(new BitmapImage(new("pack://application:,,,/XFEToolBox;component/Resources/Image/wrench_tool.png"))));
+        new PropertyMetadata(new BitmapImage(new("pack://application:,,,/XFEToolBox.WpfCore;component/Resources/Image/wrench_tool.png"))));
 
     public Brush TextColor
     {

@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 可按需显示小时、分钟和秒钟的 24 小时时间选择器。

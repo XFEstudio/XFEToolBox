@@ -1,4 +1,4 @@
-<UserControl x:Class="XFEToolBox.Client.Views.Controls.WindowCaptionBar"
+<UserControl x:Class="XFEToolBox.WpfCore.Controls.WindowCaptionBar"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent" Height="25">
@@ -11,15 +11,15 @@
                 Visibility="{Binding DragHandleVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 MouseLeftButtonDown="DragSurface_MouseLeftButtonDown"
                 MouseMove="DragSurface_MouseMove">
-            <Image Source="/XFEToolBox;component/Resources/Image/tabline.png" HorizontalAlignment="Center"
+            <Image Source="/XFEToolBox.WpfCore;component/Resources/Image/tabline.png" HorizontalAlignment="Center"
                    VerticalAlignment="Center" Margin="4" IsHitTestVisible="False"/>
         </Border>
         <StackPanel Grid.Column="1" Orientation="Horizontal">
-            <Image Width="37" Style="{StaticResource RotorImage}" Source="/XFEToolBox;component/Resources/Image/min.png"
+            <Image Width="37" Style="{StaticResource RotorImage}" Source="/XFEToolBox.WpfCore;component/Resources/Image/min.png"
                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"
                    Cursor="Hand" Visibility="{Binding MinimizeButtonVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                    MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
-            <Image Width="37" Style="{StaticResource HalfRotorImage}" Source="/XFEToolBox;component/Resources/Image/close.png"
+            <Image Width="37" Style="{StaticResource HalfRotorImage}" Source="/XFEToolBox.WpfCore;component/Resources/Image/close.png"
                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"
                    Cursor="Hand" Visibility="{Binding CloseButtonVisibility, RelativeSource={RelativeSource AncestorType=UserControl}}"
                    MouseLeftButtonUp="CloseImage_MouseLeftButtonUp"/>

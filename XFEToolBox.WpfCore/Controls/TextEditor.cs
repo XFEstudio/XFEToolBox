@@ -1,8 +1,8 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 public class TextEditor : HintTextBox
 {

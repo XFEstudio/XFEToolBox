@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 可由公共样式使用的通用控件外观辅助属性。

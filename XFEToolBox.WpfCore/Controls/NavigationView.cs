@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 左侧导航式分页控件，导航列表与当前子页拥有独立的滚动区域。

@@ -12,7 +12,7 @@ using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Models.Server;
 using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Views.Pages;
 using XFEToolBox.Client.Views.Windows;
 

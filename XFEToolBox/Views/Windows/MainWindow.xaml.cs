@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Media.Animation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -6,7 +6,8 @@ using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
-using XFEToolBox.Client.Utilities.Tutorial;
+using XFEToolBox.WpfCore.Tutorial;
+using XFEToolBox.WpfCore.Windowing;
 using MainWindowViewModel = XFEToolBox.Client.ViewModel.Windows.MainWindowViewModel;
 
 namespace XFEToolBox.Client.Views.Windows;

@@ -1,6 +1,6 @@
-﻿using System.Windows.Controls.Primitives;
+using System.Windows.Controls.Primitives;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 public class SwitchButton : ToggleButton
 {

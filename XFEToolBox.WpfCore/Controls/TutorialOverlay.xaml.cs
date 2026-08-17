@@ -4,9 +4,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using XFEToolBox.Client.Utilities.Tutorial;
+using XFEToolBox.WpfCore.Tutorial;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 带透明聚光区域和自动定位气泡的统一教程控件。

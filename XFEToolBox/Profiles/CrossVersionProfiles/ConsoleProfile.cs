@@ -21,6 +21,16 @@ public partial class ConsoleProfile : XFEProfile
     [ProfileProperty]
     private bool localHostOnly = true;
     /// <summary>
+    /// 是否由工具箱主动连接调试程序服务器（第二调试模式）
+    /// </summary>
+    [ProfileProperty]
+    private bool connectToRemoteServer = false;
+    /// <summary>
+    /// 第二调试模式下的远程调试程序服务器地址
+    /// </summary>
+    [ProfileProperty]
+    private string remoteServerAddress = "ws://localhost:3280/";
+    /// <summary>
     /// 最大行数
     /// </summary>
     [ProfileProperty]

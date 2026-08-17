@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:windows="clr-namespace:XFEToolBox.Client.ViewModel.Windows"
-        xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+        xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=windows:MainWindowViewModel}"
         Title="XFE工具箱" Height="460" Width="730" MinHeight="450" MinWidth="720" WindowState="Normal" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/XFEToolBoxIcon.ico" Loaded="Window_Loaded">

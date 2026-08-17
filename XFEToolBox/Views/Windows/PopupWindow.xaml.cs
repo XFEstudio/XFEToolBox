@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.WpfCore.Windowing;
 
 namespace XFEToolBox.Client.Views.Windows;
 

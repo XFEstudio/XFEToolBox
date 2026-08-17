@@ -1,9 +1,9 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using XFEToolBox.Client.Views.Behavior;
+using XFEToolBox.WpfCore.Behaviors;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 public class SmoothScrollViewer : ScrollViewer
 {

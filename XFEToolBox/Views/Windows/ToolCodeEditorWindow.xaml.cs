@@ -24,6 +24,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.WpfCore.Windowing;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Core.Model;

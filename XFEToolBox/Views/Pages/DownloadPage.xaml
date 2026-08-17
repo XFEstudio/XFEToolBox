@@ -1,7 +1,7 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.DownloadPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+      xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       Background="Transparent" Title="" Loaded="Page_Loaded">
     <Page.Resources>
         <Style x:Key="CategoryComboBoxItemStyle" TargetType="ComboBoxItem">

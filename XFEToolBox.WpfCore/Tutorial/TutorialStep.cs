@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace XFEToolBox.Client.Utilities.Tutorial;
+namespace XFEToolBox.WpfCore.Tutorial;
 
 /// <summary>
 /// 教程提示相对于高亮目标的首选位置。

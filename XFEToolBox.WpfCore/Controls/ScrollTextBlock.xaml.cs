@@ -6,9 +6,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using XFEToolBox.Client.Views.Behavior;
+using XFEToolBox.WpfCore.Behaviors;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 单行文本控件：默认以省略号展示溢出内容，悬停时滚动显示完整文本。

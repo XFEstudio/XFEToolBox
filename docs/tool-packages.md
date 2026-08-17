@@ -333,21 +333,23 @@ public sealed record ToolWindowPlacement(
 
 ## 主题与标准控件
 
-宿主会在创建入口视图之前自动合并 `ToolThemeResources.xaml` 和主程序通用资源，工具不需要在包内复制样式文件。建议始终使用动态资源：宿主以后切换主题时，`DynamicResource` 能随资源更新，而硬编码 `#9898E7` 不能。
+统一 WPF 控件、行为、窗口适配器和主题资源位于独立的 `XFEToolBox.WpfCore` 项目，目标框架为 `net10.0-windows10.0.17763.0`。客户端、安装器和源码工具运行宿主引用同一个程序集，避免复制控件或让视觉实现分叉。
+
+宿主会在创建入口视图之前自动合并 `XFEToolBox.WpfCore` 中的 `ToolThemeResources.xaml` 和主程序通用资源，工具不需要在包内复制样式文件。建议始终使用动态资源：宿主以后切换主题时，`DynamicResource` 能随资源更新，而硬编码 `#9898E7` 不能。
 
 ```xml
 <UserControl x:Class="XFEToolBox.Tools.Sample.MainPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls;assembly=XFEToolBox"
-             xmlns:behavior="clr-namespace:XFEToolBox.Client.Views.Behavior;assembly=XFEToolBox">
+             xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
+             xmlns:behavior="clr-namespace:XFEToolBox.WpfCore.Behaviors;assembly=XFEToolBox.WpfCore">
     <Grid Background="{DynamicResource BackgroundColor}">
         <TextBlock Foreground="{DynamicResource ToolTextPrimaryBrush}" />
     </Grid>
 </UserControl>
 ```
 
-旧工具若仍写作 `assembly=XFEToolBox.Client`，运行器会在编译前迁移成当前宿主程序集名；新工具必须直接使用 `assembly=XFEToolBox`。
+旧工具若仍引用 `XFEToolBox.Client.Views.Controls`、`XFEToolBox.Client.Views.Behavior`，或把 `XFEToolBox.WpfCore` 命名空间错误地指向宿主程序集，运行器会在编译前迁移到共享程序集；新工具必须直接使用 `assembly=XFEToolBox.WpfCore`。
 
 ### 控件画廊与属性验收
 
@@ -407,7 +409,7 @@ public sealed record ToolWindowPlacement(
 
 ### `ButtonAssist`
 
-命名空间：`XFEToolBox.Client.Views.Controls`。适用于普通 `Button`，所有成员均有对应的静态 `Get...` / `Set...` 方法。
+命名空间：`XFEToolBox.WpfCore.Controls`。适用于普通 `Button`，所有成员均有对应的静态 `Get...` / `Set...` 方法。
 
 | 附加属性 | 类型 | 默认值 | 说明 |
 | --- | --- | --- | --- |
@@ -466,7 +468,7 @@ WPF 会给 `DataGridComboBoxColumn`、`DataGridCheckBoxColumn` 等生成元素�
 
 ### `ScrollViewerBehavior`
 
-命名空间：`XFEToolBox.Client.Views.Behavior`。`VerticalOffset : double` 和 `HorizontalOffset : double` 是可绑定、可动画的附加属性，变化时分别调用目标 `ScrollViewer` 的滚动方法。
+命名空间：`XFEToolBox.WpfCore.Behaviors`。`VerticalOffset : double` 和 `HorizontalOffset : double` 是可绑定、可动画的附加属性，变化时分别调用目标 `ScrollViewer` 的滚动方法。
 
 C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffset` / `SetHorizontalOffset`。
 
@@ -476,7 +478,7 @@ C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffs
 
 ## 宿主控件 API
 
-以下控件位于 `XFEToolBox.Client.Views.Controls`，XAML 均使用前文的 `controls` 命名空间。表中列出的是控件新增 API；它们同时继承各自 WPF 基类的全部属性、事件和命令。除非特别标注，属性都是可绑定的依赖属性。
+以下控件位于 `XFEToolBox.WpfCore.Controls`，XAML 均使用前文的 `controls` 命名空间。表中列出的是控件新增 API；它们同时继承各自 WPF 基类的全部属性、事件和命令。除非特别标注，属性都是可绑定的依赖属性。
 
 ### 输入控件
 
@@ -531,23 +533,21 @@ C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffs
                          EditorBorderBrush="{DynamicResource ToolControlBorderBrush}" />
 ```
 
-### 当前源码中的预览控件
+### 统一扩展控件与样式
 
-当前工作区还包含下列公开控件。它们的类型会进入宿主程序集，但尚未全部并入自动加载的 `ToolThemeResources.xaml`，因此属于预览 API，不应作为已发布工具的兼容基线。
-
-`ProgressRing`、`CommandBar`、`AutoSuggestBox`、`InfoBar` 和 `PersonPicture` 的模板位于 `UnifiedControlsStyle.xaml`。测试时可在入口视图显式合并：
+`ProgressRing`、`CommandBar`、`AutoSuggestBox`、`InfoBar` 和 `PersonPicture` 的模板位于 `UnifiedControlsStyle.xaml`，并已由 `ToolThemeResources.xaml` 自动加载。独立 WPF 应用若只引用 `XFEToolBox.WpfCore`、不通过工具宿主启动，可在 `App.xaml` 显式合并统一入口：
 
 ```xml
 <UserControl.Resources>
     <ResourceDictionary>
         <ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary Source="/XFEToolBox;component/Resources/Style/UnifiedControlsStyle.xaml" />
+            <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/ToolThemeResources.xaml" />
         </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
 </UserControl.Resources>
 ```
 
-该字典还提供 `UnifiedProgressBarStyle`、`AutoSuggestBoxItemStyle`、`UnifiedExpanderStyle`、`UnifiedImageStyle`、`UnifiedRoundedImageStyle`、`UnifiedRadioButtonStyle`、`UnifiedToggleButtonStyle`、`UnifiedSliderStyle` 和 `UnifiedSliderThumbStyle`。它会为部分 WPF 类型增加隐式样式，合并前应检查是否会覆盖页面的本地样式。
+统一入口还提供 `UnifiedProgressBarStyle`、`AutoSuggestBoxItemStyle`、`UnifiedExpanderStyle`、`UnifiedImageStyle`、`UnifiedRoundedImageStyle`、`UnifiedRadioButtonStyle`、`UnifiedToggleButtonStyle`、`UnifiedSliderStyle` 和 `UnifiedSliderThumbStyle`。它会为部分 WPF 类型增加隐式样式，独立应用合并前应检查是否会覆盖页面的本地样式。
 
 | 控件 | 新增 API |
 | --- | --- |
@@ -712,7 +712,7 @@ CarouselControl.SetItems(new[]
 | --- | --- |
 | `WindowCaptionBar` | `DragHandleVisibility`、`MinimizeButtonVisibility`、`CloseButtonVisibility`、`AllowMaximize`；只读 `DragSurfaceElement`；事件 `MinimizeRequested`、`CloseRequested`。拖动条内置拖窗和双击最大化/还原 |
 | `WindowResizeGrip` | 右下角缩放手柄；拖动结束触发 `ResizeCompleted` |
-| `WindowWorkAreaHelper` | `XFEToolBox.Client.Utilities.WindowWorkAreaHelper.Attach(Window)`；让最大化区域遵守当前屏幕工作区，重复调用安全 |
+| `WindowWorkAreaHelper` | `XFEToolBox.WpfCore.Windowing.WindowWorkAreaHelper.Attach(Window)`；让最大化区域遵守当前屏幕工作区，重复调用安全 |
 
 ### 兼容控件
 
@@ -798,7 +798,7 @@ public sealed class RenamePopup : UserControl, IPopupPage
 
 ## 交互教程 API
 
-命名空间：`XFEToolBox.Client.Utilities.Tutorial`。统一教程系统把遮罩、目标高亮、提示卡、上一步/下一步、跳过、动画和滚动定位封装在一个可扩展服务中。目标元素必须与承载教程的 `Panel` 位于同一可视树。
+命名空间：`XFEToolBox.WpfCore.Tutorial`。统一教程系统把遮罩、目标高亮、提示卡、上一步/下一步、跳过、动画和滚动定位封装在一个可扩展服务中。目标元素必须与承载教程的 `Panel` 位于同一可视树。
 
 ### `ITutorialService`
 
@@ -826,7 +826,7 @@ public interface ITutorialService
 ```
 
 ```csharp
-using XFEToolBox.Client.Utilities.Tutorial;
+using XFEToolBox.WpfCore.Tutorial;
 
 private readonly ITutorialService tutorialService = new TutorialService();
 

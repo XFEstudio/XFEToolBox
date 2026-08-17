@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 
-namespace XFEToolBox.Client.Utilities.Tutorial;
+namespace XFEToolBox.WpfCore.Tutorial;
 
 /// <summary>
 /// 在任意 Panel 上启动统一的交互式教程。

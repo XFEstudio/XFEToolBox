@@ -1,10 +1,10 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace XFEToolBox.Client.Installer.Views.Controls
+namespace XFEToolBox.WpfCore.Controls
 {
     /// <summary>
     /// ModernProgressBar.xaml 的交互逻辑

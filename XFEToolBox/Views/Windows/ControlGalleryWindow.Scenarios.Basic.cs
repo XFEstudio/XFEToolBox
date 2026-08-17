@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using ToolControls = XFEToolBox.Client.Views.Controls;
+using ToolControls = XFEToolBox.WpfCore.Controls;
 
 namespace XFEToolBox.Client.Views.Windows;
 

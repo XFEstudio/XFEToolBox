@@ -10,6 +10,21 @@ var serviceType = typeof(XFEToolBox.Client.App).Assembly.GetType(
     "XFEToolBox.Client.Utilities.ToolProjectRunService", true)!;
 var method = serviceType.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)
              ?? throw new MissingMethodException(serviceType.FullName, "BuildAsync");
+var normalizeMethod = serviceType.GetMethod(
+    "NormalizeLegacyHostAssemblyReferences",
+    BindingFlags.NonPublic | BindingFlags.Static)
+    ?? throw new MissingMethodException(serviceType.FullName, "NormalizeLegacyHostAssemblyReferences");
+var normalizedXaml = (string)(normalizeMethod.Invoke(null,
+    [
+        "xmlns:old=\"clr-namespace:XFEToolBox.Client.Views.Controls;assembly=XFEToolBox.Client\" " +
+        "xmlns:current=\"clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore\"",
+        "XFEToolBox"
+    ]) ?? string.Empty);
+if (!normalizedXaml.Contains("assembly=XFEToolBox.WpfCore\"", StringComparison.Ordinal) ||
+    normalizedXaml.Contains("XFEToolBox.WpfCore.WpfCore", StringComparison.Ordinal) ||
+    normalizedXaml.Contains("XFEToolBox.Client.Views.Controls", StringComparison.Ordinal))
+    throw new InvalidDataException("旧控件命名空间迁移验证失败。");
+Console.WriteLine("Legacy control namespace migration: PASS - 旧引用可迁移且当前引用保持幂等。");
 var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 var allSucceeded = true;
 

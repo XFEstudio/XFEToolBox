@@ -1,9 +1,21 @@
 {
-  "startedAt": "2026-08-16T00:45:51.8506137+00:00",
-  "duration": "00:00:00.0031663",
-  "results": [],
-  "total": 0,
-  "passed": 0,
+  "startedAt": "2026-08-17T20:08:53.5334231+00:00",
+  "duration": "00:00:00.7109143",
+  "results": [
+    {
+      "id": "XFEToolBox.Client.Wpf.Test.Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea#0",
+      "displayName": "Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea",
+      "outcome": 0,
+      "bodyDuration": "00:00:00.7006523",
+      "totalDuration": "00:00:00.7020166",
+      "attempts": 1,
+      "message": null,
+      "stackTrace": null,
+      "output": ""
+    }
+  ],
+  "total": 1,
+  "passed": 1,
   "failed": 0,
   "skipped": 0
 }

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace XFEToolBox.Client.Utilities;
+namespace XFEToolBox.WpfCore.Windowing;
 
 /// <summary>
 /// 让无系统标题栏窗口最大化到所在显示器的可用工作区，避免覆盖任务栏或越出视窗。

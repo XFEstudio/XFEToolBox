@@ -38,7 +38,7 @@ dotnet run --project .\XFEToolBox.Server\XFEToolBox.Server.csproj
 - 遵循现有 C# 风格：启用 Nullable 与 Implicit Usings，优先使用文件范围命名空间、清晰的类型名和早返回。
 - 异步 I/O 使用 `async`/`await` 并以 `Async` 结尾；可传播的调用应继续传递 `CancellationToken`。
 - 公共契约放在 `XFEToolBox.Core`，客户端专用的非 UI 能力放在 `XFEToolBox.Client.Core`，服务端存储与校验放在 `XFEToolBox.Server.Core`。
-- WPF 页面保持 View、ViewModel 和业务服务边界清晰。新增样式前先复用现有 ResourceDictionary、控件和主题资源。
+- WPF 页面保持 View、ViewModel 和业务服务边界清晰。客户端与安装器共用的控件、行为、主题或窗口适配应放入 `XFEToolBox.WpfCore`；新增样式前先复用现有 ResourceDictionary、控件和主题资源。
 - 用户可见文字应明确、可操作；同一功能内保持中英文术语一致。
 - 文件、ZIP、下载地址和用户输入必须在信任边界处校验。不要降低路径穿越、符号链接、文件数量、解压大小、压缩率或 SHA-256 校验等安全限制。
 - 不要静默吞掉会影响数据、登录、下载或发布结果的异常；应记录或向用户显示有意义的信息。

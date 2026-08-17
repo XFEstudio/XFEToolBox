@@ -1,7 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 
-namespace XFEToolBox.Client.Views.Behavior;
+namespace XFEToolBox.WpfCore.Behaviors;
 
 public static class ScrollViewerBehavior
 {

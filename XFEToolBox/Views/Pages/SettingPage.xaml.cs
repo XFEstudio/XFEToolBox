@@ -1,6 +1,6 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
-using XFEToolBox.Client.Views.Controls;
+using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.ViewModel.Pages;
 using SettingPageViewModel = XFEToolBox.Client.ViewModel.Pages.SettingPageViewModel;

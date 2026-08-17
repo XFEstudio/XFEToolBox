@@ -39,8 +39,15 @@ public partial class ControlGalleryWindow
     private static Brush AccentBrush() => Application.Current.TryFindResource("MainColor") as Brush
                                            ?? new SolidColorBrush(Color.FromRgb(152, 152, 231));
 
-    private static BitmapImage ResourceImage(string path) => new(
-        new Uri($"pack://application:,,,/XFEToolBox;component/{path}", UriKind.Absolute));
+    private static BitmapImage ResourceImage(string path)
+    {
+        var assemblyName = path.EndsWith("/wrench_tool.png", StringComparison.OrdinalIgnoreCase)
+            ? "XFEToolBox.WpfCore"
+            : "XFEToolBox";
+        return new BitmapImage(new Uri(
+            $"pack://application:,,,/{assemblyName};component/{path}",
+            UriKind.Absolute));
+    }
 
     private static string OnOff(bool? value) => value == true ? "开" : value is null ? "不确定" : "关";
 

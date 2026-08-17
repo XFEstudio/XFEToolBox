@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 /// <summary>
 /// 为客户端统一按钮模板提供主次状态和可覆盖的交互外观。

@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace XFEToolBox.Client.Views.Controls;
+namespace XFEToolBox.WpfCore.Controls;
 
 public partial class PasswordEditor : UserControl
 {
@@ -321,12 +321,12 @@ public partial class PasswordEditor : UserControl
         passwordVisibleChanging = true;
         if (PasswordVisible)
         {
-            visibilityImage.Source = new BitmapImage(new("pack://application:,,,/Resources/Image/visible.png"));
+            visibilityImage.Source = new BitmapImage(new("pack://application:,,,/XFEToolBox.WpfCore;component/Resources/Image/visible.png"));
             Text = Password;
         }
         else
         {
-            visibilityImage.Source = new BitmapImage(new("pack://application:,,,/Resources/Image/invisible.png"));
+            visibilityImage.Source = new BitmapImage(new("pack://application:,,,/XFEToolBox.WpfCore;component/Resources/Image/invisible.png"));
             Text = GetMaskText(Text.Length);
         }
         passwordVisibleChanging = false;

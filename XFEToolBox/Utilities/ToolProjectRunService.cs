@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
+using XFEToolBox.WpfCore.Controls;
 
 namespace XFEToolBox.Client.Utilities;
 
@@ -179,6 +180,7 @@ internal static class ToolProjectRunService
         var root = EscapeXml(Path.GetFullPath(workspaceRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var coreAssembly = EscapeXml(typeof(ToolPackageManifest).Assembly.Location);
         var clientCoreAssembly = EscapeXml(typeof(AppPath).Assembly.Location);
+        var wpfCoreAssembly = EscapeXml(typeof(TabView).Assembly.Location);
         var clientAssemblyPath = typeof(ToolProjectRunService).Assembly.Location;
         var clientAssembly = EscapeXml(clientAssemblyPath);
         var xfeExtensionAssembly = EscapeXml(Path.Combine(
@@ -209,7 +211,8 @@ internal static class ToolProjectRunService
                    <ItemGroup>
                      <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
                      <Reference Include="XFEToolBox.Core"><HintPath>{{coreAssembly}}</HintPath><Private>true</Private></Reference>
-                     <Reference Include="XFEToolBox.Client.Core"><HintPath>{{clientCoreAssembly}}</HintPath><Private>true</Private></Reference>
+                      <Reference Include="XFEToolBox.Client.Core"><HintPath>{{clientCoreAssembly}}</HintPath><Private>true</Private></Reference>
+                      <Reference Include="XFEToolBox.WpfCore"><HintPath>{{wpfCoreAssembly}}</HintPath><Private>true</Private></Reference>
                      <Reference Include="XFEExtension.NetCore"><HintPath>{{xfeExtensionAssembly}}</HintPath><Private>true</Private></Reference>
                      <Reference Include="{{EscapeXml(hostAssemblyName)}}"><HintPath>{{clientAssembly}}</HintPath><Private>true</Private></Reference>
                    </ItemGroup>
@@ -256,7 +259,8 @@ internal static class ToolProjectRunService
                  using System.Windows.Media.Imaging;
                  using System.Windows.Threading;
                  using XFEToolBox.Client.Utilities;
-                 using XFEToolBox.Client.Views.Controls;
+                 using XFEToolBox.WpfCore.Controls;
+                 using XFEToolBox.WpfCore.Windowing;
                  using XFEToolBox.Core.Tools;
 
                  namespace XFEToolBox.RuntimeHost;
@@ -712,10 +716,75 @@ internal static class ToolProjectRunService
 
     private static string NormalizeLegacyHostAssemblyReferences(string xaml, string hostAssemblyName)
     {
-        if (hostAssemblyName.Equals("XFEToolBox.Client", StringComparison.Ordinal))
-            return xaml;
+        const string wpfCoreAssemblyName = "XFEToolBox.WpfCore";
+        static string ReplaceNamespaceAssembly(
+            string source,
+            string oldNamespace,
+            string oldAssembly,
+            string newNamespace,
+            string newAssembly)
+        {
+            foreach (var quote in new[] { '\"', '\'' })
+            {
+                source = source.Replace(
+                    $"clr-namespace:{oldNamespace};assembly={oldAssembly}{quote}",
+                    $"clr-namespace:{newNamespace};assembly={newAssembly}{quote}",
+                    StringComparison.Ordinal);
+            }
 
-        return xaml
+            return source;
+        }
+
+        var normalized = ReplaceNamespaceAssembly(
+            xaml,
+            "XFEToolBox.Client.Views.Controls",
+            "XFEToolBox.Client",
+            "XFEToolBox.WpfCore.Controls",
+            wpfCoreAssemblyName);
+        normalized = ReplaceNamespaceAssembly(
+            normalized,
+            "XFEToolBox.Client.Views.Controls",
+            hostAssemblyName,
+            "XFEToolBox.WpfCore.Controls",
+            wpfCoreAssemblyName);
+        normalized = ReplaceNamespaceAssembly(
+            normalized,
+            "XFEToolBox.WpfCore.Controls",
+            hostAssemblyName,
+            "XFEToolBox.WpfCore.Controls",
+            wpfCoreAssemblyName);
+        normalized = ReplaceNamespaceAssembly(
+            normalized,
+            "XFEToolBox.Client.Views.Behavior",
+            "XFEToolBox.Client",
+            "XFEToolBox.WpfCore.Behaviors",
+            wpfCoreAssemblyName);
+        normalized = ReplaceNamespaceAssembly(
+            normalized,
+            "XFEToolBox.Client.Views.Behavior",
+            hostAssemblyName,
+            "XFEToolBox.WpfCore.Behaviors",
+            wpfCoreAssemblyName);
+        normalized = ReplaceNamespaceAssembly(
+            normalized,
+            "XFEToolBox.WpfCore.Behaviors",
+            hostAssemblyName,
+            "XFEToolBox.WpfCore.Behaviors",
+            wpfCoreAssemblyName);
+        normalized = normalized
+            .Replace(
+                "/XFEToolBox.Client;component/Resources/Style/ToolThemeResources.xaml",
+                $"/{wpfCoreAssemblyName};component/Resources/Style/ToolThemeResources.xaml",
+                StringComparison.Ordinal)
+            .Replace(
+                $"/{hostAssemblyName};component/Resources/Style/ToolThemeResources.xaml",
+                $"/{wpfCoreAssemblyName};component/Resources/Style/ToolThemeResources.xaml",
+                StringComparison.Ordinal);
+
+        if (hostAssemblyName.Equals("XFEToolBox.Client", StringComparison.Ordinal))
+            return normalized;
+
+        return normalized
             .Replace(
                 ";assembly=XFEToolBox.Client\"",
                 $";assembly={hostAssemblyName}\"",

@@ -5,6 +5,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.WpfCore.Windowing;
 
 namespace XFEToolBox.Client.Views.Windows;
 
@@ -14,7 +15,7 @@ namespace XFEToolBox.Client.Views.Windows;
 public partial class ControlGalleryWindow : Window
 {
     public const string ToolControlsXmlns =
-        "xmlns:controls=\"clr-namespace:XFEToolBox.Client.Views.Controls;assembly=XFEToolBox\"";
+        "xmlns:controls=\"clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore\"";
 
     private static ControlGalleryWindow? activeWindow;
     private readonly IReadOnlyList<ControlGalleryItem> catalog;

@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.WpfCore.Windowing;
 
 namespace XFEToolBox.Client.Wpf.Test;
 

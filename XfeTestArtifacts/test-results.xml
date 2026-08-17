@@ -1,1 +1,3 @@
-<testsuite name="XFEExtension.NetCore.XUnit" tests="0" failures="0" skipped="0" time="0.003166" />
+<testsuite name="XFEExtension.NetCore.XUnit" tests="1" failures="0" skipped="0" time="0.710914">
+  <testcase name="Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea" time="0.702017" />
+</testsuite>
