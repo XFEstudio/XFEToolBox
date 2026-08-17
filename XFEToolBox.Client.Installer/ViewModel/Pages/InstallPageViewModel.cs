@@ -16,7 +16,7 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
         [ObservableProperty]
         bool agreementChecked = false;
         [ObservableProperty]
-        string installPath = @$"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}\XFEToolBox.Client.Installer";
+        string installPath = SystemProfile.InstallPath;
         public InstallPage ViewPage { get; set; } = viewPage;
 
         [RelayCommand]
@@ -37,7 +37,7 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
             if (openFolderDialog.ShowDialog() == true)
             {
                 if (FileHelper.IsRootPath(openFolderDialog.FolderName))
-                    InstallPath = $@"{openFolderDialog.FolderName}XFEToolBox.Client.Installer";
+                    InstallPath = Path.Combine(openFolderDialog.FolderName, SystemProfile.ApplicationName);
                 else
                     InstallPath = openFolderDialog.FolderName;
                 SystemProfile.InstallPath = InstallPath;

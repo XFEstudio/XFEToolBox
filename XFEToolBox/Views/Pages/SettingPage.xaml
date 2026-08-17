@@ -75,6 +75,28 @@
                                                            CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
                                                            Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.StartWithMaximize"/>
                                 </controls:SettingsCard>
+                                <controls:SettingsExpander Header="软件更新" Description="{Binding UpgradeStatus}" IsExpanded="True">
+                                    <controls:SettingsExpander.Content>
+                                        <Button Content="检查更新" MinWidth="96"
+                                                controls:ButtonAssist.IsPrimary="True"
+                                                Command="{Binding CheckUpgradeCommand}"/>
+                                    </controls:SettingsExpander.Content>
+                                    <controls:SettingsCard Header="当前版本" Description="升级服务中的应用名为 XFEToolBox">
+                                        <TextBlock Text="{Binding CurrentApplicationVersion}" VerticalAlignment="Center"/>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="启动时自动检查" Description="主窗口加载完成后在后台检测新版本">
+                                        <controls:SwitchButton Margin="0"
+                                                               Command="{Binding SwitchedCommand}"
+                                                               CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
+                                                               Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.CheckForUpdatesOnStartup"/>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="忽略的版本" Description="手动检查不会跳过被忽略的版本">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding IgnoredUpgradeVersionDisplay}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <Button Content="清除" Command="{Binding ClearIgnoredUpgradeVersionCommand}"/>
+                                        </StackPanel>
+                                    </controls:SettingsCard>
+                                </controls:SettingsExpander>
                             </StackPanel>
                         </Grid>
 

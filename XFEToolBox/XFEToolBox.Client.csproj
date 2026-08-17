@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <AssemblyTitle>XFEToolBox</AssemblyTitle>
     <AssemblyName>XFEToolBox</AssemblyName>
   </PropertyGroup>
@@ -47,6 +47,7 @@
     <PackageReference Include="XFEExtension.NetCore.AutoPath" Version="2.0.0" />
     <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.3.0" />
     <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
+    <PackageReference Include="XFEExtension.NetCore.UpgradeHelper" Version="2.0.0" />
     <PackageReference Include="XFEExtension.NetCore.XFEConsole" Version="2.6.0" Condition="'$(UseLocalXFEConsoleSource)' != 'true'" />
   </ItemGroup>
 

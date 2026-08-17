@@ -14,7 +14,7 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
         [RelayCommand]
         void ConfirmSuccess()
         {
-            var startInfo = new ProcessStartInfo(Path.Combine(SystemProfile.InstallPath, "XFE工具箱.exe"))
+            var startInfo = new ProcessStartInfo(Path.Combine(SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName))
             {
                 UseShellExecute = true,
                 WorkingDirectory = SystemProfile.InstallPath

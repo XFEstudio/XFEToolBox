@@ -29,8 +29,16 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     string totalProfileSize = "计算中...";
     [ObservableProperty]
     string downloadDirectory = "目标下载目录：";
+    [ObservableProperty]
+    string upgradeStatus = "可手动检查更新，也可在启动时自动检测新版本。";
+    [ObservableProperty]
+    string ignoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CheckUpgradeCommand))]
+    bool isCheckingForUpdates;
     bool ignoreNextScroll = false;
     public SettingPage ViewPage { get; set; } = viewPage;
+    public string CurrentApplicationVersion => $"当前版本 {UpgradeHelper.DisplayVersion}";
 
     public static void LoadSettingProfile(DependencyObject parent)
     {
@@ -269,5 +277,39 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
             ViewPage.scrollViewer.ScrollToVerticalOffset(ViewPage.scrollViewer.VerticalOffset + textBlock.TranslatePoint(new(), ViewPage.scrollViewer).Y - 20);
         }
     }
+
+    private bool CanCheckUpgrade() => !IsCheckingForUpdates;
+
+    [RelayCommand(CanExecute = nameof(CanCheckUpgrade))]
+    async Task CheckUpgrade()
+    {
+        IsCheckingForUpdates = true;
+        UpgradeStatus = "正在连接升级服务器...";
+        try
+        {
+            var result = await UpgradeService.CheckForUpdatesAsync(
+                userInitiated: true,
+                owner: Window.GetWindow(ViewPage));
+            UpgradeStatus = result.Message;
+            IgnoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    [RelayCommand]
+    void ClearIgnoredUpgradeVersion()
+    {
+        SystemProfile.IgnoredUpgradeVersion = string.Empty;
+        IgnoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
+        UpgradeStatus = "已清除忽略记录，后续检查会再次提示所有新版本。";
+    }
+
+    private static string GetIgnoredUpgradeVersionDisplay() =>
+        string.IsNullOrWhiteSpace(SystemProfile.IgnoredUpgradeVersion)
+            ? "未忽略任何版本"
+            : $"已忽略 {SystemProfile.IgnoredUpgradeVersion}";
     #endregion
 }

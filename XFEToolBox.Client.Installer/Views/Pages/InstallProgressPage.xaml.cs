@@ -30,9 +30,10 @@ namespace XFEToolBox.Client.Installer.Views.Pages
                 {
                     case "Upgrade":
                         var filePath = Path.Combine(SystemProfile.InstallPath, "InstallPackage.zip");
-                        if (File.Exists(filePath) && File.OpenRead(filePath) is FileStream fileStream)
+                        if (File.Exists(filePath))
                         {
-                            Install(fileStream);
+                            using (var fileStream = File.OpenRead(filePath))
+                                Install(fileStream);
                             File.Delete(filePath);
                         }
                         break;
@@ -42,7 +43,7 @@ namespace XFEToolBox.Client.Installer.Views.Pages
                             if (SystemProfile.InstallPath != string.Empty && !Directory.Exists(SystemProfile.InstallPath))
                                 Directory.CreateDirectory(SystemProfile.InstallPath);
                             if (Install(innerStream))
-                                FileHelper.CreateShortCut($@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\XFE工具箱.lnk", Path.Combine(SystemProfile.InstallPath, "XFEToolBox.exe"), null, "XFE工具箱快捷方式", null, SystemProfile.InstallPath);
+                                FileHelper.CreateShortCut($@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\XFE工具箱.lnk", Path.Combine(SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName), null, "XFE工具箱快捷方式", null, SystemProfile.InstallPath);
                         }
                         break;
                 }

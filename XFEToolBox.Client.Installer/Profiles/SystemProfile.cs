@@ -2,6 +2,9 @@
 {
     public class SystemProfile
     {
+        public const string ApplicationName = "XFEToolBox";
+        public const string ApplicationExecutableName = ApplicationName + ".exe";
+
         /// <summary>
         /// 当前窗口DPI缩放
         /// </summary>
@@ -29,7 +32,9 @@
         /// <summary>
         /// 安装目录
         /// </summary>
-        public static string InstallPath { get; set; } = @$"{Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)}\XFEToolBox.Client.Installer";
+        public static string InstallPath { get; set; } = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            ApplicationName);
         /// <summary>
         /// 第一次安装
         /// </summary>

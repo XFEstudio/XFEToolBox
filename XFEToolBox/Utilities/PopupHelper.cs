@@ -45,6 +45,9 @@ public static class PopupHelper
     };
 
     public static MessageBoxResult? ShowConfirmDialog(object content, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")
+        => ShowConfirmDialog(content, new PopupWindowOptions(), showCancelButton, confirmText, cancelText);
+
+    public static MessageBoxResult? ShowConfirmDialog(object content, PopupWindowOptions options, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")
     {
         var dialog = CreateNormalDialogPage(content);
         dialog.ViewModel.ConfirmText = confirmText;
@@ -52,7 +55,7 @@ public static class PopupHelper
         dialog.ViewModel.ConfirmGridLength = new GridLength(1, GridUnitType.Star);
         if (showCancelButton)
             dialog.ViewModel.CancelGridLength = new GridLength(1, GridUnitType.Star);
-        return ShowDialog(dialog);
+        return ShowDialog(dialog, options);
     }
 
     public static MessageBoxResult? ShowConfirmDialog(string text, Color textColor, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") => ShowConfirmDialog(CreateTextContent(text, textColor), showCancelButton, confirmText, cancelText);
@@ -60,6 +63,9 @@ public static class PopupHelper
     public static MessageBoxResult? ShowConfirmDialog(string text, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") => ShowConfirmDialog(text, Colors.Black, showCancelButton, confirmText, cancelText);
 
     public static MessageBoxResult? ShowYesOrNoDialog(object content, bool showCancelButton = false, string yesText = "是", string noText = "否")
+        => ShowYesOrNoDialog(content, new PopupWindowOptions(), showCancelButton, yesText, noText);
+
+    public static MessageBoxResult? ShowYesOrNoDialog(object content, PopupWindowOptions options, bool showCancelButton = false, string yesText = "是", string noText = "否")
     {
         var dialog = CreateNormalDialogPage(content);
         dialog.ViewModel.YesText = yesText;
@@ -68,7 +74,7 @@ public static class PopupHelper
         dialog.ViewModel.NoGridLength = new GridLength(1, GridUnitType.Star);
         if (showCancelButton)
             dialog.ViewModel.CancelGridLength = new GridLength(1, GridUnitType.Star);
-        return ShowDialog(dialog);
+        return ShowDialog(dialog, options);
     }
 
     public static MessageBoxResult? ShowYesOrNoDialog(string text, Color textColor, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(CreateTextContent(text, textColor), showCancelButton, yesText, noText);

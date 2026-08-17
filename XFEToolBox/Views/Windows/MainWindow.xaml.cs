@@ -53,6 +53,9 @@ public partial class MainWindow : Window
             if (result is TutorialResult.Completed or TutorialResult.Skipped)
                 SystemProfile.MainTutorialCompleted = true;
         }
+
+        if (SystemProfile.CheckForUpdatesOnStartup)
+            _ = UpgradeService.CheckForUpdatesAsync(userInitiated: false, owner: this);
     }
 
     /// <summary>
