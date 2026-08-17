@@ -105,7 +105,8 @@
                                          TextChanged="CatalogSearchTextBox_TextChanged"/>
                     <ComboBox x:Name="CategoryFilterBox" Grid.Column="2" Height="36" SelectionChanged="CatalogFilterBox_SelectionChanged"/>
                     <ComboBox x:Name="StatusFilterBox" Grid.Column="4" Height="36"
-                              DisplayMemberPath="Text" SelectionChanged="CatalogFilterBox_SelectionChanged"/>
+                              DisplayMemberPath="Text" TextSearch.TextPath="Text"
+                              SelectionChanged="CatalogFilterBox_SelectionChanged"/>
                     <Button Grid.Column="6" Content="清除筛选" MinWidth="84" Click="ClearFiltersButton_Click"/>
                 </Grid>
 
@@ -123,7 +124,8 @@
                             <DataTemplate>
                                 <Border Padding="14,12" Background="#FCFCFF" BorderBrush="#E3E3EF"
                                         BorderThickness="1" CornerRadius="13" Cursor="Hand"
-                                        Tag="{Binding}" MouseLeftButtonUp="SoftwareCard_MouseLeftButtonUp">
+                                        Tag="{Binding}" Loaded="SoftwareCard_Loaded"
+                                        MouseLeftButtonUp="SoftwareCard_MouseLeftButtonUp">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="46"/><ColumnDefinition Width="14"/>
@@ -133,9 +135,34 @@
                                         </Grid.ColumnDefinitions>
                                         <Border Width="46" Height="46" CornerRadius="14" Background="#EEEEFC"
                                                 BorderBrush="#E0E0F2" BorderThickness="1">
-                                            <TextBlock Text="{Binding Initial}" Foreground="{DynamicResource MainColor}"
-                                                       FontSize="16" FontWeight="SemiBold"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            <Grid>
+                                                <TextBlock Text="{Binding Initial}" Foreground="{DynamicResource MainColor}"
+                                                           FontSize="16" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IconSource}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <Image Source="{Binding IconSource}" Width="31" Height="31" Stretch="Uniform">
+                                                    <Image.Style>
+                                                        <Style TargetType="Image">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IconSource}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Image.Style>
+                                                </Image>
+                                            </Grid>
                                         </Border>
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">

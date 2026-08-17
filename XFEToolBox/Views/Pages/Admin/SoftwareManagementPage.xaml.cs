@@ -2,11 +2,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
@@ -18,6 +21,8 @@ public partial class SoftwareManagementPage : Page
 {
     public static SoftwareManagementPage Current { get; } = new();
 
+    private static readonly HttpClient IconClient = CreateIconClient();
+    private static readonly SemaphoreSlim IconLoadGate = new(4);
     private readonly ObservableCollection<SoftwareCatalogItem> _software = [];
     private readonly ObservableCollection<SoftwareCatalogRow> _softwareRows = [];
     private readonly ObservableCollection<EditableChannel> _channels = [];
@@ -95,7 +100,7 @@ public partial class SoftwareManagementPage : Page
             foreach (var item in response.Result.OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 _software.Add(item);
-                _softwareRows.Add(new SoftwareCatalogRow(item));
+                _softwareRows.Add(new SoftwareCatalogRow(item, GetBundledIcon(item.Id)));
             }
 
             RebuildSuggestionSources();
@@ -235,6 +240,87 @@ public partial class SoftwareManagementPage : Page
             OpenEditor(row.Item);
             e.Handled = true;
         }
+    }
+
+    private async void SoftwareCard_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is Border { DataContext: SoftwareCatalogRow row } && row.TryBeginIconLoad())
+            await LoadConfiguredIconAsync(row);
+    }
+
+    private static async Task LoadConfiguredIconAsync(SoftwareCatalogRow row)
+    {
+        await IconLoadGate.WaitAsync();
+        try
+        {
+            var icon = await ReadIconAsync(row.Item.IconUrl);
+            if (icon is not null)
+                row.IconSource = icon;
+        }
+        catch
+        {
+            // 配置图标不可用时继续显示内置图标或首字母占位。
+        }
+        finally
+        {
+            IconLoadGate.Release();
+        }
+    }
+
+    private static async Task<ImageSource?> ReadIconAsync(string value)
+    {
+        byte[] bytes;
+        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+        {
+            var separator = value.IndexOf(',');
+            if (separator < 0)
+                return null;
+            bytes = Convert.FromBase64String(value[(separator + 1)..]);
+        }
+        else
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                return null;
+            bytes = await IconClient.GetByteArrayAsync(uri);
+        }
+
+        if (bytes.Length == 0 || bytes.Length > 1024 * 1024)
+            return null;
+
+        using var stream = new MemoryStream(bytes);
+        var image = new BitmapImage();
+        image.BeginInit();
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.StreamSource = stream;
+        image.EndInit();
+        image.Freeze();
+        return image;
+    }
+
+    private static ImageSource? GetBundledIcon(string id)
+    {
+        var resource = id.ToLowerInvariant() switch
+        {
+            "steam" => "/Resources/Image/DownloadImage/steam_logo.png",
+            "watt-toolkit" or "steampp" => "/Resources/Image/DownloadImage/steampp.png",
+            "visual-studio" => "/Resources/Image/DownloadImage/visual_studio.png",
+            "cheat-engine" => "/Resources/Image/DownloadImage/cheat_engine.png",
+            _ => null
+        };
+        if (resource is null)
+            return null;
+
+        var image = new BitmapImage(new Uri($"pack://application:,,,{resource}", UriKind.Absolute));
+        image.Freeze();
+        return image;
+    }
+
+    private static HttpClient CreateIconClient()
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("XFEToolBox/1.0");
+        return client;
     }
 
     private void NewButton_Click(object sender, RoutedEventArgs e)
@@ -704,12 +790,32 @@ public partial class SoftwareManagementPage : Page
         Channels = _channels.Select((channel, index) => channel.ToContract(index)).ToArray()
     };
 
-    private sealed class SoftwareCatalogRow(SoftwareCatalogItem item)
+    private sealed class SoftwareCatalogRow(SoftwareCatalogItem item, ImageSource? iconSource) : INotifyPropertyChanged
     {
+        private int _iconLoadStarted;
+        private ImageSource? _iconSource = iconSource;
+
         public SoftwareCatalogItem Item { get; } = item;
         public string Initial => string.IsNullOrWhiteSpace(Item.Name) ? "?" : Item.Name.Trim()[..1].ToUpperInvariant();
         public string ChannelSummary => $"{Item.GetEffectiveChannels().Length} 个渠道";
         public string FeaturedText => Item.Featured ? "精选" : "普通";
+
+        public ImageSource? IconSource
+        {
+            get => _iconSource;
+            set
+            {
+                if (ReferenceEquals(_iconSource, value))
+                    return;
+                _iconSource = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IconSource)));
+            }
+        }
+
+        public bool TryBeginIconLoad() =>
+            !string.IsNullOrWhiteSpace(Item.IconUrl) && Interlocked.Exchange(ref _iconLoadStarted, 1) == 0;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
     private sealed class EditableChannel : INotifyPropertyChanged
@@ -798,6 +904,12 @@ public partial class SoftwareManagementPage : Page
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    private sealed record FilterOption(string Text, string Value);
-    private sealed record ChannelModeOption(string Name, SoftwareDownloadMode Value);
+    private sealed record FilterOption(string Text, string Value)
+    {
+        public override string ToString() => Text;
+    }
+    private sealed record ChannelModeOption(string Name, SoftwareDownloadMode Value)
+    {
+        public override string ToString() => Name;
+    }
 }

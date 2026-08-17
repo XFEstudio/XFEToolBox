@@ -27,6 +27,8 @@ public sealed class SoftwareDownloadChannel
 
     public bool Enabled { get; set; } = true;
     public int SortOrder { get; set; }
+
+    public override string ToString() => string.IsNullOrWhiteSpace(Name) ? Id : Name;
 }
 
 /// <summary>
