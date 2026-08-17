@@ -102,10 +102,10 @@
                     </Grid.ColumnDefinitions>
                     <controls:TextEditor x:Name="SearchTextBox" Style="{StaticResource AdminTextEditor}"
                                          HintText="搜索软件名称、标识、发布者、分类或标签"
-                                         TextChanged="CatalogFilter_Changed"/>
-                    <ComboBox x:Name="CategoryFilterBox" Grid.Column="2" Height="36" SelectionChanged="CatalogFilter_Changed"/>
+                                         TextChanged="CatalogSearchTextBox_TextChanged"/>
+                    <ComboBox x:Name="CategoryFilterBox" Grid.Column="2" Height="36" SelectionChanged="CatalogFilterBox_SelectionChanged"/>
                     <ComboBox x:Name="StatusFilterBox" Grid.Column="4" Height="36"
-                              DisplayMemberPath="Text" SelectionChanged="CatalogFilter_Changed"/>
+                              DisplayMemberPath="Text" SelectionChanged="CatalogFilterBox_SelectionChanged"/>
                     <Button Grid.Column="6" Content="清除筛选" MinWidth="84" Click="ClearFiltersButton_Click"/>
                 </Grid>
 

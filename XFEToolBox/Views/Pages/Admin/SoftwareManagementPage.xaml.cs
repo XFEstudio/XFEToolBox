@@ -28,6 +28,7 @@ public partial class SoftwareManagementPage : Page
     private ICollectionView? _softwareView;
     private string? _editingSoftwareId;
     private bool _isCreating;
+    private bool _pageInitialized;
 
     public SoftwareManagementPage()
     {
@@ -63,6 +64,7 @@ public partial class SoftwareManagementPage : Page
         };
 
         UpdateChannelEditorState();
+        _pageInitialized = true;
         UpdateCatalogCount();
     }
 
@@ -191,8 +193,15 @@ public partial class SoftwareManagementPage : Page
     private static bool Contains(string? value, string query) =>
         value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
 
-    private void CatalogFilter_Changed(object sender, RoutedEventArgs e)
+    private void CatalogSearchTextBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyCatalogFilter();
+
+    private void CatalogFilterBox_SelectionChanged(object sender, SelectionChangedEventArgs e) => ApplyCatalogFilter();
+
+    private void ApplyCatalogFilter()
     {
+        if (!_pageInitialized)
+            return;
+
         _softwareView?.Refresh();
         UpdateCatalogCount();
     }
@@ -208,6 +217,9 @@ public partial class SoftwareManagementPage : Page
 
     private void UpdateCatalogCount()
     {
+        if (!_pageInitialized)
+            return;
+
         var filteredCount = _softwareView?.Cast<object>().Count() ?? 0;
         CatalogSummaryText.Text = $"{_software.Count} 个软件";
         FilteredCountText.Text = filteredCount == _software.Count
