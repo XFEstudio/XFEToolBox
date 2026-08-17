@@ -670,37 +670,51 @@
         </ControlTemplate></Setter.Value></Setter>
     </Style>
 
-    <Style x:Key="TopTabViewItemStyle" TargetType="TabItem">
-        <Setter Property="Padding" Value="13,8"/><Setter Property="MinHeight" Value="38"/>
+    <Style x:Key="TabViewItemStyle" TargetType="TabItem">
+        <Setter Property="Padding" Value="15,10"/><Setter Property="MinHeight" Value="42"/>
+        <Setter Property="Margin" Value="1,0,5,0"/>
         <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1,1,1,0"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/><Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
-            <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,2" CornerRadius="8,8,0,0">
-                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            </Border>
+            <Grid Panel.ZIndex="2">
+                <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="11,11,0,0">
+                    <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
             <ControlTemplate.Triggers>
                 <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/></Trigger>
-                <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/><Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/></Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlBackgroundBrush}"/>
+                    <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource MainColor}"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>
 
-    <Style TargetType="controls:TopTabView">
-        <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="0"/><Setter Property="TabStripPlacement" Value="Top"/>
-        <Setter Property="ItemContainerStyle" Value="{StaticResource TopTabViewItemStyle}"/>
-        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:TopTabView">
-            <Grid ClipToBounds="True">
+    <Style TargetType="controls:TabView">
+        <Setter Property="Background" Value="{DynamicResource ToolControlBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="18"/><Setter Property="TabStripPlacement" Value="Top"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource TabViewItemStyle}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:TabView">
+            <Grid SnapsToDevicePixels="True">
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                 <ScrollViewer x:Name="HeaderScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
-                              CanContentScroll="False" PanningMode="HorizontalOnly" Focusable="False">
+                              CanContentScroll="False" PanningMode="HorizontalOnly" Focusable="False"
+                              Margin="1,1,1,0" Panel.ZIndex="2">
                     <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1"/>
                 </ScrollViewer>
                 <Border Grid.Row="1" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                        BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}"
+                        CornerRadius="0,14,14,14" Margin="0,-1,0,0" Panel.ZIndex="1">
                     <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"
                                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Border>
@@ -708,8 +722,8 @@
         </ControlTemplate></Setter.Value></Setter>
     </Style>
 
-    <Style x:Key="LeftNavigationTabItemStyle" TargetType="TabItem">
-        <Setter Property="Padding" Value="14,11"/><Setter Property="Margin" Value="0,0,0,5"/>
+    <Style x:Key="NavigationViewItemStyle" TargetType="TabItem">
+        <Setter Property="Padding" Value="14,11"/><Setter Property="Margin" Value="1,0,1,5"/>
         <Setter Property="MinHeight" Value="42"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/><Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -732,23 +746,27 @@
         </ControlTemplate></Setter.Value></Setter>
     </Style>
 
-    <Style TargetType="controls:LeftNavigationTabView">
+    <Style TargetType="controls:NavigationView">
         <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/><Setter Property="TabStripPlacement" Value="Left"/>
-        <Setter Property="ItemContainerStyle" Value="{StaticResource LeftNavigationTabItemStyle}"/>
-        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:LeftNavigationTabView">
-            <Grid ClipToBounds="True">
+        <Setter Property="ItemContainerStyle" Value="{StaticResource NavigationViewItemStyle}"/>
+        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="controls:NavigationView">
+            <Grid SnapsToDevicePixels="True">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="{Binding NavigationWidth, RelativeSource={RelativeSource TemplatedParent}}"/>
                     <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Border Background="{DynamicResource ToolSurfaceBrush}" BorderBrush="{DynamicResource ToolControlBorderBrush}"
-                        BorderThickness="1" CornerRadius="15" Padding="7">
-                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
-                                  CanContentScroll="True" PanningMode="VerticalOnly" Focusable="False">
-                        <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1"/>
-                    </ScrollViewer>
+                <Border Margin="1" Background="{DynamicResource ToolSurfaceBrush}"
+                        BorderBrush="{DynamicResource ToolControlBorderBrush}" BorderThickness="1"
+                        CornerRadius="15" Padding="1">
+                    <controls:RoundedClipBorder Background="{DynamicResource ToolSurfaceBrush}"
+                            CornerRadius="13" Padding="5">
+                        <ScrollViewer Background="Transparent" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                                      CanContentScroll="True" PanningMode="VerticalOnly" Focusable="False">
+                            <TabPanel IsItemsHost="True" Background="Transparent" KeyboardNavigation.TabIndex="1"/>
+                        </ScrollViewer>
+                    </controls:RoundedClipBorder>
                 </Border>
                 <Border Grid.Column="2" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">

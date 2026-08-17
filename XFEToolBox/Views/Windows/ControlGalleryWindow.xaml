@@ -230,17 +230,22 @@
                                         </Border>
                                         <StackPanel>
                                             <TextBlock Text="实时效果" Style="{StaticResource GallerySectionTitleStyle}"/>
-                                            <TextBlock Text="这里运行的就是工具页面实际使用的控件" Foreground="#9696A8" FontSize="9" Margin="0,2,0,0"/>
+                                            <TextBlock Text="按场景查看真实控件，并在右侧调整该场景相关参数" Foreground="#9696A8" FontSize="9" Margin="0,2,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
-                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="重置演示"
-                                            Padding="12,6" Click="ResetPreviewButton_Click"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <Border Padding="9,5" Margin="0,0,8,0" Background="#F0EFFB" CornerRadius="8">
+                                            <TextBlock x:Name="PreviewCoverageText" Foreground="#6A6AB8" FontSize="8.5"
+                                                       FontWeight="SemiBold"/>
+                                        </Border>
+                                        <Button Content="重置演示" Padding="12,6" Click="ResetPreviewButton_Click"/>
+                                    </StackPanel>
                                 </Grid>
                                 <Border Grid.Row="1" Background="#ECEBF3"/>
-                                <Border Grid.Row="2" Margin="0,15,0,0" Padding="22" Background="#FAFAFD"
+                                <Border Grid.Row="2" Margin="0,15,0,0" Padding="12" Background="#FAFAFD"
                                         BorderBrush="#ECEBF3" BorderThickness="1" CornerRadius="13" MinHeight="150">
                                     <ContentControl x:Name="PreviewHost" HorizontalContentAlignment="Stretch"
-                                                    VerticalContentAlignment="Center"/>
+                                                    VerticalContentAlignment="Top"/>
                                 </Border>
                             </Grid>
                         </Border>
@@ -267,7 +272,9 @@
 
                         <Border Grid.Row="3" Style="{StaticResource GalleryCardStyle}" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="关键属性" Style="{StaticResource GallerySectionTitleStyle}" Margin="0,0,0,12"/>
+                                <TextBlock Text="属性参考" Style="{StaticResource GallerySectionTitleStyle}"/>
+                                <TextBlock Text="以下每一项都可在上方对应场景中实际调整或观察" Foreground="#9696A8"
+                                           FontSize="9" Margin="0,3,0,12"/>
                                 <ItemsControl x:Name="PropertiesItemsControl">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

@@ -147,10 +147,20 @@ public partial class ControlGalleryWindow : Window
         PreviewHost.Content = null;
         try
         {
-            PreviewHost.Content = CreatePreview(item.Id);
+            var preview = CreateScenarioPreview(item.Id);
+            var uncoveredProperties = item.Properties
+                .Where(property => !preview.CoveredProperties.Contains(property.Name))
+                .Select(property => property.Name)
+                .ToArray();
+            if (uncoveredProperties.Length > 0)
+                throw new InvalidOperationException($"以下属性尚未配置演示：{string.Join("、", uncoveredProperties)}");
+
+            PreviewHost.Content = preview.View;
+            PreviewCoverageText.Text = $"{item.Properties.Count} / {item.Properties.Count} 属性可演示";
         }
         catch (Exception exception)
         {
+            PreviewCoverageText.Text = "演示配置异常";
             PreviewHost.Content = new TextBlock
             {
                 Text = $"演示加载失败：{exception.Message}",

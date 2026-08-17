@@ -123,7 +123,7 @@ public partial class ControlGalleryWindow
                     Value="65" TickFrequency="5"
                     IsSnapToTickEnabled="True"/>
             """,
-            [P("Value", "double", "当前值"), P("Minimum / Maximum", "double", "允许范围"), P("TickFrequency", "double", "刻度步长")],
+            [P("Value", "double", "当前值"), P("Minimum", "double", "允许范围的最小值"), P("Maximum", "double", "允许范围的最大值"), P("TickFrequency", "double", "刻度步长")],
             ["旁边应显示当前精确值", "离散数据可启用 IsSnapToTickEnabled"],
             ["滑块", "slider", "range", "数值"]),
 
@@ -179,7 +179,7 @@ public partial class ControlGalleryWindow
                                  PlaceholderText="选择执行时间"
                                  SelectedTime="{Binding RunTime}"/>
             """,
-            [P("SelectedTime", "TimeSpan?", "当前时间，默认双向绑定"), P("ShowHour / ShowMinute / ShowSecond", "bool", "分别控制时、分、秒列"), P("MinuteIncrement / SecondIncrement", "int", "分钟和秒钟步长，范围 1–30"), P("IsDropDownOpen", "bool", "弹层是否打开")],
+            [P("SelectedTime", "TimeSpan?", "当前时间，默认双向绑定"), P("ShowHour", "bool", "是否显示小时列"), P("ShowMinute", "bool", "是否显示分钟列"), P("ShowSecond", "bool", "是否显示秒钟列"), P("MinuteIncrement", "int", "分钟步长，范围 1–30"), P("SecondIncrement", "int", "秒钟步长，范围 1–30"), P("IsDropDownOpen", "bool", "弹层是否打开")],
             ["默认显示小时和分钟，秒钟按需启用", "“现在”会按对应步长四舍五入"],
             ["时间", "timepicker", "时分秒", "second"]),
 
@@ -191,7 +191,7 @@ public partial class ControlGalleryWindow
             <ProgressBar Width="360" Height="8"
                          Minimum="0" Maximum="100" Value="68"/>
             """,
-            [P("Value", "double", "当前进度"), P("Minimum / Maximum", "double", "进度范围"), P("IsIndeterminate", "bool", "是否显示循环动画")],
+            [P("Value", "double", "当前进度"), P("Minimum", "double", "进度范围最小值"), P("Maximum", "double", "进度范围最大值"), P("IsIndeterminate", "bool", "是否显示循环动画")],
             ["可确定任务应优先显示真实进度", "长任务旁应补充状态文字和取消操作"],
             ["进度条", "progress", "loading"]),
 
@@ -205,7 +205,7 @@ public partial class ControlGalleryWindow
                                    IsIndeterminate="False"
                                    IsActive="True" RingThickness="3"/>
             """,
-            [P("Value", "double", "确定模式的当前进度"), P("Minimum / Maximum", "double", "进度范围"), P("IsIndeterminate", "bool", "是否使用循环动画"), P("IsActive", "bool", "是否显示活动弧段"), P("RingThickness", "double", "环形笔画宽度")],
+            [P("Value", "double", "确定模式的当前进度"), P("Minimum", "double", "进度范围最小值"), P("Maximum", "double", "进度范围最大值"), P("IsIndeterminate", "bool", "是否使用循环动画"), P("IsActive", "bool", "是否显示活动弧段"), P("RingThickness", "double", "环形笔画宽度")],
             ["未知进度时启用 IsIndeterminate", "无障碍状态文字应放在控件附近"],
             ["环形进度", "progressring", "busy", "loading"]),
 
@@ -311,30 +311,30 @@ public partial class ControlGalleryWindow
             ["表格", "datagrid", "数据", "列表"]),
 
         Item(
-            "top-tab-view", "TopTabView", "controls:TopTabView", "数据与导航", "═",
+            "tab-view", "TabView", "controls:TabView", "数据与导航", "═",
             "顶部页签式内容导航。",
-            "TopTabView 在页签过多或窗口较窄时让标题区域独立横向滚动，内容区域仍保持稳定布局。",
+            "TabView 让选中的页签与内容面板在视觉上自然连接；页签过多或窗口较窄时，标题区域可独立横向滚动。",
             """
-            <controls:TopTabView>
+            <controls:TabView>
                 <TabItem Header="概览"><TextBlock Text="概览内容"/></TabItem>
                 <TabItem Header="日志"><TextBlock Text="日志内容"/></TabItem>
                 <TabItem Header="设置"><TextBlock Text="设置内容"/></TabItem>
-            </controls:TopTabView>
+            </controls:TabView>
             """,
             [P("Items", "ItemCollection", "TabItem 页面集合"), P("SelectedIndex", "int", "当前页签索引"), P("SelectedItem", "object", "当前页签")],
             ["适合 2–8 个同级页面", "页签标题应短且可区分"],
             ["顶部导航", "tab", "top", "分页"]),
 
         Item(
-            "left-navigation-tab-view", "LeftNavigationTabView", "controls:LeftNavigationTabView", "数据与导航", "☰",
+            "navigation-view", "NavigationView", "controls:NavigationView", "数据与导航", "☰",
             "带独立滚动区域的左侧导航分页。",
-            "LeftNavigationTabView 适合设置页或功能较多的工具，导航列表和当前子页分别滚动，避免长页面互相干扰。",
+            "NavigationView 适合设置页或功能较多的工具，导航列表和当前子页分别滚动，避免长页面互相干扰。",
             """
-            <controls:LeftNavigationTabView NavigationWidth="180">
+            <controls:NavigationView NavigationWidth="180">
                 <TabItem Header="常规"><TextBlock Text="常规设置"/></TabItem>
                 <TabItem Header="网络"><TextBlock Text="网络设置"/></TabItem>
                 <TabItem Header="高级"><TextBlock Text="高级设置"/></TabItem>
-            </controls:LeftNavigationTabView>
+            </controls:NavigationView>
             """,
             [P("NavigationWidth", "GridLength", "左侧导航栏宽度"), P("Items", "ItemCollection", "子页面集合"), P("SelectedIndex", "int", "当前子页索引")],
             ["导航标题可以使用带图标的自定义内容", "窄窗口下注意为右侧内容保留足够宽度"],
@@ -346,10 +346,11 @@ public partial class ControlGalleryWindow
             "CommandPreviewBox 用于让开发者确认工具即将执行的命令，控件本身不会启动进程，执行权限始终由调用方控制。",
             """
             <controls:CommandPreviewBox Label="等价命令"
-                                        CommandText="dotnet build -c Release"
+                                        CommandText="dotnet publish -c Release --output ./artifacts"
+                                        IsSyntaxHighlightingEnabled="True"
                                         CopyButtonText="复制"/>
             """,
-            [P("Label", "string", "命令区说明"), P("CommandText", "string", "显示和复制的命令"), P("CopyButtonText", "string", "复制按钮文字")],
+            [P("Label", "string", "命令区说明"), P("CommandText", "string", "显示和复制的命令"), P("IsSyntaxHighlightingEnabled", "bool", "是否启用命令语法着色"), P("CopyButtonText", "string", "复制按钮文字")],
             ["不要把密码或令牌拼入可见命令", "执行命令前仍需独立校验参数"],
             ["命令", "command", "copy", "终端"]),
 

@@ -349,6 +349,12 @@ public sealed record ToolWindowPlacement(
 
 旧工具若仍写作 `assembly=XFEToolBox.Client`，运行器会在编译前迁移成当前宿主程序集名；新工具必须直接使用 `assembly=XFEToolBox`。
 
+### 控件画廊与属性验收
+
+客户端的控件画廊按真实使用场景组织演示，而不是为每个属性建立孤立示例。每个场景片段左侧运行实际控件，右侧集中调整该场景相关参数；同一控件存在不同用途时，多个场景会纵向排列。
+
+画廊“属性参考”中列出的每个属性都必须映射到至少一个可交互参数或实时只读值。画廊加载预览时会执行覆盖校验，缺少属性演示会直接在预览区报告配置异常，避免新增 API 后文档与演示脱节。
+
 ### 颜色与画刷资源
 
 | 资源键 | 类型 | 用途 |
@@ -383,7 +389,7 @@ public sealed record ToolWindowPlacement(
 | DataGrid | `ToolBoxDataGridStyle`、`ToolBoxDataGridRowStyle`、`ToolBoxDataGridCellStyle`、`ToolBoxDataGridColumnHeaderStyle`、`ToolBoxDataGridCenteredHeaderStyle`、`ToolBoxDataGridRightHeaderStyle` |
 | DataGrid 编辑 | `ToolBoxDataGridButtonStyle`、`ToolBoxDataGridToggleButtonStyle`、`ToolBoxDataGridTextBoxStyle`、`ToolBoxDataGridComboBoxStyle`、`ToolBoxDataGridEditingComboBoxStyle`、`ToolBoxDataGridCheckBoxStyle`、`ToolBoxDataGridEditingCheckBoxStyle`、`ToolBoxDataGridRadioButtonStyle`、`ToolBoxDataGridTextElementStyle` |
 | DataGrid 文本 | `ToolBoxDataGridPrimaryTextStyle`、`ToolBoxDataGridSecondaryTextStyle`、`ToolBoxDataGridCenteredTextStyle`、`ToolBoxDataGridNumericTextStyle` |
-| 其他 | `ToolBoxScrollBarStyle`、`ToolBoxScrollBarThumbStyle`、`ToolBoxProgressBarStyle`、`ToolBoxContextMenuStyle`、`ToolBoxMenuItemStyle`、`ToolBoxSeparatorStyle`、`TopTabViewItemStyle`、`LeftNavigationTabItemStyle` |
+| 其他 | `ToolBoxScrollBarStyle`、`ToolBoxScrollBarThumbStyle`、`ToolBoxProgressBarStyle`、`ToolBoxContextMenuStyle`、`ToolBoxMenuItemStyle`、`ToolBoxSeparatorStyle`、`TabViewItemStyle`、`NavigationViewItemStyle` |
 
 示例：
 
@@ -572,10 +578,10 @@ C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffs
 | `CheckButton` | `CheckBox` | 统一复选样式，使用继承的 `IsChecked` |
 | `NavigationButton` | `RadioButton` | 导航按钮样式；同一 `GroupName` 内互斥 |
 | `TabUnderLineButton` | `RadioButton` | 下划线选项卡样式 |
-| `TopTabView` | `TabControl` | 页签标题区可独立横向滚动，适合顶部导航 |
-| `LeftNavigationTabView` | `TabControl` | 左侧导航与内容分别滚动；新增 `NavigationWidth : GridLength`，默认 `190` |
+| `TabView` | `TabControl` | 选中页签与内容面板视觉连接，标题区可独立横向滚动 |
+| `NavigationView` | `TabControl` | 左侧导航与内容分别滚动；新增 `NavigationWidth : GridLength`，默认 `190` |
 
-`TopTabView` 和 `LeftNavigationTabView` 直接放置 `TabItem` 即可，宿主会自动套用对应样式。
+`TabView` 和 `NavigationView` 直接放置 `TabItem` 即可，宿主会自动套用对应样式。
 
 ### 布局与滚动控件
 
@@ -653,43 +659,47 @@ CarouselControl.SetItems(new[]
 | `Label` | `string` | `等价命令` |
 | `CommandText` | `string` | 空字符串 |
 | `CopyButtonText` | `string` | `复制` |
+| `IsSyntaxHighlightingEnabled` | `bool` | `true` |
 
 ```xml
 <controls:CommandPreviewBox Label="等价命令"
                             CommandText="{Binding CommandPreview}"
-                            CopyButtonText="复制" />
+                            CopyButtonText="复制"
+                            IsSyntaxHighlightingEnabled="True" />
 ```
+
+语法着色会区分可执行文件、常用命令、选项、引号字符串、变量、运算符和数字；复制内容始终保持为原始 `CommandText`。
 
 执行外部命令时必须使用 `ProcessStartInfo.ArgumentList` 等结构化参数 API，不要把预览文本交给 Shell 二次解析。
 
-### `TopTabView`
+### `TabView`
 
-顶部导航式分页控件，继承自 `TabControl`。页签标题拥有独立的横向滚动区域，窗口变窄时不会挤压或覆盖当前子页。
+顶部页签式分页控件，继承自 `TabControl`。选中页签与内容面板共用背景和边界，形成连贯的当前页面；页签标题拥有独立的横向滚动区域。
 
 ```xml
-<controls:TopTabView SelectedIndex="0">
+<controls:TabView SelectedIndex="0">
     <TabItem Header="常规">
         <views:GeneralPage />
     </TabItem>
     <TabItem Header="高级">
         <views:AdvancedPage />
     </TabItem>
-</controls:TopTabView>
+</controls:TabView>
 ```
 
-### `LeftNavigationTabView`
+### `NavigationView`
 
 左侧导航式分页控件，同样继承自 `TabControl`。左侧导航项可独立纵向滚动，`NavigationWidth : GridLength` 用于设置导航栏宽度，默认 `190`。
 
 ```xml
-<controls:LeftNavigationTabView NavigationWidth="190" SelectedIndex="0">
+<controls:NavigationView NavigationWidth="190" SelectedIndex="0">
     <TabItem Header="仓库设置">
         <views:RepositorySettingsPage />
     </TabItem>
     <TabItem Header="网络与代理">
         <views:NetworkSettingsPage />
     </TabItem>
-</controls:LeftNavigationTabView>
+</controls:NavigationView>
 ```
 
 两个分页控件都支持 `ItemsSource`、`ItemTemplate`、`SelectedItem`、命令绑定和自定义 `TabItem.Header`。子页内部仍应使用 `ScrollViewer` 或响应式排列，不要用固定最小宽度把窗口强行撑大。

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace XFEToolBox.Client.Views.Controls;
 
@@ -9,6 +10,15 @@ namespace XFEToolBox.Client.Views.Controls;
 /// </summary>
 public class TimePicker : Control
 {
+    public static readonly RoutedUICommand SelectNowCommand = new(
+        "选择当前时间", nameof(SelectNowCommand), typeof(TimePicker));
+
+    public static readonly RoutedUICommand ClearTimeCommand = new(
+        "清除时间", nameof(ClearTimeCommand), typeof(TimePicker));
+
+    public static readonly RoutedUICommand ConfirmTimeCommand = new(
+        "确认时间", nameof(ConfirmTimeCommand), typeof(TimePicker));
+
     private static readonly DependencyPropertyKey DisplayTextPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(DisplayText), typeof(string), typeof(TimePicker), new PropertyMetadata("选择时间"));
 
@@ -56,9 +66,6 @@ public class TimePicker : Control
         nameof(SelectedTimeChanged), RoutingStrategy.Bubble,
         typeof(RoutedPropertyChangedEventHandler<TimeSpan?>), typeof(TimePicker));
 
-    private Button? nowButton;
-    private Button? clearButton;
-    private Button? confirmButton;
     private bool synchronizing;
 
     public TimePicker()
@@ -68,6 +75,9 @@ public class TimePicker : Control
         Seconds = [];
         RebuildMinutes();
         RebuildSeconds();
+        CommandBindings.Add(new CommandBinding(SelectNowCommand, (_, _) => SelectNow()));
+        CommandBindings.Add(new CommandBinding(ClearTimeCommand, (_, _) => ClearTime()));
+        CommandBindings.Add(new CommandBinding(ConfirmTimeCommand, (_, _) => SetCurrentValue(IsDropDownOpenProperty, false)));
     }
 
     public IReadOnlyList<int> Hours { get; }
@@ -76,71 +86,27 @@ public class TimePicker : Control
 
     public ObservableCollection<int> Seconds { get; }
 
-    public TimeSpan? SelectedTime
-    {
-        get => (TimeSpan?)GetValue(SelectedTimeProperty);
-        set => SetValue(SelectedTimeProperty, value);
-    }
+    public TimeSpan? SelectedTime { get => (TimeSpan?)GetValue(SelectedTimeProperty); set => SetValue(SelectedTimeProperty, value); }
 
-    public int Hour
-    {
-        get => (int)GetValue(HourProperty);
-        set => SetValue(HourProperty, value);
-    }
+    public int Hour { get => (int)GetValue(HourProperty); set => SetValue(HourProperty, value); }
 
-    public int Minute
-    {
-        get => (int)GetValue(MinuteProperty);
-        set => SetValue(MinuteProperty, value);
-    }
+    public int Minute { get => (int)GetValue(MinuteProperty); set => SetValue(MinuteProperty, value); }
 
-    public int Second
-    {
-        get => (int)GetValue(SecondProperty);
-        set => SetValue(SecondProperty, value);
-    }
+    public int Second { get => (int)GetValue(SecondProperty); set => SetValue(SecondProperty, value); }
 
-    public int MinuteIncrement
-    {
-        get => (int)GetValue(MinuteIncrementProperty);
-        set => SetValue(MinuteIncrementProperty, value);
-    }
+    public int MinuteIncrement { get => (int)GetValue(MinuteIncrementProperty); set => SetValue(MinuteIncrementProperty, value); }
 
-    public int SecondIncrement
-    {
-        get => (int)GetValue(SecondIncrementProperty);
-        set => SetValue(SecondIncrementProperty, value);
-    }
+    public int SecondIncrement { get => (int)GetValue(SecondIncrementProperty); set => SetValue(SecondIncrementProperty, value); }
 
-    public bool ShowHour
-    {
-        get => (bool)GetValue(ShowHourProperty);
-        set => SetValue(ShowHourProperty, value);
-    }
+    public bool ShowHour { get => (bool)GetValue(ShowHourProperty); set => SetValue(ShowHourProperty, value); }
 
-    public bool ShowMinute
-    {
-        get => (bool)GetValue(ShowMinuteProperty);
-        set => SetValue(ShowMinuteProperty, value);
-    }
+    public bool ShowMinute { get => (bool)GetValue(ShowMinuteProperty); set => SetValue(ShowMinuteProperty, value); }
 
-    public bool ShowSecond
-    {
-        get => (bool)GetValue(ShowSecondProperty);
-        set => SetValue(ShowSecondProperty, value);
-    }
+    public bool ShowSecond { get => (bool)GetValue(ShowSecondProperty); set => SetValue(ShowSecondProperty, value); }
 
-    public string PlaceholderText
-    {
-        get => (string)GetValue(PlaceholderTextProperty);
-        set => SetValue(PlaceholderTextProperty, value);
-    }
+    public string PlaceholderText { get => (string)GetValue(PlaceholderTextProperty); set => SetValue(PlaceholderTextProperty, value); }
 
-    public bool IsDropDownOpen
-    {
-        get => (bool)GetValue(IsDropDownOpenProperty);
-        set => SetValue(IsDropDownOpenProperty, value);
-    }
+    public bool IsDropDownOpen { get => (bool)GetValue(IsDropDownOpenProperty); set => SetValue(IsDropDownOpenProperty, value); }
 
     public string DisplayText => (string)GetValue(DisplayTextProperty);
 
@@ -148,21 +114,6 @@ public class TimePicker : Control
     {
         add => AddHandler(SelectedTimeChangedEvent, value);
         remove => RemoveHandler(SelectedTimeChangedEvent, value);
-    }
-
-    public override void OnApplyTemplate()
-    {
-        DetachButtons();
-        base.OnApplyTemplate();
-        nowButton = GetTemplateChild("PART_NowButton") as Button;
-        clearButton = GetTemplateChild("PART_ClearButton") as Button;
-        confirmButton = GetTemplateChild("PART_ConfirmButton") as Button;
-        if (nowButton is not null)
-            nowButton.Click += NowButton_Click;
-        if (clearButton is not null)
-            clearButton.Click += ClearButton_Click;
-        if (confirmButton is not null)
-            confirmButton.Click += ConfirmButton_Click;
     }
 
     private static void OnSelectedTimeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
@@ -267,7 +218,7 @@ public class TimePicker : Control
         }
     }
 
-    private void NowButton_Click(object sender, RoutedEventArgs e)
+    private void SelectNow()
     {
         var now = DateTime.Now;
         var minuteIncrement = Math.Clamp(MinuteIncrement, 1, 30);
@@ -295,22 +246,10 @@ public class TimePicker : Control
         SetCurrentValue(SelectedTimeProperty, new TimeSpan(hour, minute, second));
     }
 
-    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    private void ClearTime()
     {
         SetCurrentValue(SelectedTimeProperty, null);
         SetCurrentValue(IsDropDownOpenProperty, false);
     }
 
-    private void ConfirmButton_Click(object sender, RoutedEventArgs e) =>
-        SetCurrentValue(IsDropDownOpenProperty, false);
-
-    private void DetachButtons()
-    {
-        if (nowButton is not null)
-            nowButton.Click -= NowButton_Click;
-        if (clearButton is not null)
-            clearButton.Click -= ClearButton_Click;
-        if (confirmButton is not null)
-            confirmButton.Click -= ConfirmButton_Click;
-    }
 }

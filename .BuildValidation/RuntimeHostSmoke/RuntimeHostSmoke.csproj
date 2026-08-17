@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="XFEToolBox"><HintPath>..\host-bin\Debug\net10.0-windows10.0.17763.0\XFEToolBox.dll</HintPath><Private>true</Private></Reference>

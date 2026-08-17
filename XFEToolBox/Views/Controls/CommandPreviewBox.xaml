@@ -18,10 +18,10 @@
             <StackPanel Grid.Column="2" VerticalAlignment="Center">
                 <TextBlock Text="{Binding Label, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            Foreground="#A8A8BE" FontSize="9.5"/>
-                <TextBlock Text="{Binding CommandText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                <TextBlock x:Name="CommandTextBlock"
                            ToolTip="{Binding CommandText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                            Foreground="White" FontFamily="Consolas" FontSize="11.5"
-                           TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
+                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,3,0,0"/>
             </StackPanel>
             <Button Grid.Column="4" Content="{Binding CopyButtonText, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     MinWidth="58" Height="32" Padding="11,0" VerticalAlignment="Center"

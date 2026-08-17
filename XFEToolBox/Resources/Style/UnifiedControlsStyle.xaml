@@ -918,12 +918,21 @@
                                       VerticalAlignment="Center" Focusable="False"/>
                         <ContentControl x:Name="PART_Watermark" Margin="{TemplateBinding Padding}"
                                         Foreground="{DynamicResource ToolTextDisabledBrush}"
-                                        VerticalAlignment="Center" Focusable="False" IsHitTestVisible="False">
+                                        VerticalAlignment="Center" Focusable="False" IsHitTestVisible="False"
+                                        Visibility="Collapsed">
                             <TextBlock Text="{Binding PlaceholderText, RelativeSource={RelativeSource AncestorType=controls:CalendarPicker},
                                                       FallbackValue=选择日期, TargetNullValue=选择日期}"
                                        Foreground="{DynamicResource ToolTextDisabledBrush}"/>
                         </ContentControl>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter TargetName="PART_Watermark" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="Text" Value="{x:Null}">
+                            <Setter TargetName="PART_Watermark" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -1012,14 +1021,17 @@
         </Setter>
     </Style>
 
-    <Style x:Key="TimePickerListStyle" TargetType="ListBox" BasedOn="{StaticResource ToolBoxListBoxStyle}">
+    <Style x:Key="TimePickerListStyle" TargetType="ListBox">
         <Setter Property="Width" Value="80"/>
         <Setter Property="Height" Value="180"/>
         <Setter Property="Padding" Value="3,3,1,8"/>
         <Setter Property="Margin" Value="0,0,0,3"/>
         <Setter Property="Background" Value="{DynamicResource ToolControlBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="ItemContainerStyle" Value="{StaticResource TimePickerListItemStyle}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
@@ -1137,9 +1149,16 @@
                                     </StackPanel>
                                     <Grid Grid.Row="1" Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <Button x:Name="PART_NowButton" Content="现在" Height="32" MinWidth="0" Padding="7,0"/>
-                                        <Button x:Name="PART_ClearButton" Grid.Column="2" Content="清除" Height="32" MinWidth="0" Padding="7,0"/>
-                                        <Button x:Name="PART_ConfirmButton" Grid.Column="4" Content="完成" Height="32" MinWidth="0" Padding="7,0" controls:ButtonAssist.IsPrimary="True"/>
+                                        <Button Content="现在" Height="32" MinWidth="0" Padding="7,0"
+                                                Command="{x:Static controls:TimePicker.SelectNowCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"/>
+                                        <Button Grid.Column="2" Content="清除" Height="32" MinWidth="0" Padding="7,0"
+                                                Command="{x:Static controls:TimePicker.ClearTimeCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"/>
+                                        <Button Grid.Column="4" Content="完成" Height="32" MinWidth="0" Padding="7,0"
+                                                controls:ButtonAssist.IsPrimary="True"
+                                                Command="{x:Static controls:TimePicker.ConfirmTimeCommand}"
+                                                CommandTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"/>
                                     </Grid>
                                 </Grid>
                             </Border>
