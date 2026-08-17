@@ -13,6 +13,7 @@ var tests = new (string Name, Action Run)[]
     ("路径穿越会被拒绝", PathTraversalIsRejected),
     ("语义化版本按预期排序", SemanticVersionsAreOrdered),
     ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage),
+    ("文件仓库拒绝覆盖已存在的工具版本", RepositoryRejectsDuplicateVersion),
     ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad)
 };
 
@@ -90,6 +91,41 @@ static void RepositoryRoundTripsPackage()
         _ = repository.SetPublishedAsync("base64-generator", "1.0.0", published: false).GetAwaiter().GetResult();
         published = repository.ListAsync(publishedOnly: true).GetAwaiter().GetResult();
         Assert(published.Count == 0, "下架后的工具包仍出现在公开列表中。");
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RepositoryRejectsDuplicateVersion()
+{
+    var root = Path.Combine(Path.GetTempPath(), "XFEToolBox.Server.Test", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var validationOptions = new ToolPackageValidationOptions();
+        var repository = new FileSystemToolPackageRepository(
+            new ToolPackageValidator(validationOptions),
+            validationOptions,
+            new ToolPackageStorageOptions { StorageRoot = root });
+
+        using (var firstPackage = CreatePackage())
+            _ = repository.SaveAsync(firstPackage, published: true, overwrite: false).GetAwaiter().GetResult();
+
+        try
+        {
+            using var duplicatePackage = CreatePackage();
+            _ = repository.SaveAsync(duplicatePackage, published: true, overwrite: true).GetAwaiter().GetResult();
+            throw new InvalidOperationException("仓库允许 overwrite=true 覆盖已存在的工具版本。");
+        }
+        catch (ToolPackageConflictException exception)
+        {
+            Assert(exception.Message.Contains("不允许覆盖发布", StringComparison.Ordinal), "重复版本提示不明确。");
+        }
+
+        var stored = repository.ListAsync(publishedOnly: false).GetAwaiter().GetResult();
+        Assert(stored.Count == 1, "拒绝重复版本后，仓库中的版本数量发生了变化。");
     }
     finally
     {

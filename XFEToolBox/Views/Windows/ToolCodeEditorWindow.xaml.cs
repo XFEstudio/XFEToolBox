@@ -698,7 +698,7 @@ public partial class ToolCodeEditorWindow : Window
             var package = await BuildToolPackageAsync();
             var response = await ShowEditorDialogAsync(
                 "发布工具包",
-                $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 发布到工具服务器。若服务器中已有相同版本，将使用当前内容覆盖。",
+                $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 发布到工具服务器。同一工具的版本号不可重复，发布后如需更新内容，请先修改 manifest.json 中的 version。",
                 "立即发布");
             if (response.Choice != EditorDialogChoice.Primary)
             {
@@ -708,7 +708,17 @@ public partial class ToolCodeEditorWindow : Window
 
             SetHostStatus($"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
             var upload = await ClientSession.Requester.Request<ToolPackageUploadResult>(
-                "adminUploadTool", Convert.ToBase64String(package.Bytes), true, true);
+                "adminUploadTool", Convert.ToBase64String(package.Bytes), true, false);
+            if (upload.StatusCode == HttpStatusCode.Conflict)
+            {
+                SetHostStatus("版本已存在");
+                await ShowAlertAsync(
+                    "版本已存在",
+                    string.IsNullOrWhiteSpace(upload.Message)
+                        ? $"服务器中已存在“{package.Manifest.Name}” {package.Manifest.Version}，请修改 manifest.json 中的 version 后重新发布。"
+                        : upload.Message);
+                return;
+            }
             if (upload.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Created)
                 || upload.Result is null)
             {

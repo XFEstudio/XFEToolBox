@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -9,8 +10,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using XFEToolBox.Client.Utilities.Helpers;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Models.Server;
+using XFEToolBox.Client.Models;
+using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Views.Controls;
 using XFEToolBox.Client.Views.Pages;
+using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
@@ -22,6 +26,7 @@ public partial class MainPageViewModel : ObservableObject
     private const int LatestVideoCount = 2;
     private const int TutorialVideoCount = 2;
     private const int ExpectedCarouselItemCount = PopularVideoCount + LatestVideoCount + TutorialVideoCount;
+    private const int MaximumVisibleRecentItems = 8;
     private Task? loadingTask;
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
@@ -35,6 +40,7 @@ public partial class MainPageViewModel : ObservableObject
         MainPage.Loaded += MainPage_Loaded;
         MainPage.Unloaded += MainPage_Unloaded;
         ClientSession.SessionChanged += ClientSession_SessionChanged;
+        RecentUsageService.Changed += RecentUsageService_Changed;
         adminRefreshTimer = new DispatcherTimer(DispatcherPriority.Background, MainPage.Dispatcher)
         {
             Interval = TimeSpan.FromSeconds(2)
@@ -57,9 +63,14 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty] private string adminUptimeText = "--";
     [ObservableProperty] private string adminUptimeDetail = "--";
     [ObservableProperty] private string adminUpdatedText = string.Empty;
+    [ObservableProperty] private Visibility recentItemsVisibility = Visibility.Collapsed;
+    [ObservableProperty] private Visibility recentEmptyVisibility = Visibility.Visible;
+    [ObservableProperty] private string recentUsageCountText = "0 项";
+    public ObservableCollection<RecentUsageCardViewModel> RecentItems { get; } = [];
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
+        RefreshRecentUsage();
         var tasks = new List<Task> { LoadAdminOverviewAsync() };
         if (!MainPage.mainCarousel.HasItems) tasks.Add(ReloadAsync());
         await Task.WhenAll(tasks);
@@ -72,10 +83,62 @@ public partial class MainPageViewModel : ObservableObject
 
     private void ClientSession_SessionChanged(object? sender, EventArgs e) => MainPage.Dispatcher.InvokeAsync(async () =>
     {
+        RefreshRecentUsage();
         await LoadAdminOverviewAsync();
         if (ClientSession.IsAdministrator && MainPage.IsVisible) adminRefreshTimer.Start();
         else adminRefreshTimer.Stop();
     });
+
+    private void RecentUsageService_Changed(object? sender, EventArgs e) =>
+        MainPage.Dispatcher.InvokeAsync(RefreshRecentUsage);
+
+    public async Task OpenRecentItemAsync(RecentUsageCardViewModel card)
+    {
+        if (!card.IsEnabled || MainWindow.Current is null) return;
+        card.IsEnabled = false;
+        try
+        {
+            switch (card.Entry.Kind)
+            {
+                case RecentUsageKind.Tool:
+                    MainWindow.Current.ViewModel.NavigateToPageCommand.Execute("tool");
+                    await ToolBoxPage.Current.OpenToolByIdAsync(card.Entry.TargetId);
+                    break;
+
+                case RecentUsageKind.Software:
+                    MainWindow.Current.ViewModel.NavigateToPageCommand.Execute("download");
+                    await DownloadPage.Current.OpenSoftwareByIdAsync(card.Entry.TargetId);
+                    break;
+            }
+        }
+        finally
+        {
+            card.IsEnabled = true;
+        }
+    }
+
+    public void RemoveRecentItem(RecentUsageCardViewModel card) =>
+        RecentUsageService.Remove(card.Entry.Kind, card.Entry.TargetId);
+
+    public void ClearRecentUsage() => RecentUsageService.Clear();
+
+    public void OpenToolBox() => MainWindow.Current?.ViewModel.NavigateToPageCommand.Execute("tool");
+
+    private void RefreshRecentUsage()
+    {
+        var recent = RecentUsageService.GetRecent()
+            .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software)
+            .Take(MaximumVisibleRecentItems)
+            .Select(entry => new RecentUsageCardViewModel(entry))
+            .ToArray();
+
+        RecentItems.Clear();
+        foreach (var item in recent) RecentItems.Add(item);
+
+        RecentItemsVisibility = recent.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        RecentEmptyVisibility = recent.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RecentUsageCountText = $"{recent.Length} 项";
+    }
 
     private async Task LoadAdminOverviewAsync()
     {

@@ -71,7 +71,16 @@ public partial class ToolManagementPage : Page
             StatusText.Text = "正在上传并校验工具包…";
             var bytes = await File.ReadAllBytesAsync(dialog.FileName);
             var response = await ClientSession.Requester.Request<ToolPackageUploadResult>(
-                "adminUploadTool", Convert.ToBase64String(bytes), true, true);
+                "adminUploadTool", Convert.ToBase64String(bytes), true, false);
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                var message = string.IsNullOrWhiteSpace(response.Message)
+                    ? "服务器中已存在相同的工具版本，请修改工具包 manifest.json 中的 version 后重新上传。"
+                    : response.Message;
+                StatusText.Text = message;
+                PopupHelper.ShowConfirmDialog(message, confirmText: "知道了");
+                return;
+            }
             if (response.StatusCode is not (HttpStatusCode.OK or HttpStatusCode.Created) || response.Result is null)
             {
                 StatusText.Text = string.IsNullOrWhiteSpace(response.Message) ? "服务器没有返回工具包信息。" : response.Message;

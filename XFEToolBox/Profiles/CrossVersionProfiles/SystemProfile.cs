@@ -45,6 +45,11 @@ public partial class SystemProfile : XFEProfile
     /// </summary>
     [ProfileProperty]
     private bool mainTutorialCompleted = false;
+    /// <summary>
+    /// 最近使用页面、工具和软件的 JSON 记录，由 RecentUsageService 维护。
+    /// </summary>
+    [ProfileProperty]
+    private string recentUsageJson = string.Empty;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

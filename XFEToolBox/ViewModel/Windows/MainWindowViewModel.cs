@@ -27,6 +27,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     public string CurrentUserRole => ClientSession.IsAdministrator ? "管理员" : ClientSession.IsLoggedIn ? "普通用户" : "连接工具服务器";
 
+    public bool IsCurrentUserOnline => ClientSession.IsLoggedIn;
+
     public Visibility AdministratorVisibility => ClientSession.IsAdministrator ? Visibility.Visible : Visibility.Collapsed;
 
     public MainWindowViewModel(MainWindow viewPage)
@@ -45,6 +47,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             OnPropertyChanged(nameof(CurrentUserName));
             OnPropertyChanged(nameof(CurrentUserRole));
+            OnPropertyChanged(nameof(IsCurrentUserOnline));
             OnPropertyChanged(nameof(AdministratorVisibility));
         });
     }
@@ -111,44 +114,24 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToPage(string pageTag)
     {
-        switch (pageTag)
+        Page? destination = pageTag switch
         {
-            case "home":
-                CurrentPage = MainPage.Current;
-                break;
-            case "tool":
-                CurrentPage = ToolBoxPage.Current;
-                break;
-            case "download":
-                CurrentPage = DownloadPage.Current;
-                break;
-            case "console":
-                CurrentPage = ConsolePage.Current;
-                break;
-            case "setting":
-                CurrentPage = SettingPage.Current;
-                break;
-            case "profile":
-                CurrentPage = PersonalCenterPage.Current;
-                break;
-            case "serverManagement":
-                if (ClientSession.IsAdministrator) CurrentPage = ServerManagementPage.Current;
-                break;
-            case "serverOverview":
-                if (ClientSession.IsAdministrator) CurrentPage = ServerOverviewPage.Current;
-                break;
-            case "userManagement":
-                if (ClientSession.IsAdministrator) CurrentPage = UserManagementPage.Current;
-                break;
-            case "toolManagement":
-                if (ClientSession.IsAdministrator) CurrentPage = ToolManagementPage.Current;
-                break;
-            case "softwareManagement":
-                if (ClientSession.IsAdministrator) CurrentPage = SoftwareManagementPage.Current;
-                break;
-            default:
-                break;
-        }
+            "home" => MainPage.Current,
+            "tool" => ToolBoxPage.Current,
+            "download" => DownloadPage.Current,
+            "console" => ConsolePage.Current,
+            "setting" => SettingPage.Current,
+            "profile" => PersonalCenterPage.Current,
+            "serverManagement" when ClientSession.IsAdministrator => ServerManagementPage.Current,
+            "serverOverview" when ClientSession.IsAdministrator => ServerOverviewPage.Current,
+            "userManagement" when ClientSession.IsAdministrator => UserManagementPage.Current,
+            "toolManagement" when ClientSession.IsAdministrator => ToolManagementPage.Current,
+            "softwareManagement" when ClientSession.IsAdministrator => SoftwareManagementPage.Current,
+            _ => null
+        };
+        if (destination is null) return;
+
+        CurrentPage = destination;
     }
 
     [RelayCommand]

@@ -4,6 +4,7 @@
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/XFEToolBox;component/Resources/Style/Theme/LightTheme.xaml"/>
         <ResourceDictionary Source="/XFEToolBox;component/Resources/Style/StandardControlsStyle.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox;component/Resources/Style/UnifiedControlsStyle.xaml"/>
         <ResourceDictionary Source="/XFEToolBox;component/Resources/Style/MyControlsStyle.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

@@ -153,9 +153,9 @@
                     ToolTip="打开个人中心" MouseLeftButtonUp="AccountEntry_MouseLeftButtonUp">
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="32"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <Border Width="29" Height="29" CornerRadius="10" Background="#9898E7">
-                        <TextBlock Text="X" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <controls:PersonPicture Width="29" Height="29" FontSize="10.5"
+                                            DisplayName="{Binding CurrentUserName}"
+                                            IsOnline="{Binding IsCurrentUserOnline}"/>
                     <StackPanel Grid.Column="1" Margin="8,0,2,0" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CurrentUserName}" Foreground="#4B4B5E" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding CurrentUserRole}" Foreground="#8A8A9D" FontSize="9.5"/>

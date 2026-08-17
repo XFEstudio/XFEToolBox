@@ -204,6 +204,55 @@ public partial class ToolBoxPage : Page
             await OpenToolAsync(card);
     }
 
+    /// <summary>
+    /// 供主页最近使用卡片调用。优先使用本地目录快照，缺失时再刷新完整服务器目录。
+    /// </summary>
+    public async Task<bool> OpenToolByIdAsync(string toolId)
+    {
+        if (string.IsNullOrWhiteSpace(toolId)) return false;
+        EnsureCacheLoaded();
+
+        var card = _tools.FirstOrDefault(item => string.Equals(item.Id, toolId, StringComparison.OrdinalIgnoreCase));
+        var summary = card?.Package ?? _cachedCatalog.FirstOrDefault(item =>
+            string.Equals(item.Id, toolId, StringComparison.OrdinalIgnoreCase));
+        if (summary is null)
+        {
+            try
+            {
+                StatusText.Text = "正在更新工具目录…";
+                var response = await ClientSession.Requester.Request<ToolPackageSummary[]>(
+                    "catalogTools", string.Empty, string.Empty);
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    _cachedCatalog = response.Result ?? [];
+                    _hasCachedCatalog = true;
+                    TrySaveCatalogCache(_cachedCatalog);
+                    summary = _cachedCatalog.FirstOrDefault(item =>
+                        string.Equals(item.Id, toolId, StringComparison.OrdinalIgnoreCase));
+                }
+                else
+                {
+                    StatusText.Text = string.IsNullOrWhiteSpace(response.Message)
+                        ? "无法更新工具目录。"
+                        : response.Message;
+                }
+            }
+            catch (Exception exception)
+            {
+                StatusText.Text = $"更新工具目录失败：{exception.Message}";
+            }
+        }
+
+        if (summary is null)
+        {
+            StatusText.Text = "该工具已下架或当前服务器不再提供。";
+            return false;
+        }
+
+        card ??= new ToolCardViewModel(summary, CreateIconSource(summary.IconDataUrl), File.Exists(GetCachePath(summary)));
+        return await OpenToolAsync(card);
+    }
+
     private void ClearToolDataMenuItem_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
@@ -234,7 +283,7 @@ public partial class ToolBoxPage : Page
         }
     }
 
-    private async Task OpenToolAsync(ToolCardViewModel card)
+    private async Task<bool> OpenToolAsync(ToolCardViewModel card)
     {
         string? temporaryPath = null;
         string? cachePath = null;
@@ -287,11 +336,14 @@ public partial class ToolBoxPage : Page
 
             card.CacheState = "已打开";
             StatusText.Text = $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
+            RecentUsageService.RecordTool(card.Package);
+            return true;
         }
         catch (Exception exception)
         {
             card.CacheState = cachePath is not null && File.Exists(cachePath) ? "重试打开" : "重试获取";
             StatusText.Text = $"打开失败：{exception.Message}";
+            return false;
         }
         finally
         {

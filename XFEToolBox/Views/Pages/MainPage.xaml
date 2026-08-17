@@ -5,8 +5,34 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
       mc:Ignorable="d"
-      d:DesignHeight="450" d:DesignWidth="800"
-      Title="MainPage">
+       d:DesignHeight="450" d:DesignWidth="800"
+       Title="MainPage">
+    <Page.Resources>
+        <Style x:Key="RecentCardStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="Height" Value="92"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="13"/>
+            <Setter Property="Background" Value="#FCFCFF"/>
+            <Setter Property="BorderBrush" Value="#E1E1EF"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="controls:ButtonAssist.CornerRadius" Value="14"/>
+            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#F7F7FE"/>
+            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#BEBEEC"/>
+            <Setter Property="controls:ButtonAssist.PressedBackground" Value="#EEEEFA"/>
+        </Style>
+        <Style x:Key="RecentRemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="Width" Value="24"/><Setter Property="Height" Value="24"/><Setter Property="MinWidth" Value="24"/>
+            <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,9,9,0"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Background" Value="#EEEEF9"/><Setter Property="Foreground" Value="#8B8B9E"/>
+            <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="FontSize" Value="12"/>
+            <Setter Property="controls:ButtonAssist.CornerRadius" Value="8"/>
+            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#E4E4F5"/>
+            <Setter Property="controls:ButtonAssist.HoverForeground" Value="#6666B9"/>
+            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#C9C9EC"/>
+        </Style>
+    </Page.Resources>
     <Grid>
         <controls:SmoothScrollViewer Padding="14,5,12,12">
             <StackPanel Orientation="Vertical">
@@ -34,27 +60,77 @@
                         <TextBlock Text="最近使用" Foreground="White" FontSize="15" FontWeight="SemiBold"/>
                         <TextBlock Text="快速回到最近打开的功能" Foreground="#C9FFFFFF" FontSize="9.5" Margin="0,1,0,0"/>
                     </StackPanel>
-                    <Border Grid.Column="2" Height="24" Padding="10,0" Background="#22FFFFFF" CornerRadius="12" VerticalAlignment="Center">
-                        <TextBlock Text="0 项" Foreground="#E8FFFFFF" FontSize="10.5" VerticalAlignment="Center"/>
-                    </Border>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="清空" Height="24" MinWidth="48" Margin="0,0,7,0" Padding="10,0"
+                                Visibility="{Binding RecentItemsVisibility}" Click="ClearRecentUsage_Click"
+                                Background="#16FFFFFF" Foreground="#E8FFFFFF" BorderBrush="#38FFFFFF"
+                                controls:ButtonAssist.CornerRadius="12"
+                                controls:ButtonAssist.HoverBackground="#30FFFFFF" controls:ButtonAssist.HoverForeground="White" controls:ButtonAssist.HoverBorderBrush="#78FFFFFF"/>
+                        <Border Height="24" Padding="10,0" Background="#22FFFFFF" CornerRadius="12">
+                            <TextBlock Text="{Binding RecentUsageCountText}" Foreground="#E8FFFFFF" FontSize="10.5" VerticalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
                 </Grid>
 
-                <Border Margin="3,10,3,4" MinHeight="112" Padding="18"
+                <Border Margin="3,10,3,4" MinHeight="112" Padding="7"
                         Background="#F8F8FD" BorderBrush="#5CFFFFFF" BorderThickness="1" CornerRadius="17">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="60"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Width="48" Height="48" CornerRadius="15" Background="#EDEDFB" HorizontalAlignment="Left" VerticalAlignment="Center">
-                            <Path Width="22" Height="22" Stretch="Uniform" Stroke="{DynamicResource MainColor}" StrokeThickness="1.7"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                  Data="M 11,2 C 16,2 20,6 20,11 C 20,16 16,20 11,20 C 6,20 2,16 2,11 C 2,6 6,2 11,2 Z M 11,6 L 11,11 L 15,13"/>
-                        </Border>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="还没有最近使用记录" Foreground="#4D4D64" FontSize="13" FontWeight="SemiBold"/>
-                            <TextBlock Text="打开工具后，常用功能会出现在这里" Foreground="#9696A8" FontSize="10.5" Margin="0,5,0,0"/>
-                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding RecentItems}" Visibility="{Binding RecentItemsVisibility}"
+                                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate><UniformGrid Columns="2" VerticalAlignment="Top"/></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Button Style="{StaticResource RecentCardStyle}" CommandParameter="{Binding}"
+                                                IsEnabled="{Binding IsEnabled}" Click="RecentItem_Click">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="49"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="40" Height="40" CornerRadius="13" Background="#EEEEFB"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                    <Image Source="{Binding IconSource}" Width="25" Height="25" Stretch="Uniform"/>
+                                                </Border>
+                                                <Grid Grid.Column="1">
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <Grid Margin="0,0,27,0">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Name}" Foreground="#414156" FontSize="12.5" FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                        <Border Grid.Column="1" Padding="6,2" Margin="7,0,0,0" Background="#EEEEFB" CornerRadius="7">
+                                                            <TextBlock Text="{Binding KindText}" Foreground="#7171C5" FontSize="8.5"/>
+                                                        </Border>
+                                                    </Grid>
+                                                    <TextBlock Grid.Row="1" Text="{Binding Description}" Foreground="#878799" FontSize="9.5"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,4,3,3"/>
+                                                    <Grid Grid.Row="2">
+                                                        <TextBlock Text="{Binding Detail}" Foreground="#A0A0B0" FontSize="8.5" TextTrimming="CharacterEllipsis" Margin="0,0,68,0"/>
+                                                        <TextBlock Text="{Binding LastUsedText}" Foreground="#8585CF" FontSize="8.5" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                </Grid>
+                                            </Grid>
+                                        </Button>
+                                        <Button Content="×" ToolTip="从最近使用中移除" Style="{StaticResource RecentRemoveButtonStyle}"
+                                                CommandParameter="{Binding}" Click="RemoveRecentItem_Click"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Grid Visibility="{Binding RecentEmptyVisibility}" Margin="11">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Border Width="48" Height="48" CornerRadius="15" Background="#EDEDFB" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Path Width="22" Height="22" Stretch="Uniform" Stroke="{DynamicResource MainColor}" StrokeThickness="1.7"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Data="M 11,2 C 16,2 20,6 20,11 C 20,16 16,20 11,20 C 6,20 2,16 2,11 C 2,6 6,2 11,2 Z M 11,6 L 11,11 L 15,13"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="还没有最近使用记录" Foreground="#4D4D64" FontSize="13" FontWeight="SemiBold"/>
+                                <TextBlock Text="打开工具、软件或常用页面后会出现在这里" Foreground="#9696A8" FontSize="10.5" Margin="0,5,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="前往工具箱" MinWidth="92" Margin="12,0,0,0"
+                                    VerticalAlignment="Center" Click="OpenToolBox_Click"/>
+                        </Grid>
                     </Grid>
                 </Border>
 
