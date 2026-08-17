@@ -546,9 +546,9 @@ C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffs
 | 控件 | 新增 API |
 | --- | --- |
 | `AutoSuggestBox : ComboBox` | `PlaceholderText : string`（默认“输入以搜索”）、`MinimumPrefixLength : int`（默认 1）。根据 `Text` 对 `Items` 做当前区域性、不区分大小写的包含筛选；设置 `DisplayMemberPath` 时按对应公开属性取搜索文本 |
-| `CalendarPicker : DatePicker` | `DisplayFormat : string`（默认 `yyyy-MM-dd`）、`PlaceholderText : string`（默认“选择日期”）；`DataPicker` 是兼容别名 |
+| `CalendarPicker : DatePicker` | `DisplayFormat : string`（默认 `yyyy-MM-dd`）、`PlaceholderText : string`（默认“选择日期”） |
 | `CommandBar : HeaderedItemsControl` | `SecondaryContent : object?`、`IsCompact : bool`；继承的 `Header` 显示标题，`Items` 放主命令 |
-| `ProgressRing : Control` | `IsActive : bool`（默认 `true`）、`RingThickness : double`（默认 3） |
+| `ProgressRing : RangeBase` | 继承 `Minimum`、`Maximum`、`Value`；`IsIndeterminate : bool`（默认 `true`）、`IsActive : bool`（默认 `true`）、`RingThickness : double`（默认 3） |
 | `InfoBar : ContentControl` | `IsOpen : bool`、`IsClosable : bool`、`Title : string`、`Message : string`、`Severity : InfoBarSeverity`、`ActionContent : object?`；路由事件 `Closed` |
 | `PersonPicture : Control` | `ProfilePicture : ImageSource?`、`DisplayName : string`、`Initials : string`、`IsOnline : bool`；只读 `ResolvedInitials : string` |
 
@@ -560,7 +560,7 @@ C# 访问器为 `GetVerticalOffset` / `SetVerticalOffset` 和 `GetHorizontalOffs
 | --- | --- |
 | `ColorPicker : Control` | 双向 `SelectedColor : Color`、`IsDropDownOpen : bool`、`HexValue : string`、`Red/Green/Blue : double`；只读 `SelectedBrush : Brush`、`Palette : ObservableCollection<ColorSwatch>`；路由事件 `SelectedColorChanged` |
 | `ColorSwatch` | `ColorSwatch(string name, Color color)`；只读 `Name`、`Color`、`Brush`、`HexValue` |
-| `TimePicker : Control` | 双向 `SelectedTime : TimeSpan?`、`Hour : int`、`Minute : int`、`IsDropDownOpen : bool`；`MinuteIncrement : int`（运行时限制 1–30）、`PlaceholderText : string`；只读 `DisplayText`、`Hours : IReadOnlyList<int>`、`Minutes : ObservableCollection<int>`；路由事件 `SelectedTimeChanged` |
+| `TimePicker : Control` | 双向 `SelectedTime : TimeSpan?`、`Hour/Minute/Second : int`、`IsDropDownOpen : bool`；`ShowHour/ShowMinute/ShowSecond : bool` 分别控制时、分、秒列；`MinuteIncrement/SecondIncrement : int`（运行时限制 1–30）、`PlaceholderText : string`；只读 `DisplayText`、`Hours`、`Minutes`、`Seconds`；路由事件 `SelectedTimeChanged` |
 
 预览控件转为稳定 API 后，应把样式并入 `ToolThemeResources.xaml` 并更新本文的兼容级别；工具作者不应自行复制预览模板到工具包中。
 

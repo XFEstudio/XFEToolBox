@@ -36,6 +36,8 @@
                 <TextBlock Text="上传、校验并控制工具版本的公开状态" Style="{StaticResource AdminPageSubtitle}"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="控件画廊" Margin="0,0,8,0"
+                        Click="OpenControlGalleryButton_Click"/>
                 <Button Content="项目" Margin="0,0,8,0"
                         Click="OpenProjectsButton_Click"/>
                 <Button Content="上传工具包" Margin="0,0,8,0"

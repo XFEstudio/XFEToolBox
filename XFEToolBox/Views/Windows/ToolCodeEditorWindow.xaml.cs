@@ -2284,6 +2284,9 @@ public partial class ToolCodeEditorWindow : Window
         }
     }
 
+    private void OpenControlGalleryButton_Click(object sender, RoutedEventArgs e) =>
+        ControlGalleryWindow.ShowGallery(this);
+
     private void ExecuteEditorCommand(string command)
     {
         switch (command)
@@ -2655,6 +2658,11 @@ public partial class ToolCodeEditorWindow : Window
         else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.E)
         {
             PackageButton_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.G)
+        {
+            OpenControlGalleryButton_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
     }

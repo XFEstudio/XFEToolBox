@@ -31,7 +31,11 @@ public partial class MiniToolButton : UserControl
         get { return (ImageSource)GetValue(IconSourceProperty); }
         set { SetValue(IconSourceProperty, value); }
     }
-    public static readonly DependencyProperty IconSourceProperty = DependencyProperty.Register("IconSource", typeof(ImageSource), typeof(MiniToolButton), new PropertyMetadata(new BitmapImage(new("pack://application:,,,/Resources/Image/wrench_tool.png"))));
+    public static readonly DependencyProperty IconSourceProperty = DependencyProperty.Register(
+        "IconSource",
+        typeof(ImageSource),
+        typeof(MiniToolButton),
+        new PropertyMetadata(new BitmapImage(new("pack://application:,,,/XFEToolBox;component/Resources/Image/wrench_tool.png"))));
 
     public Brush TextColor
     {

@@ -52,10 +52,3 @@ public class CalendarPicker : DatePicker
             SetCurrentValue(TextProperty, date.ToString(DisplayFormat, CultureInfo.CurrentCulture));
     }
 }
-
-/// <summary>
-/// 保留 DataPicker 名称，兼容工具作者常用的控件命名。
-/// </summary>
-public class DataPicker : CalendarPicker
-{
-}

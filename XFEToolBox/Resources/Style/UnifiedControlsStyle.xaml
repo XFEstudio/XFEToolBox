@@ -2,6 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls">
 
+    <BooleanToVisibilityConverter x:Key="TimePickerBooleanToVisibilityConverter"/>
+
     <!-- 统一进度控件。 -->
     <Style x:Key="UnifiedProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="8"/>
@@ -55,47 +57,20 @@
         <Setter Property="Width" Value="32"/>
         <Setter Property="Height" Value="32"/>
         <Setter Property="Foreground" Value="{DynamicResource MainColor}"/>
+        <Setter Property="Background" Value="{DynamicResource ToolAccentSoftBrush}"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:ProgressRing">
-                    <Grid x:Name="RingRoot" RenderTransformOrigin="0.5,0.5">
-                        <Ellipse Stroke="{DynamicResource ToolAccentSoftBrush}"
-                                 StrokeThickness="{TemplateBinding RingThickness}"/>
-                        <Ellipse Stroke="{TemplateBinding Foreground}"
-                                 StrokeThickness="{TemplateBinding RingThickness}"
-                                 StrokeDashArray="1.7,4.2" StrokeDashCap="Round">
-                            <Ellipse.RenderTransform>
-                                <RotateTransform x:Name="RingRotation" Angle="0"
-                                                 CenterX="16" CenterY="16"/>
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsActive" Value="True">
-                            <Trigger.EnterActions>
-                                <BeginStoryboard x:Name="RingStoryboard">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="RingRotation"
-                                                         Storyboard.TargetProperty="Angle" From="0" To="360"
-                                                         Duration="0:0:0.95" RepeatBehavior="Forever"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <StopStoryboard BeginStoryboardName="RingStoryboard"/>
-                            </Trigger.ExitActions>
-                        </Trigger>
-                        <Trigger Property="IsActive" Value="False">
-                            <Setter TargetName="RingRoot" Property="Opacity" Value="0.34"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="RingRoot" Property="Opacity" Value="0.25"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
+                    <Border Background="Transparent"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.25"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- CommandBar：主命令位于中间，Header 和 SecondaryContent 可选。 -->
@@ -214,6 +189,9 @@
                                 <Grid Grid.Column="1" Margin="0,2">
                                     <TextBox x:Name="PART_EditableTextBox" Style="{x:Null}" Background="Transparent"
                                              BorderThickness="0" Foreground="{TemplateBinding Foreground}"
+                                             CaretBrush="{DynamicResource MainColor}"
+                                             SelectionBrush="{DynamicResource MainColor}"
+                                             FocusVisualStyle="{x:Null}"
                                              VerticalContentAlignment="Center"/>
                                     <TextBlock x:Name="Placeholder" Text="{TemplateBinding PlaceholderText}" Visibility="Collapsed"
                                                Foreground="{DynamicResource ToolTextDisabledBrush}"
@@ -800,7 +778,7 @@
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
-                        <Popup Placement="Bottom" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                        <Popup x:Name="PART_TimePopup" Placement="Bottom" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                                StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
                             <Border Width="286" Margin="0,6,0,0" Padding="14"
                                     Background="{DynamicResource ToolSurfaceBrush}"
@@ -862,7 +840,7 @@
         </Setter>
     </Style>
 
-    <!-- DatePicker / DataPicker / CalendarPicker。 -->
+    <!-- DatePicker / CalendarPicker。 -->
     <Style x:Key="UnifiedCalendarDayButtonStyle" TargetType="CalendarDayButton">
         <Setter Property="MinWidth" Value="30"/>
         <Setter Property="MinHeight" Value="28"/>
@@ -927,9 +905,28 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource MainColor}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource MainColor}"/>
         <Setter Property="Padding" Value="11,0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePickerTextBox">
+                    <Grid Background="Transparent">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center" Focusable="False"/>
+                        <ContentControl x:Name="PART_Watermark" Margin="{TemplateBinding Padding}"
+                                        Foreground="{DynamicResource ToolTextDisabledBrush}"
+                                        VerticalAlignment="Center" Focusable="False" IsHitTestVisible="False">
+                            <TextBlock Text="{Binding PlaceholderText, RelativeSource={RelativeSource AncestorType=controls:CalendarPicker},
+                                                      FallbackValue=选择日期, TargetNullValue=选择日期}"
+                                       Foreground="{DynamicResource ToolTextDisabledBrush}"/>
+                        </ContentControl>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="UnifiedDatePickerStyle" TargetType="DatePicker">
@@ -987,14 +984,12 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <Style x:Key="ToolBoxDataPickerStyle" TargetType="DatePicker" BasedOn="{StaticResource UnifiedDatePickerStyle}"/>
     <Style TargetType="DatePicker" BasedOn="{StaticResource UnifiedDatePickerStyle}"/>
     <Style TargetType="controls:CalendarPicker" BasedOn="{StaticResource UnifiedDatePickerStyle}"/>
-    <Style TargetType="controls:DataPicker" BasedOn="{StaticResource UnifiedDatePickerStyle}"/>
 
     <!-- TimePicker。 -->
     <Style x:Key="TimePickerListItemStyle" TargetType="ListBoxItem">
-        <Setter Property="Width" Value="64"/>
+        <Setter Property="Width" Value="60"/>
         <Setter Property="Height" Value="34"/>
         <Setter Property="Margin" Value="2"/>
         <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
@@ -1015,6 +1010,20 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <Style x:Key="TimePickerListStyle" TargetType="ListBox" BasedOn="{StaticResource ToolBoxListBoxStyle}">
+        <Setter Property="Width" Value="80"/>
+        <Setter Property="Height" Value="180"/>
+        <Setter Property="Padding" Value="3,3,1,8"/>
+        <Setter Property="Margin" Value="0,0,0,3"/>
+        <Setter Property="Background" Value="{DynamicResource ToolControlBackgroundBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource TimePickerListItemStyle}"/>
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="False"/>
     </Style>
 
     <Style TargetType="controls:TimePicker">
@@ -1060,31 +1069,73 @@
                         </ToggleButton>
                         <Popup Placement="Bottom" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                                StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
-                            <Border Width="210" Margin="0,6,0,0" Padding="12" Background="{DynamicResource ToolSurfaceBrush}"
+                            <Border Width="308" Margin="0,6,0,0" Padding="12" Background="{DynamicResource ToolSurfaceBrush}"
                                     BorderBrush="{DynamicResource ToolControlBorderBrush}" BorderThickness="1" CornerRadius="15">
                                 <Border.Effect><DropShadowEffect Color="#514D74" BlurRadius="22" ShadowDepth="6" Opacity="0.2"/></Border.Effect>
                                 <Grid>
-                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="156"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                    <Grid Margin="2,0,2,8">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <TextBlock Text="小时" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" HorizontalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="分钟" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" HorizontalAlignment="Center"/>
-                                    </Grid>
-                                    <Grid Grid.Row="1">
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <ListBox ItemsSource="{Binding Hours, RelativeSource={RelativeSource TemplatedParent}}"
-                                                 SelectedItem="{Binding Hour, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                                 ItemContainerStyle="{StaticResource TimePickerListItemStyle}"
-                                                 Background="{DynamicResource ToolControlBackgroundBrush}" BorderThickness="0" Padding="3"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-                                        <TextBlock Grid.Column="1" Text=":" Foreground="{DynamicResource MainColor}" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        <ListBox Grid.Column="2" ItemsSource="{Binding Minutes, RelativeSource={RelativeSource TemplatedParent}}"
-                                                 SelectedItem="{Binding Minute, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                                 ItemContainerStyle="{StaticResource TimePickerListItemStyle}"
-                                                 Background="{DynamicResource ToolControlBackgroundBrush}" BorderThickness="0" Padding="3"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-                                    </Grid>
-                                    <Grid Grid.Row="2" Margin="0,10,0,0">
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <StackPanel Width="80" Visibility="{Binding ShowHour, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TimePickerBooleanToVisibilityConverter}}">
+                                            <TextBlock Text="小时" Margin="0,0,0,8" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" HorizontalAlignment="Center"/>
+                                            <ListBox x:Name="PART_HourList" Style="{StaticResource TimePickerListStyle}"
+                                                     ItemsSource="{Binding Hours, RelativeSource={RelativeSource TemplatedParent}}"
+                                                     SelectedItem="{Binding Hour, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
+                                        </StackPanel>
+                                        <TextBlock Text=":" Width="16" Foreground="{DynamicResource MainColor}" FontSize="18" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding ShowHour, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                                <Condition Binding="{Binding ShowMinute, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <StackPanel Width="80" Visibility="{Binding ShowMinute, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TimePickerBooleanToVisibilityConverter}}">
+                                            <TextBlock Text="分钟" Margin="0,0,0,8" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" HorizontalAlignment="Center"/>
+                                            <ListBox x:Name="PART_MinuteList" Style="{StaticResource TimePickerListStyle}"
+                                                     ItemsSource="{Binding Minutes, RelativeSource={RelativeSource TemplatedParent}}"
+                                                     SelectedItem="{Binding Minute, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
+                                        </StackPanel>
+                                        <TextBlock Text=":" Width="16" Foreground="{DynamicResource MainColor}" FontSize="18" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding ShowHour, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                                <Condition Binding="{Binding ShowSecond, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </MultiDataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding ShowMinute, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                                <Condition Binding="{Binding ShowSecond, RelativeSource={RelativeSource TemplatedParent}}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <StackPanel Width="80" Visibility="{Binding ShowSecond, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource TimePickerBooleanToVisibilityConverter}}">
+                                            <TextBlock Text="秒钟" Margin="0,0,0,8" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" HorizontalAlignment="Center"/>
+                                            <ListBox x:Name="PART_SecondList" Style="{StaticResource TimePickerListStyle}"
+                                                     ItemsSource="{Binding Seconds, RelativeSource={RelativeSource TemplatedParent}}"
+                                                     SelectedItem="{Binding Second, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Grid Grid.Row="1" Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/><ColumnDefinition Width="6"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                         <Button x:Name="PART_NowButton" Content="现在" Height="32" MinWidth="0" Padding="7,0"/>
                                         <Button x:Name="PART_ClearButton" Grid.Column="2" Content="清除" Height="32" MinWidth="0" Padding="7,0"/>

@@ -16,7 +16,7 @@
                 controls:ButtonAssist.CornerRadius="12"
                 Command="{Binding Command,ElementName=toolButton}" CommandParameter="{Binding CommandParameter,ElementName=toolButton}"
                 MouseEnter="Button_MouseEnter" MouseLeave="Button_MouseLeave">
-            <Image Source="{Binding IconSource,ElementName=toolButton,FallbackValue=/Resources/Image/wrench_tool.png}"
+            <Image Source="{Binding IconSource,ElementName=toolButton,FallbackValue=/XFEToolBox;component/Resources/Image/wrench_tool.png}"
                    Stretch="UniformToFill"/>
         </Button>
         <controls:RoundedClipBorder Grid.Row="1" Width="40" Height="5" VerticalAlignment="Center" HorizontalAlignment="Center"

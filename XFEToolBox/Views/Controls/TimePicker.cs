@@ -5,7 +5,7 @@ using System.Windows.Controls;
 namespace XFEToolBox.Client.Views.Controls;
 
 /// <summary>
-/// 24 小时时间选择器，支持可配置的分钟步长。
+/// 可按需显示小时、分钟和秒钟的 24 小时时间选择器。
 /// </summary>
 public class TimePicker : Control
 {
@@ -19,22 +19,42 @@ public class TimePicker : Control
         new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSelectedTimeChanged));
 
     public static readonly DependencyProperty HourProperty = DependencyProperty.Register(
-        nameof(Hour), typeof(int), typeof(TimePicker), new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPartChanged));
+        nameof(Hour), typeof(int), typeof(TimePicker),
+        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPartChanged));
 
     public static readonly DependencyProperty MinuteProperty = DependencyProperty.Register(
-        nameof(Minute), typeof(int), typeof(TimePicker), new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPartChanged));
+        nameof(Minute), typeof(int), typeof(TimePicker),
+        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPartChanged));
+
+    public static readonly DependencyProperty SecondProperty = DependencyProperty.Register(
+        nameof(Second), typeof(int), typeof(TimePicker),
+        new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPartChanged));
 
     public static readonly DependencyProperty MinuteIncrementProperty = DependencyProperty.Register(
         nameof(MinuteIncrement), typeof(int), typeof(TimePicker), new PropertyMetadata(5, OnMinuteIncrementChanged));
+
+    public static readonly DependencyProperty SecondIncrementProperty = DependencyProperty.Register(
+        nameof(SecondIncrement), typeof(int), typeof(TimePicker), new PropertyMetadata(1, OnSecondIncrementChanged));
+
+    public static readonly DependencyProperty ShowHourProperty = DependencyProperty.Register(
+        nameof(ShowHour), typeof(bool), typeof(TimePicker), new PropertyMetadata(true, OnDisplayedPartsChanged));
+
+    public static readonly DependencyProperty ShowMinuteProperty = DependencyProperty.Register(
+        nameof(ShowMinute), typeof(bool), typeof(TimePicker), new PropertyMetadata(true, OnDisplayedPartsChanged));
+
+    public static readonly DependencyProperty ShowSecondProperty = DependencyProperty.Register(
+        nameof(ShowSecond), typeof(bool), typeof(TimePicker), new PropertyMetadata(false, OnDisplayedPartsChanged));
 
     public static readonly DependencyProperty PlaceholderTextProperty = DependencyProperty.Register(
         nameof(PlaceholderText), typeof(string), typeof(TimePicker), new PropertyMetadata("选择时间", OnPlaceholderChanged));
 
     public static readonly DependencyProperty IsDropDownOpenProperty = DependencyProperty.Register(
-        nameof(IsDropDownOpen), typeof(bool), typeof(TimePicker), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        nameof(IsDropDownOpen), typeof(bool), typeof(TimePicker),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
     public static readonly RoutedEvent SelectedTimeChangedEvent = EventManager.RegisterRoutedEvent(
-        nameof(SelectedTimeChanged), RoutingStrategy.Bubble, typeof(RoutedPropertyChangedEventHandler<TimeSpan?>), typeof(TimePicker));
+        nameof(SelectedTimeChanged), RoutingStrategy.Bubble,
+        typeof(RoutedPropertyChangedEventHandler<TimeSpan?>), typeof(TimePicker));
 
     private Button? nowButton;
     private Button? clearButton;
@@ -45,12 +65,16 @@ public class TimePicker : Control
     {
         Hours = Enumerable.Range(0, 24).ToArray();
         Minutes = [];
+        Seconds = [];
         RebuildMinutes();
+        RebuildSeconds();
     }
 
     public IReadOnlyList<int> Hours { get; }
 
     public ObservableCollection<int> Minutes { get; }
+
+    public ObservableCollection<int> Seconds { get; }
 
     public TimeSpan? SelectedTime
     {
@@ -70,10 +94,40 @@ public class TimePicker : Control
         set => SetValue(MinuteProperty, value);
     }
 
+    public int Second
+    {
+        get => (int)GetValue(SecondProperty);
+        set => SetValue(SecondProperty, value);
+    }
+
     public int MinuteIncrement
     {
         get => (int)GetValue(MinuteIncrementProperty);
         set => SetValue(MinuteIncrementProperty, value);
+    }
+
+    public int SecondIncrement
+    {
+        get => (int)GetValue(SecondIncrementProperty);
+        set => SetValue(SecondIncrementProperty, value);
+    }
+
+    public bool ShowHour
+    {
+        get => (bool)GetValue(ShowHourProperty);
+        set => SetValue(ShowHourProperty, value);
+    }
+
+    public bool ShowMinute
+    {
+        get => (bool)GetValue(ShowMinuteProperty);
+        set => SetValue(ShowMinuteProperty, value);
+    }
+
+    public bool ShowSecond
+    {
+        get => (bool)GetValue(ShowSecondProperty);
+        set => SetValue(ShowSecondProperty, value);
     }
 
     public string PlaceholderText
@@ -117,7 +171,8 @@ public class TimePicker : Control
             return;
 
         picker.UpdateFromSelectedTime((TimeSpan?)e.NewValue);
-        picker.RaiseEvent(new RoutedPropertyChangedEventArgs<TimeSpan?>((TimeSpan?)e.OldValue, (TimeSpan?)e.NewValue, SelectedTimeChangedEvent));
+        picker.RaiseEvent(new RoutedPropertyChangedEventArgs<TimeSpan?>(
+            (TimeSpan?)e.OldValue, (TimeSpan?)e.NewValue, SelectedTimeChangedEvent));
     }
 
     private static void OnPartChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
@@ -125,15 +180,28 @@ public class TimePicker : Control
         if (dependencyObject is not TimePicker picker || picker.synchronizing)
             return;
 
-        var hour = Math.Clamp(picker.Hour, 0, 23);
-        var minute = Math.Clamp(picker.Minute, 0, 59);
-        picker.SetCurrentValue(SelectedTimeProperty, new TimeSpan(hour, minute, 0));
+        picker.SetCurrentValue(SelectedTimeProperty, new TimeSpan(
+            Math.Clamp(picker.Hour, 0, 23),
+            Math.Clamp(picker.Minute, 0, 59),
+            Math.Clamp(picker.Second, 0, 59)));
     }
 
     private static void OnMinuteIncrementChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
     {
         if (dependencyObject is TimePicker picker)
             picker.RebuildMinutes();
+    }
+
+    private static void OnSecondIncrementChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+    {
+        if (dependencyObject is TimePicker picker)
+            picker.RebuildSeconds();
+    }
+
+    private static void OnDisplayedPartsChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
+    {
+        if (dependencyObject is TimePicker picker)
+            picker.UpdateDisplayText(picker.SelectedTime);
     }
 
     private static void OnPlaceholderChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
@@ -151,38 +219,80 @@ public class TimePicker : Control
             {
                 SetCurrentValue(HourProperty, Math.Clamp(value.Hours, 0, 23));
                 SetCurrentValue(MinuteProperty, Math.Clamp(value.Minutes, 0, 59));
-                SetValue(DisplayTextPropertyKey, $"{value.Hours:00}:{value.Minutes:00}");
-            }
-            else
-            {
-                SetValue(DisplayTextPropertyKey, PlaceholderText);
+                SetCurrentValue(SecondProperty, Math.Clamp(value.Seconds, 0, 59));
             }
         }
         finally
         {
             synchronizing = false;
         }
+
+        UpdateDisplayText(time);
     }
 
-    private void RebuildMinutes()
+    private void UpdateDisplayText(TimeSpan? time)
     {
-        var increment = Math.Clamp(MinuteIncrement, 1, 30);
-        Minutes.Clear();
-        for (var minute = 0; minute < 60; minute += increment)
-            Minutes.Add(minute);
+        if (time is null || (!ShowHour && !ShowMinute && !ShowSecond))
+        {
+            SetValue(DisplayTextPropertyKey, PlaceholderText);
+            return;
+        }
 
-        if (!Minutes.Contains(Minute))
-            SetCurrentValue(MinuteProperty, Minutes.OrderBy(value => Math.Abs(value - Minute)).FirstOrDefault());
+        var value = time.Value;
+        var parts = new List<string>(3);
+        if (ShowHour)
+            parts.Add($"{value.Hours:00}");
+        if (ShowMinute)
+            parts.Add($"{value.Minutes:00}");
+        if (ShowSecond)
+            parts.Add($"{value.Seconds:00}");
+        SetValue(DisplayTextPropertyKey, string.Join(':', parts));
+    }
+
+    private void RebuildMinutes() => RebuildPartCollection(Minutes, MinuteIncrement, Minute, MinuteProperty);
+
+    private void RebuildSeconds() => RebuildPartCollection(Seconds, SecondIncrement, Second, SecondProperty);
+
+    private void RebuildPartCollection(ObservableCollection<int> collection, int requestedIncrement, int selectedValue, DependencyProperty selectedProperty)
+    {
+        var increment = Math.Clamp(requestedIncrement, 1, 30);
+        collection.Clear();
+        for (var value = 0; value < 60; value += increment)
+            collection.Add(value);
+
+        if (!collection.Contains(selectedValue))
+        {
+            var nearest = collection.OrderBy(value => Math.Abs(value - selectedValue)).FirstOrDefault();
+            SetCurrentValue(selectedProperty, nearest);
+        }
     }
 
     private void NowButton_Click(object sender, RoutedEventArgs e)
     {
         var now = DateTime.Now;
-        var increment = Math.Clamp(MinuteIncrement, 1, 30);
-        var roundedTotalMinutes = (int)Math.Round(now.Minute / (double)increment) * increment;
-        var roundedHour = (now.Hour + roundedTotalMinutes / 60) % 24;
-        var roundedMinute = roundedTotalMinutes % 60;
-        SetCurrentValue(SelectedTimeProperty, new TimeSpan(roundedHour, roundedMinute, 0));
+        var minuteIncrement = Math.Clamp(MinuteIncrement, 1, 30);
+        var secondIncrement = Math.Clamp(SecondIncrement, 1, 30);
+
+        var hour = now.Hour;
+        var minute = ShowMinute
+            ? (int)Math.Round(now.Minute / (double)minuteIncrement) * minuteIncrement
+            : now.Minute;
+        var second = ShowSecond
+            ? (int)Math.Round(now.Second / (double)secondIncrement) * secondIncrement
+            : now.Second;
+
+        if (second >= 60)
+        {
+            second = 0;
+            minute++;
+        }
+        if (minute >= 60)
+        {
+            minute = 0;
+            hour = (hour + 1) % 24;
+        }
+
+        SetCurrentValue(SelectedTimeProperty, new TimeSpan(hour, minute, second));
     }
 
     private void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -191,7 +301,8 @@ public class TimePicker : Control
         SetCurrentValue(IsDropDownOpenProperty, false);
     }
 
-    private void ConfirmButton_Click(object sender, RoutedEventArgs e) => SetCurrentValue(IsDropDownOpenProperty, false);
+    private void ConfirmButton_Click(object sender, RoutedEventArgs e) =>
+        SetCurrentValue(IsDropDownOpenProperty, false);
 
     private void DetachButtons()
     {

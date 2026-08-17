@@ -1,0 +1,324 @@
+<Window x:Class="XFEToolBox.Client.Views.Windows.ControlGalleryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:XFEToolBox.Client.Views.Controls"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="XFEToolBox 控件画廊"
+        Width="1260" Height="820" MinWidth="960" MinHeight="640"
+        WindowStartupLocation="CenterOwner" WindowStyle="None" ResizeMode="CanResize"
+        Background="{DynamicResource MainColor}" Foreground="#45455B"
+        Icon="/XFEToolBox;component/Resources/Icon/XFEToolBoxIcon.ico"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" CornerRadius="18" GlassFrameThickness="0"
+                            ResizeBorderThickness="6" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <DropShadowEffect x:Key="GalleryShadow" Color="#4A4A7A" BlurRadius="22" ShadowDepth="5" Opacity="0.18"/>
+        <SolidColorBrush x:Key="GalleryMutedBrush" Color="#8D8DA2"/>
+
+        <Style x:Key="GalleryListItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Surface" Padding="9,8" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#F1F0FC"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#EAE9FB"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#C7C5F1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GalleryCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E6E5F0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="18"/>
+        </Style>
+
+        <Style x:Key="GallerySectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#4B4B62"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="GalleryCodeBoxStyle" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Background" Value="#202033"/>
+            <Setter Property="Foreground" Value="#EEEEFA"/>
+            <Setter Property="CaretBrush" Value="#EEEEFA"/>
+            <Setter Property="SelectionBrush" Value="#6969BC"/>
+            <Setter Property="BorderBrush" Value="#303047"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource MainColor}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="42"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Grid Margin="12,0,0,3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="29" Height="29" CornerRadius="9" Background="White" Margin="2,0,10,0">
+                    <TextBlock Text="◫" Foreground="{DynamicResource MainColor}" FontSize="14" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="XFE·控件画廊" Foreground="White" FontSize="14" FontWeight="Bold"/>
+                    <TextBlock Text="Control Gallery · 实时预览与开发参考" Foreground="#DEDEFF" FontSize="9"/>
+                </StackPanel>
+            </StackPanel>
+            <controls:WindowCaptionBar Grid.Column="1" MinWidth="120" HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                       MinimizeButtonVisibility="Visible" CloseButtonVisibility="Visible"
+                                       shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+        </Grid>
+
+        <controls:RoundedClipBorder Grid.Row="1" Margin="14,2,14,8" CornerRadius="18" Background="#F8F8FC"
+                                    BorderBrush="#72FFFFFF" BorderThickness="1" Effect="{StaticResource GalleryShadow}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="286"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Grid Background="#FBFBFE">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="18,18,18,12">
+                        <StackPanel>
+                            <TextBlock Text="控件库" Foreground="#414157" FontSize="18" FontWeight="Bold"/>
+                            <TextBlock Text="选择控件以查看用法和真实效果" Foreground="{StaticResource GalleryMutedBrush}"
+                                       FontSize="10" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Top" Padding="8,4"
+                                Background="#EAE9FB" CornerRadius="9">
+                            <TextBlock x:Name="CountText" Foreground="#6666B8" FontSize="9.5" FontWeight="SemiBold"/>
+                        </Border>
+                    </Grid>
+
+                    <controls:TextEditor x:Name="SearchBox" Grid.Row="1" Height="38" Margin="18,0,18,10"
+                                         HintText="搜索名称、类型或用途" TextChanged="SearchBox_TextChanged"/>
+
+                    <ComboBox x:Name="CategoryFilter" Grid.Row="2" Height="36" Margin="18,0,18,11"
+                              SelectionChanged="CategoryFilter_SelectionChanged"/>
+
+                    <ListBox x:Name="ControlList" Grid.Row="3" Margin="10,0,8,0" BorderThickness="0"
+                             Background="Transparent" ItemContainerStyle="{StaticResource GalleryListItemStyle}"
+                             SelectionChanged="ControlList_SelectionChanged"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="38"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="31" Height="31" CornerRadius="9" Background="#ECEBFA"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Icon}" Foreground="#7777C9" FontSize="13" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Foreground="#4A4A60" FontSize="10.5" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Category}" Foreground="#9696A8" FontSize="8.5" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="›" Foreground="#A7A6BC" FontSize="17"
+                                               VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Border Grid.Row="4" Margin="16,10,16,16" Padding="11,9" Background="#F0EFFB" CornerRadius="11">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse Width="7" Height="7" Fill="#5ED890" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="示例均可直接交互和复制" Foreground="#6B6B82" FontSize="9.5" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Border Grid.Column="1" Background="#E7E6F0"/>
+
+                <ScrollViewer x:Name="DetailScrollViewer" Grid.Column="2" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+                    <Grid Margin="24,22,26,28">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="CategoryText" Foreground="#7777C5" FontSize="10" FontWeight="SemiBold"/>
+                                    <TextBlock Text="  /  XFEToolBox.Controls" Foreground="#A2A2B3" FontSize="10"/>
+                                </StackPanel>
+                                <TextBlock x:Name="NameText" Foreground="#3E3E54" FontSize="25" FontWeight="Bold" Margin="0,7,0,0"/>
+                                <TextBlock x:Name="SummaryText" Foreground="#77778D" FontSize="11" Margin="0,6,0,0"
+                                           TextWrapping="Wrap" MaxWidth="760" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <Border Padding="10,5" Background="#EAE9FB" CornerRadius="9" HorizontalAlignment="Right">
+                                    <TextBlock x:Name="TypeText" Foreground="#6666B7" FontFamily="Cascadia Mono, Consolas"
+                                               FontSize="9.5" FontWeight="SemiBold"/>
+                                </Border>
+                                <Button Margin="0,9,0,0" Padding="12,6" Content="复制 xmlns" Click="CopyNamespaceButton_Click"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="1" Style="{StaticResource GalleryCardStyle}" Margin="0,20,0,14" MinHeight="238">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="1"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,13">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="31" Height="31" CornerRadius="9" Background="#F0EFFC" Margin="0,0,10,0">
+                                            <TextBlock Text="▶" Foreground="#7777C8" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel>
+                                            <TextBlock Text="实时效果" Style="{StaticResource GallerySectionTitleStyle}"/>
+                                            <TextBlock Text="这里运行的就是工具页面实际使用的控件" Foreground="#9696A8" FontSize="9" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button HorizontalAlignment="Right" VerticalAlignment="Center" Content="重置演示"
+                                            Padding="12,6" Click="ResetPreviewButton_Click"/>
+                                </Grid>
+                                <Border Grid.Row="1" Background="#ECEBF3"/>
+                                <Border Grid.Row="2" Margin="0,15,0,0" Padding="22" Background="#FAFAFD"
+                                        BorderBrush="#ECEBF3" BorderThickness="1" CornerRadius="13" MinHeight="150">
+                                    <ContentControl x:Name="PreviewHost" HorizontalContentAlignment="Stretch"
+                                                    VerticalContentAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="2" Style="{StaticResource GalleryCardStyle}" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="XAML 用法" Style="{StaticResource GallerySectionTitleStyle}"/>
+                                        <TextBlock Text="复制到工具项目页面即可使用" Foreground="#9696A8" FontSize="9" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button x:Name="CopyCodeButton" HorizontalAlignment="Right" Content="复制代码"
+                                            Padding="13,6" Click="CopyCodeButton_Click"/>
+                                </Grid>
+                                <controls:RoundedClipBorder Grid.Row="1" CornerRadius="12">
+                                    <TextBox x:Name="CodeTextBox" Height="178" Style="{StaticResource GalleryCodeBoxStyle}"/>
+                                </controls:RoundedClipBorder>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="3" Style="{StaticResource GalleryCardStyle}" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="关键属性" Style="{StaticResource GallerySectionTitleStyle}" Margin="0,0,0,12"/>
+                                <ItemsControl x:Name="PropertiesItemsControl">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="170"/>
+                                                    <ColumnDefinition Width="115"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.ColumnSpan="3" Background="#FAFAFD" BorderBrush="#EEEFF5"
+                                                        BorderThickness="1" CornerRadius="10"/>
+                                                <TextBlock Text="{Binding Name}" Margin="12,10" Foreground="#5B5BA0"
+                                                           FontFamily="Cascadia Mono, Consolas" FontSize="9.5" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Type}" Margin="10" Foreground="#89899D"
+                                                           FontFamily="Cascadia Mono, Consolas" FontSize="9"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Description}" Margin="10" Foreground="#66667B"
+                                                           FontSize="9.5" TextWrapping="Wrap"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="4" Padding="16,13" Background="#F0EFFB" BorderBrush="#DEDCF5"
+                                BorderThickness="1" CornerRadius="14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="35"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="27" Height="27" CornerRadius="9" Background="#DDDBF7" VerticalAlignment="Top">
+                                    <TextBlock Text="i" Foreground="#6666B5" FontSize="13" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock x:Name="NotesText" Grid.Column="1" Foreground="#65657B" FontSize="10"
+                                           LineHeight="18" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </controls:RoundedClipBorder>
+
+        <Grid Grid.Row="2" Margin="18,0,18,4">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse Width="6" Height="6" Fill="#65E69A" Margin="0,0,7,0"/>
+                <TextBlock x:Name="StatusText" Foreground="#EEFFFFFF" FontSize="9.5"/>
+            </StackPanel>
+            <TextBlock Text="Ctrl+F 搜索  ·  Esc 关闭" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Foreground="#D8D8FA" FontSize="9"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -319,6 +319,10 @@
                         <MenuItem Header="导出工具包…" InputGestureText="Ctrl+Shift+E" Click="PackageButton_Click"/>
                         <MenuItem x:Name="PublishPackageMenuItem" Header="发布工具包" Click="PublishPackageButton_Click"/>
                     </MenuItem>
+                    <MenuItem Header="开发" Style="{StaticResource EditorTopMenuItem}"
+                              ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
+                        <MenuItem Header="控件画廊" InputGestureText="Ctrl+Shift+G" Click="OpenControlGalleryButton_Click"/>
+                    </MenuItem>
                 </Menu>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button x:Name="PreviewButton" Margin="0,0,8,0" Click="PreviewButton_Click" ToolTip="预览当前 Markdown、XAML 或文本文件（Ctrl+Shift+W）">

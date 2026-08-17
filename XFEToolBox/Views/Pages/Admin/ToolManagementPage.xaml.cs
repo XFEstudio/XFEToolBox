@@ -20,6 +20,10 @@ public partial class ToolManagementPage : Page
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync();
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
+
+    private void OpenControlGalleryButton_Click(object sender, RoutedEventArgs e) =>
+        ControlGalleryWindow.ShowGallery(Window.GetWindow(this));
+
     private void OpenProjectsButton_Click(object sender, RoutedEventArgs e)
     {
         var launcher = new ToolProjectLauncherPopupPage();
