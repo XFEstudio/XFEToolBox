@@ -3,6 +3,7 @@
     <!-- 工具箱与外部工具共同加载的主题入口；工具作者无需显式引用任何 Style。 -->
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/Theme/LightTheme.xaml"/>
+        <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/WindowChromeStyle.xaml"/>
         <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/StandardControlsStyle.xaml"/>
         <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/UnifiedControlsStyle.xaml"/>
         <ResourceDictionary Source="/XFEToolBox.WpfCore;component/Resources/Style/SettingsControlsStyle.xaml"/>

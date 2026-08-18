@@ -29,12 +29,7 @@ namespace XFEToolBox.Client.Installer
             }
             else
             {
-                MessageBox.Show(
-                    "Installer 收到的升级参数无效。请从 XFEToolBox 内重新检查更新。",
-                    "无法开始升级",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                Shutdown(-1);
+                SystemProfile.StartupError = "Installer 收到的升级参数无效。请从 XFEToolBox 内重新检查更新。";
             }
         }
     }

@@ -4,60 +4,54 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodel="clr-namespace:XFEToolBox.Client.Installer.ViewModel.Windows"
-        xmlns:ctr="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
-        xmlns:local="clr-namespace:XFEToolBox.Client.Installer.Views.Windows"
+        xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=viewmodel:MainWindowViewModel}"
-        Title="XFE工具箱安装程序" Height="460" Width="730" MinHeight="450" MinWidth="720" Background="Transparent" WindowStyle="None" AllowsTransparency="True" WindowStartupLocation="CenterScreen" Icon="/Resources/Icon/Icon.png" Loaded="Window_Loaded">
-
-    <Border CornerRadius="19" Background="{DynamicResource MainColor}" Margin="5" ClipToBounds="True">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="25"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Border CornerRadius="12" Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"/>
-            <Grid Grid.RowSpan="2">
+        Title="XFE工具箱安装程序"
+        Width="760" Height="520" MinWidth="720" MinHeight="460"
+        ResizeMode="CanResize" Background="Transparent" WindowStyle="None"
+        AllowsTransparency="True" WindowStartupLocation="CenterScreen"
+        Icon="/Resources/Icon/Icon.png" Loaded="Window_Loaded">
+    <Grid>
+        <controls:RoundedClipBorder x:Name="MainSurface" Margin="5" CornerRadius="20"
+                                    Background="{DynamicResource MainColor}">
+            <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition/>
-                    <RowDefinition Height="40"/>
-                    <RowDefinition Height="40"/>
-                    <RowDefinition Height="2*"/>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="92"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Image Grid.RowSpan="4" Source="/Resources/Image/background.png" Stretch="Fill" ClipToBounds="True"/>
-                <Border Grid.Row="2" Height="40" VerticalAlignment="Top" Background="White" CornerRadius="12">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="1" Direction="90"/>
-                    </Border.Effect>
-                </Border>
-                <Border Grid.Row="2" Grid.RowSpan="2" Background="White" CornerRadius="12">
-                    <Frame x:Name="contentFrame" x:FieldModifier="internal" IsTabStop="False" NavigationUIVisibility="Hidden"/>
-                </Border>
-                <Border CornerRadius="10" Width="80" Background="White" Grid.Row="1" Grid.RowSpan="2" HorizontalAlignment="Center" BorderBrush="{DynamicResource MainColor}" BorderThickness="3">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="1"/>
-                    </Border.Effect>
-                    <Image Source="/Resources/Icon/Icon.png" Margin="10"/>
-                </Border>
-            </Grid>
-            <Border Grid.Row="0" Background="Transparent">
-                <Grid>
+
+                <controls:WindowCaptionBar x:Name="CaptionBar" Margin="138,0,0,0"
+                                           CloseRequested="CaptionBar_CloseRequested"/>
+
+                <Grid Grid.Row="1" Margin="30,6,30,14">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="3*"/>
-                        <ColumnDefinition Width="45"/>
-                        <ColumnDefinition Width="45"/>
+                        <ColumnDefinition Width="58"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="1" x:Name="dragTabBorder" CornerRadius="0,0,20,20" Style="{StaticResource TabBorderStyle}" MouseMove="DragTabBorder_MouseMove" MouseDown="DragTabBorder_MouseDown">
-                        <Image x:Name="dragTabImage" Source="/XFEToolBox.WpfCore;component/Resources/Image/tabline.png" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4"/>
+                    <Border Width="50" Height="50" CornerRadius="15" Background="#2BFFFFFF"
+                            VerticalAlignment="Center">
+                        <Image Source="/Resources/Icon/Icon.png" Margin="9"/>
                     </Border>
-                    <Image x:Name="minimizeImage" Style="{StaticResource RotorImage}" Grid.Column="2" Source="/XFEToolBox.WpfCore;component/Resources/Image/min.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="MinimizeImage_MouseLeftButtonUp"/>
-                    <Image x:Name="closeWindowImage" Style="{StaticResource HalfRotorImage}" Grid.Column="3" Source="/XFEToolBox.WpfCore;component/Resources/Image/close.png" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4" MouseLeftButtonUp="CloseWindowImage_MouseLeftButtonUp"/>
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="XFE工具箱安装程序" Foreground="White" FontSize="22" FontWeight="Bold"/>
+                        <TextBlock Text="安全安装、修复或升级 XFEToolBox" Foreground="#E8E8FB"
+                                   FontSize="11" Margin="0,3,0,0"/>
+                    </StackPanel>
                 </Grid>
-            </Border>
-            <Image Grid.Row="1" Source="/XFEToolBox.WpfCore;component/Resources/Image/corner.png" Width="25" Height="25" HorizontalAlignment="Right" VerticalAlignment="Bottom" FocusVisualStyle="{x:Null}"/>
-            <Border x:Name="cornerBorder" Grid.Row="1" Style="{StaticResource CornerBorderStyle}" MouseDown="CornerBorder_MouseDown">
-            </Border>
-        </Grid>
-    </Border>
+
+                <controls:RoundedClipBorder Grid.Row="2" Margin="18,0,18,18" CornerRadius="18"
+                                            Background="{DynamicResource ToolSurfaceBrush}">
+                    <Frame x:Name="contentFrame" x:FieldModifier="internal" IsTabStop="False"
+                           NavigationUIVisibility="Hidden" Background="Transparent"/>
+                </controls:RoundedClipBorder>
+
+                <Border x:Name="ModalShade" Grid.RowSpan="3" Background="#660F0F19"
+                        Visibility="Collapsed" IsHitTestVisible="False"/>
+            </Grid>
+        </controls:RoundedClipBorder>
+
+        <controls:WindowResizeGrip Margin="0,0,5,5" ResizeCompleted="WindowResizeGrip_ResizeCompleted"/>
+    </Grid>
 </Window>

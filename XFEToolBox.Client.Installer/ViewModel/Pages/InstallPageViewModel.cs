@@ -22,8 +22,24 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
         [RelayCommand]
         void GotoInstallProgressPage()
         {
-            if (MainWindow.Current is not null)
-                MainWindow.Current.contentFrame.Content = new InstallProgressPage();
+            try
+            {
+                var normalizedPath = Path.GetFullPath(InstallPath.Trim());
+                if (FileHelper.IsRootPath(normalizedPath))
+                    throw new InvalidOperationException("不能直接安装到磁盘根目录，请选择一个应用文件夹。");
+
+                Directory.CreateDirectory(normalizedPath);
+                VerifyWriteAccess(normalizedPath);
+                InstallPath = normalizedPath;
+                SystemProfile.InstallPath = normalizedPath;
+
+                if (MainWindow.Current is not null)
+                    MainWindow.Current.contentFrame.Content = new InstallProgressPage();
+            }
+            catch (Exception exception)
+            {
+                PopupHelper.ShowConfirmDialog($"安装目录不可用：\n{exception.Message}", confirmText: "重新选择");
+            }
         }
 
         [RelayCommand]
@@ -37,9 +53,9 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
             if (openFolderDialog.ShowDialog() == true)
             {
                 if (FileHelper.IsRootPath(openFolderDialog.FolderName))
-                    InstallPath = Path.Combine(openFolderDialog.FolderName, SystemProfile.ApplicationName);
+                    InstallPath = Path.Combine(Path.GetFullPath(openFolderDialog.FolderName), SystemProfile.ApplicationName);
                 else
-                    InstallPath = openFolderDialog.FolderName;
+                    InstallPath = Path.GetFullPath(openFolderDialog.FolderName);
                 SystemProfile.InstallPath = InstallPath;
             }
         }
@@ -47,23 +63,46 @@ namespace XFEToolBox.Client.Installer.ViewModel.Pages
         [RelayCommand]
         void ViewEULAAgreement()
         {
-            if (Assembly.GetExecutingAssembly().GetManifestResourceStream("XFEToolBox.Client.Installer.Resources.Resource.EULA.txt") is Stream stream && new StreamReader(stream).ReadToEnd() is string agreementText)
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("XFEToolBox.Client.Installer.Resources.Resource.EULA.txt");
+            if (stream is not null)
+            {
+                using var reader = new StreamReader(stream);
                 PopupHelper.ShowDialog(new AgreementDialogPopupPage
                 {
                     Title = "软件最终用户许可协议",
-                    Agreement = agreementText
+                    Agreement = reader.ReadToEnd()
                 }, 480, 420);
+            }
         }
 
         [RelayCommand]
         void ViewUserPrivateAgreement()
         {
-            if (Assembly.GetExecutingAssembly().GetManifestResourceStream("XFEToolBox.Client.Installer.Resources.Resource.PrivateService.txt") is Stream stream && new StreamReader(stream).ReadToEnd() is string agreementText)
+            using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("XFEToolBox.Client.Installer.Resources.Resource.PrivateService.txt");
+            if (stream is not null)
+            {
+                using var reader = new StreamReader(stream);
                 PopupHelper.ShowDialog(new AgreementDialogPopupPage
                 {
                     Title = "用户隐私协议",
-                    Agreement = agreementText
+                    Agreement = reader.ReadToEnd()
                 }, 480, 420);
+            }
+        }
+
+        private static void VerifyWriteAccess(string directory)
+        {
+            var probePath = Path.Combine(directory, $".xfe-write-test-{Guid.NewGuid():N}.tmp");
+            try
+            {
+                using var probe = new FileStream(probePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                probe.WriteByte(0);
+            }
+            finally
+            {
+                if (File.Exists(probePath))
+                    File.Delete(probePath);
+            }
         }
     }
 }

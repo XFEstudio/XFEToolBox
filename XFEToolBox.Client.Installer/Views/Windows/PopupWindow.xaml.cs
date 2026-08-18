@@ -1,34 +1,25 @@
-﻿using System.Windows;
+using System.Windows;
 using XFEToolBox.Client.Installer.ViewModel.Windows;
+using XFEToolBox.WpfCore.Windowing;
 
-namespace XFEToolBox.Client.Installer.Views.Windows
+namespace XFEToolBox.Client.Installer.Views.Windows;
+
+public partial class PopupWindow : Window
 {
-    /// <summary>
-    /// PopupWindow.xaml 的交互逻辑
-    /// </summary>
-    public partial class PopupWindow : Window
+    public PopupWindowViewModel ViewModel { get; }
+    public MessageBoxResult? Result { get; set; }
+
+    public PopupWindow()
     {
-        public static PopupWindow? Current { get; set; }
-        public PopupWindowViewModel ViewModel { get; set; }
-        public MessageBoxResult? Result { get; set; }
-        public PopupWindow()
-        {
-            Current = this;
-            DataContext = ViewModel = new(this);
-            InitializeComponent();
-        }
+        ViewModel = new PopupWindowViewModel(this);
+        DataContext = ViewModel;
+        InitializeComponent();
+        WindowWorkAreaHelper.Attach(this);
+    }
 
-        private void CloseWindowImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            Result = MessageBoxResult.None;
-            DialogResult = false;
-            Close();
-        }
-
-        private void DragTabBorder_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
-                DragMove();
-        }
+    private void CaptionBar_CloseRequested(object? sender, EventArgs e)
+    {
+        Result = MessageBoxResult.None;
+        Close();
     }
 }
