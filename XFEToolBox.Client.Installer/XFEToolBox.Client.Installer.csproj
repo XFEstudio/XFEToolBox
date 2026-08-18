@@ -27,7 +27,6 @@
     <None Remove="Resources\Image\wrench.png" />
     <None Remove="Resources\Resource\EULA.txt" />
     <None Remove="Resources\Resource\PrivateService.txt" />
-    <None Remove="Resources\Resource\Source.zip" />
   </ItemGroup>
 
   <ItemGroup>
