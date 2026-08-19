@@ -11,31 +11,18 @@ public partial class ServerProfile : XFEProfile
 
     public ServerProfile() => DefaultProfileOperationMode = ProfileOperationMode.Xml;
 
-    [ProfileProperty] private string _httpAddress = "http://localhost:3000/";
-
-    [ProfileProperty] private string _httpsAddress = "https://localhost:3400/";
-
-    [ProfileProperty] private string _storageRoot = "Data/ToolPackages";
-
-    [ProfileProperty] private string _softwareStorageRoot = "Data/SoftwareFiles";
-
-    [ProfileProperty] private string _adminApiKey = string.Empty;
-
-    [ProfileProperty] private long _maxPackageBytes = 10 * 1024 * 1024;
-
-    [ProfileProperty] private long _maxSoftwareBytes = 256 * 1024 * 1024;
-
-    [ProfileProperty] private long _maxExpandedBytes = 30 * 1024 * 1024;
-
-    [ProfileProperty] private int _maxFileCount = 256;
-
-    [ProfileProperty] private double _maxCompressionRatio = 100;
-
-    [ProfileProperty] private int _loginKeepDays = 30;
-
-    [ProfileProperty] private string _initialAdminUserName = "admin";
-
-    [ProfileProperty] private string _initialAdminPassword = DefaultInitialAdminPassword;
-
-    [ProfileProperty] private bool _allowRegistration = true;
+    [ProfileProperty] public static string HttpAddress { get; set; } = "http://localhost:3000/";
+    [ProfileProperty] public static string HttpsAddress { get; set; } = "https://localhost:3400/";
+    [ProfileProperty] public static string StorageRoot { get; set; } = "Data/ToolPackages";
+    [ProfileProperty] public static string SoftwareStorageRoot { get; set; } = "Data/SoftwareFiles";
+    [ProfileProperty] public static string AdminApiKey { get; set; } = string.Empty;
+    [ProfileProperty] public static long MaxPackageBytes { get; set; } = 10 * 1024 * 1024;
+    [ProfileProperty] public static long MaxSoftwareBytes { get; set; } = 256 * 1024 * 1024;
+    [ProfileProperty] public static long MaxExpandedBytes { get; set; } = 30 * 1024 * 1024;
+    [ProfileProperty] public static int MaxFileCount { get; set; } = 256;
+    [ProfileProperty] public static double MaxCompressionRatio { get; set; } = 100;
+    [ProfileProperty] public static int LoginKeepDays { get; set; } = 30;
+    [ProfileProperty] public static string InitialAdminUserName { get; set; } = "admin";
+    [ProfileProperty] public static string InitialAdminPassword { get; set; } = DefaultInitialAdminPassword;
+    [ProfileProperty] public static bool AllowRegistration { get; set; } = true;
 }

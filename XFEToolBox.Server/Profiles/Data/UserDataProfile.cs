@@ -6,13 +6,6 @@ namespace XFEToolBox.Server.Profiles.Data;
 
 internal partial class UserDataProfile : XFEProfile
 {
-    [ProfileProperty]
-    [ProfilePropertyAddGet("Current._userTable.CurrentProfile = Current")]
-    [ProfilePropertyAddGet("return Current._userTable")]
-    private ProfileList<ToolBoxUser> _userTable = [];
-
-    [ProfileProperty]
-    [ProfilePropertyAddGet("Current._loginTable.CurrentProfile = Current")]
-    [ProfilePropertyAddGet("return Current._loginTable")]
-    private ProfileList<EncryptedUserLoginModel> _loginTable = [];
+    [ProfileProperty] public static partial ProfileList<ToolBoxUser> UserTable { get; set; } = [];
+    [ProfileProperty] public static partial ProfileList<EncryptedUserLoginModel> LoginTable { get; set; } = [];
 }
