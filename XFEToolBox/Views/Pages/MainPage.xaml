@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:gif="http://wpfanimatedgif.codeplex.com"
       xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       mc:Ignorable="d"
        d:DesignHeight="450" d:DesignWidth="800"
@@ -89,7 +90,9 @@
                                                 <Grid.ColumnDefinitions><ColumnDefinition Width="49"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                                 <Border Width="40" Height="40" CornerRadius="13" Background="#EEEEFB"
                                                         HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                    <Image Source="{Binding IconSource}" Width="25" Height="25" Stretch="Uniform"/>
+                                                    <Image gif:ImageBehavior.AnimatedSource="{Binding IconSource}"
+                                                           gif:ImageBehavior.RepeatBehavior="Forever"
+                                                           Width="25" Height="25" Stretch="Uniform"/>
                                                 </Border>
                                                 <Grid Grid.Column="1">
                                                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>

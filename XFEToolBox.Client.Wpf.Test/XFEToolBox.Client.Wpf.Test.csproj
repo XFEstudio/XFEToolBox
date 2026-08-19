@@ -9,7 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="XFEExtension.NetCore.XUnit" Version="4.0.0" />
+    <PackageReference Include="SharpVectors" Version="1.8.5" />
+    <PackageReference Include="XFEExtension.NetCore.XUnit" Version="4.0.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,13 @@
     <Compile Include="..\XFEToolBox\Utilities\BufferedConsoleRenderer.cs" Link="Utilities\BufferedConsoleRenderer.cs" />
     <Compile Include="..\XFEToolBox.Client.Installer\Utilities\InstallationService.cs" Link="Installer\InstallationService.cs" />
     <Compile Include="..\XFEToolBox.Client.Installer\Utilities\ZipHelper.cs" Link="Installer\ZipHelper.cs" />
+    <Compile Include="..\XFEToolBox\Utilities\WebImageSourceLoader.cs" Link="Utilities\WebImageSourceLoader.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\XFEToolBox\Resources\Icon\XFEToolBoxIcon.ico" Link="TestAssets\XFEToolBoxIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

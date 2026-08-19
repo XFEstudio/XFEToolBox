@@ -37,8 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="XFEExtension.NetCore" Version="3.2.7" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="XFEExtension.NetCore" Version="5.2.1" />
   </ItemGroup>
 
   <ItemGroup>

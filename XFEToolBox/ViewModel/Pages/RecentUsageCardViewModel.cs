@@ -1,10 +1,10 @@
-using System.IO;
 using System.Text.Json;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Profiles.CacheProfiles;
+using XFEToolBox.Client.Utilities;
 using XFEToolBox.Core.Downloads;
 using XFEToolBox.Core.Tools;
 
@@ -15,7 +15,8 @@ public partial class RecentUsageCardViewModel : ObservableObject
     public RecentUsageCardViewModel(RecentUsageEntry entry)
     {
         Entry = entry;
-        IconSource = CreateIconSource(entry);
+        IconSource = CreateFallbackIcon(entry);
+        _ = LoadConfiguredIconAsync(entry);
     }
 
     public RecentUsageEntry Entry { get; }
@@ -30,46 +31,36 @@ public partial class RecentUsageCardViewModel : ObservableObject
     };
 
     public string LastUsedText => FormatLastUsed(Entry.LastUsedAtUtc);
-    public ImageSource IconSource { get; }
+    [ObservableProperty]
+    private ImageSource iconSource;
 
     [ObservableProperty]
     private bool isEnabled = true;
 
-    private static ImageSource CreateIconSource(RecentUsageEntry entry)
+    private async Task LoadConfiguredIconAsync(RecentUsageEntry entry)
     {
         var reference = string.IsNullOrWhiteSpace(entry.IconReference)
             ? ResolveCatalogIcon(entry)
             : entry.IconReference;
-        if (!string.IsNullOrWhiteSpace(reference))
+        if (string.IsNullOrWhiteSpace(reference) || reference.StartsWith('/'))
+            return;
+
+        try
         {
-            try
-            {
-                if (reference.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-                {
-                    var separator = reference.IndexOf(',');
-                    if (separator > 0)
-                    {
-                        using var stream = new MemoryStream(Convert.FromBase64String(reference[(separator + 1)..]));
-                        var dataImage = new BitmapImage();
-                        dataImage.BeginInit();
-                        dataImage.CacheOption = BitmapCacheOption.OnLoad;
-                        dataImage.DecodePixelWidth = 96;
-                        dataImage.StreamSource = stream;
-                        dataImage.EndInit();
-                        dataImage.Freeze();
-                        return dataImage;
-                    }
-                }
-                else if (reference.StartsWith('/'))
-                {
-                    return CreateResourceImage(reference);
-                }
-            }
-            catch
-            {
-                // 损坏或不再可用的图标回退到对应类型的内置图标。
-            }
+            var image = await WebImageSourceLoader.LoadAsync(reference);
+            if (image is not null)
+                IconSource = image;
         }
+        catch
+        {
+            // 网络或图标格式不可用时保留对应类型的内置图标。
+        }
+    }
+
+    private static ImageSource CreateFallbackIcon(RecentUsageEntry entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.IconReference) && entry.IconReference.StartsWith('/'))
+            return CreateResourceImage(entry.IconReference);
 
         return CreateResourceImage(entry.Kind switch
         {
