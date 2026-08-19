@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -22,8 +21,11 @@ public partial class ToolBoxPage : Page
 {
     private static readonly ImageSource DefaultToolIcon = CreateDefaultIcon();
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly ObservableCollection<ToolCardViewModel> _tools = [];
+    private readonly List<ToolCardViewModel> _tools = [];
+    private ToolCatalogRowViewModel[] _toolRows = [];
+    private int _visibleCategoryCount;
     private ToolPackageSummary[] _cachedCatalog = [];
+    private bool _updatingCategories;
     private bool _cacheLoaded;
     private bool _hasCachedCatalog;
     private int _refreshGeneration;
@@ -34,25 +36,34 @@ public partial class ToolBoxPage : Page
     {
         Current = this;
         InitializeComponent();
-        ToolCards.ItemsSource = _tools;
+        CategoryFilter.Items.Add("全部分类");
+        CategoryFilter.SelectedIndex = 0;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
-    private async void SearchButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
+    private async void SearchButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(updateCategories: false);
 
     private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter) await RefreshAsync();
+        if (e.Key == Key.Enter) await RefreshAsync(updateCategories: false);
     }
 
-    private async Task RefreshAsync(bool refreshFullCatalog = false)
+    private async void CategoryFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_updatingCategories && IsLoaded) await RefreshAsync(updateCategories: false);
+    }
+
+    private async Task RefreshAsync(bool updateCategories = true, bool refreshFullCatalog = false)
     {
         EnsureCacheLoaded();
         var query = SearchTextBox.Text.Trim();
+        var category = GetSelectedCategory();
         if (_hasCachedCatalog)
         {
-            ApplyTools(FilterCachedTools(query));
+            if (updateCategories) UpdateCategories(GetCatalogCategories(_cachedCatalog), category);
+            category = GetSelectedCategory();
+            ApplyTools(FilterCachedTools(query, category));
             StatusText.Text = _tools.Count == 0
                 ? "缓存中没有符合条件的工具，正在后台刷新…"
                 : "已显示本地缓存，正在后台刷新…";
@@ -63,11 +74,14 @@ public partial class ToolBoxPage : Page
         }
 
         var refreshGeneration = ++_refreshGeneration;
+        SearchButton.IsEnabled = RefreshButton.IsEnabled = false;
+        CategoryFilter.IsEnabled = false;
         try
         {
             var requestQuery = refreshFullCatalog ? string.Empty : query;
+            var requestCategory = refreshFullCatalog ? string.Empty : category;
             var response = await ClientSession.Requester.Request<ToolPackageSummary[]>(
-                "catalogTools", requestQuery, string.Empty);
+                "catalogTools", requestQuery, requestCategory);
             if (refreshGeneration != _refreshGeneration) return;
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -76,23 +90,36 @@ public partial class ToolBoxPage : Page
             }
 
             var tools = response.Result ?? [];
-            if (refreshFullCatalog || string.IsNullOrWhiteSpace(query))
+            if (refreshFullCatalog || string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(category))
             {
                 _cachedCatalog = tools;
                 _hasCachedCatalog = true;
                 TrySaveCatalogCache(tools);
-                tools = FilterCachedTools(query);
+                if (updateCategories)
+                {
+                    UpdateCategories(GetCatalogCategories(_cachedCatalog), category);
+                    category = GetSelectedCategory();
+                }
+                tools = FilterCachedTools(query, category);
             }
 
             ApplyTools(tools);
             StatusText.Text = _tools.Count == 0
                 ? "没有符合条件的工具。"
-                : "点击工具卡片即可打开；未缓存的工具会先自动获取。右键卡片可清除该工具的数据。";
+                : "点击卡片打开工具；右键卡片可打开工具菜单。";
         }
         catch (Exception exception)
         {
             if (refreshGeneration == _refreshGeneration)
                 ShowRefreshFailure($"读取失败：{exception.Message}");
+        }
+        finally
+        {
+            if (refreshGeneration == _refreshGeneration)
+            {
+                SearchButton.IsEnabled = RefreshButton.IsEnabled = true;
+                CategoryFilter.IsEnabled = true;
+            }
         }
     }
 
@@ -114,17 +141,17 @@ public partial class ToolBoxPage : Page
         }
     }
 
-    private ToolPackageSummary[] FilterCachedTools(string query)
-    {
-        if (string.IsNullOrWhiteSpace(query)) return _cachedCatalog;
-        return _cachedCatalog.Where(tool =>
-                Contains(tool.Name, query)
-                || Contains(tool.Description, query)
-                || Contains(tool.Author, query)
-                || Contains(tool.Category, query)
-                || tool.Tags?.Any(tag => Contains(tag, query)) == true)
+    private ToolPackageSummary[] FilterCachedTools(string query, string category) =>
+        _cachedCatalog.Where(tool =>
+                (string.IsNullOrWhiteSpace(category)
+                 || string.Equals(NormalizeCategory(tool.Category), category, StringComparison.CurrentCultureIgnoreCase))
+                && (string.IsNullOrWhiteSpace(query)
+                    || Contains(tool.Name, query)
+                    || Contains(tool.Description, query)
+                    || Contains(tool.Author, query)
+                    || Contains(tool.Category, query)
+                    || tool.Tags?.Any(tag => Contains(tag, query)) == true))
             .ToArray();
-    }
 
     private void ApplyTools(IReadOnlyList<ToolPackageSummary> tools)
     {
@@ -137,17 +164,58 @@ public partial class ToolBoxPage : Page
             return new ToolCardViewModel(tool, CreateIconSource(tool.IconDataUrl), File.Exists(GetCachePath(tool)));
         }).ToArray();
 
-        ReconcileCollection(_tools, desiredCards);
+        _tools.Clear();
+        _tools.AddRange(desiredCards);
+        RebuildCatalogRows();
         EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        ToolCountText.Text = $"{_tools.Count} 个工具";
+        ToolCountText.Text = FormatToolCount();
     }
+
+    private void RebuildCatalogRows()
+    {
+        var categoryOrder = CategoryFilter.Items.Cast<object>()
+            .Skip(1)
+            .Select((item, index) => (Name: item?.ToString() ?? string.Empty, Index: index))
+            .Where(item => !string.IsNullOrWhiteSpace(item.Name))
+            .GroupBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Min(item => item.Index), StringComparer.CurrentCultureIgnoreCase);
+
+        var groups = _tools
+            .GroupBy(card => NormalizeCategory(card.Category), StringComparer.CurrentCultureIgnoreCase)
+            .Select(group => (Name: group.Key, Items: (IReadOnlyList<ToolCardViewModel>)group.ToArray()))
+            .OrderBy(group => categoryOrder.TryGetValue(group.Name, out var index) ? index : int.MaxValue)
+            .ThenBy(group => group.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToArray();
+
+        var rows = new List<ToolCatalogRowViewModel>(_tools.Count / 2 + groups.Length * 2);
+        foreach (var group in groups)
+        {
+            rows.Add(ToolCatalogRowViewModel.Header(
+                new ToolCategoryGroupViewModel(group.Name, group.Items.Count)));
+            for (var index = 0; index < group.Items.Count; index += 2)
+                rows.Add(ToolCatalogRowViewModel.Cards(
+                    group.Items[index],
+                    index + 1 < group.Items.Count ? group.Items[index + 1] : null));
+        }
+
+        _visibleCategoryCount = groups.Length;
+        _toolRows = rows.ToArray();
+        ToolCards.ItemsSource = _toolRows;
+    }
+
+    private string FormatToolCount() => _tools.Count == 0
+        ? "0 个工具"
+        : $"{_tools.Count} 个工具 · {_visibleCategoryCount} 个分类";
+
+    private static string NormalizeCategory(string? category) =>
+        string.IsNullOrWhiteSpace(category) ? "其他工具" : category.Trim();
 
     private void ShowRefreshFailure(string message)
     {
         if (_hasCachedCatalog)
         {
             EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-            ToolCountText.Text = $"{_tools.Count} 个工具";
+            ToolCountText.Text = FormatToolCount();
             StatusText.Text = $"后台刷新失败，当前显示本地缓存：{message}";
             return;
         }
@@ -173,26 +241,33 @@ public partial class ToolBoxPage : Page
     private static bool ToolSummariesEquivalent(ToolPackageSummary left, ToolPackageSummary right) =>
         JsonSerializer.Serialize(left, CacheJsonOptions) == JsonSerializer.Serialize(right, CacheJsonOptions);
 
-    private static void ReconcileCollection<T>(ObservableCollection<T> target, IReadOnlyList<T> desired)
-        where T : class
-    {
-        for (var index = 0; index < desired.Count; index++)
-        {
-            var item = desired[index];
-            var currentIndex = target.IndexOf(item);
-            if (currentIndex < 0)
-                target.Insert(index, item);
-            else if (currentIndex != index)
-                target.Move(currentIndex, index);
-        }
+    private static string[] GetCatalogCategories(IEnumerable<ToolPackageSummary> tools) =>
+        tools.Select(tool => NormalizeCategory(tool.Category))
+            .Distinct(StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
+            .ToArray();
 
-        while (target.Count > desired.Count)
-            target.RemoveAt(target.Count - 1);
+    private void UpdateCategories(IEnumerable<string> categories, string selectedCategory)
+    {
+        _updatingCategories = true;
+        CategoryFilter.Items.Clear();
+        CategoryFilter.Items.Add("全部分类");
+        foreach (var category in categories) CategoryFilter.Items.Add(category);
+        CategoryFilter.SelectedItem = CategoryFilter.Items.Cast<object>()
+            .FirstOrDefault(item => string.Equals(item.ToString(), selectedCategory, StringComparison.CurrentCultureIgnoreCase));
+        if (CategoryFilter.SelectedIndex < 0) CategoryFilter.SelectedIndex = 0;
+        _updatingCategories = false;
     }
+
+    private string GetSelectedCategory() =>
+        CategoryFilter.SelectedIndex > 0 ? CategoryFilter.SelectedItem?.ToString() ?? string.Empty : string.Empty;
 
     private void ShowEmptyResult(string message)
     {
         _tools.Clear();
+        _toolRows = [];
+        _visibleCategoryCount = 0;
+        ToolCards.ItemsSource = _toolRows;
         EmptyState.Visibility = Visibility.Visible;
         ToolCountText.Text = string.Empty;
         StatusText.Text = message;
@@ -201,6 +276,13 @@ public partial class ToolBoxPage : Page
     private async void ToolCard_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { CommandParameter: ToolCardViewModel card })
+            await OpenToolAsync(card);
+    }
+
+    private async void OpenToolMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is MenuItem { CommandParameter: ToolCardViewModel card })
             await OpenToolAsync(card);
     }
 

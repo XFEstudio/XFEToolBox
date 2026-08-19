@@ -85,7 +85,8 @@ Console.WriteLine($"  地址：{ServerProfile.HttpAddress.TrimEnd('/')}/api");
 Console.WriteLine($"  数据：{storageRoot}");
 Console.WriteLine($"  软件：{softwareStorageRoot}");
 Console.WriteLine($"  用户：{UserDataProfile.UserTable.Count}");
-await server.Start();
+await server.StartAsync();
+await server.RunAsync();
 return;
 
 static void EnsureInitialAdministrator()

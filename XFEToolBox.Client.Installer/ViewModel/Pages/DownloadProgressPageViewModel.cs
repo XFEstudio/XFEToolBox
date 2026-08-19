@@ -1,118 +1,205 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
-using System.Windows;
 using XFEExtension.NetCore.FileExtension;
-using XFEExtension.NetCore.StringExtension;
 using XFEExtension.NetCore.WebExtension;
 using XFEToolBox.Client.Installer.Profiles;
-using XFEToolBox.Client.Installer.Utilities;
 using XFEToolBox.Client.Installer.Views.Pages;
 using XFEToolBox.Client.Installer.Views.Windows;
 
-namespace XFEToolBox.Client.Installer.ViewModel.Pages
+namespace XFEToolBox.Client.Installer.ViewModel.Pages;
+
+public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage) : ViewModelBase, IDisposable
 {
-    public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage) : ViewModelBase
+    [ObservableProperty]
+    private bool isBusy = true;
+
+    [ObservableProperty]
+    private bool isPause;
+
+    [ObservableProperty]
+    private bool isError;
+
+    [ObservableProperty]
+    private bool pauseSwitchEnable;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RetryCommand))]
+    private bool isDownloading;
+
+    [ObservableProperty]
+    private double maxValue = 100;
+
+    [ObservableProperty]
+    private double value;
+
+    [ObservableProperty]
+    private string pauseText = "暂停";
+
+    [ObservableProperty]
+    private string downloadText = "正在连接服务器...";
+
+    [ObservableProperty]
+    private string errorMessage = string.Empty;
+
+    private XFEDownloader? downloader;
+    private int transitionStarted;
+    private bool isDisposed;
+
+    public DownloadProgressPage ViewPage { get; } = viewPage;
+
+    private bool CanRetry() => !IsDownloading && Volatile.Read(ref transitionStarted) == 0;
+
+    [RelayCommand(CanExecute = nameof(CanRetry))]
+    private async Task Retry()
     {
-        [ObservableProperty]
-        bool isBusy = false;
-        [ObservableProperty]
-        bool isPause = false;
-        [ObservableProperty]
-        bool isError = false;
-        [ObservableProperty]
-        bool pauseSwitchEnable = false;
-        [ObservableProperty]
-        double maxValue = 100;
-        [ObservableProperty]
-        double value = 0;
-        [ObservableProperty]
-        string pauseText = "暂停";
-        [ObservableProperty]
-        string downloadText = "0/0";
-        private XFEDownloader? downloader;
-        public DownloadProgressPage ViewPage { get; set; } = viewPage;
-        public XFEDownloader? Downloader
+        if (isDisposed || IsDownloading)
+            return;
+
+        IsDownloading = true;
+        IsBusy = true;
+        IsPause = false;
+        IsError = false;
+        PauseSwitchEnable = false;
+        PauseText = "暂停";
+        ErrorMessage = string.Empty;
+        DownloadText = "正在连接服务器...";
+        Value = 0;
+        MaxValue = 100;
+        RefreshProgressVisual();
+
+        try
         {
-            get => downloader;
-            set
+            if (!Uri.TryCreate(SystemProfile.DownloadUrl, UriKind.Absolute, out var downloadUri) ||
+                (downloadUri.Scheme != Uri.UriSchemeHttp && downloadUri.Scheme != Uri.UriSchemeHttps))
+                throw new InvalidOperationException("升级下载地址无效，请返回 XFEToolBox 重新检查更新。");
+
+            Directory.CreateDirectory(SystemProfile.InstallPath);
+            var packagePath = Path.Combine(SystemProfile.InstallPath, "InstallPackage.zip");
+            if (File.Exists(packagePath))
+                File.Delete(packagePath);
+
+            ReplaceDownloader(new XFEDownloader
             {
-                PauseSwitchEnable = false;
-                if (value is not null)
-                {
-                    if (downloader is not null)
-                        downloader.BufferDownloaded -= Downloader_BufferDownloaded;
-                    value.BufferDownloaded += Downloader_BufferDownloaded;
-                    PauseSwitchEnable = true;
-                }
-                downloader = value;
+                DownloadUrl = downloadUri.AbsoluteUri,
+                SavePath = packagePath
+            });
+
+            IsBusy = false;
+            PauseSwitchEnable = true;
+            RefreshProgressVisual();
+            await downloader!.Download(false);
+        }
+        catch (Exception exception) when (!isDisposed)
+        {
+            SetDownloadError(exception);
+        }
+        finally
+        {
+            if (!isDisposed)
+            {
+                IsDownloading = false;
+                if (Volatile.Read(ref transitionStarted) == 0)
+                    PauseSwitchEnable = false;
             }
         }
+    }
 
-        private async Task StartDownload()
+    private void Downloader_BufferDownloaded(XFEDownloader sender, FileDownloadedEventArgs e)
+    {
+        ViewPage.Dispatcher.BeginInvoke(() =>
         {
-            try
-            {
-                if (Downloader is not null)
-                    await Downloader.Download(false);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"下载出错：\n{ex.Message}");
-                PauseText = "继续";
-                IsError = true;
-                ViewPage.progress.SetError();
-            }
-        }
+            if (isDisposed)
+                return;
 
-        private void Downloader_BufferDownloaded(XFEDownloader sender, FileDownloadedEventArgs e)
-        {
-            DownloadText = $"{e.DownloadedBufferSize.FileSize()}/{(e.TotalBufferSize is not null ? e.TotalBufferSize.Value.FileSize() : "未知")}";
+            DownloadText = $"{e.DownloadedBufferSize.FileSize()}/{(e.TotalBufferSize is not null ? e.TotalBufferSize.Value.FileSize() : "未知大小")}";
             Value = e.DownloadedBufferSize;
-            if (e.TotalBufferSize is not null)
+            if (e.TotalBufferSize is not null && e.TotalBufferSize.Value > 0)
                 MaxValue = e.TotalBufferSize.Value;
-            ViewPage.Dispatcher.Invoke(ViewPage.progress.Update);
-            if (e.Downloaded)
-            {
-                MainWindow.Current?.Dispatcher.Invoke(() => MainWindow.Current.contentFrame.Content = new InstallProgressPage());
-            }
+            RefreshProgressVisual();
+
+            if (!e.Downloaded || Interlocked.Exchange(ref transitionStarted, 1) != 0)
+                return;
+
+            PauseSwitchEnable = false;
+            IsDownloading = false;
+            ReplaceDownloader(null);
+            if (MainWindow.Current is not null)
+                MainWindow.Current.contentFrame.Content = new InstallProgressPage();
+        });
+    }
+
+    [RelayCommand]
+    private void PauseSwitch()
+    {
+        if (downloader is null || !PauseSwitchEnable)
+            return;
+
+        if (downloader.IsPaused)
+        {
+            downloader.Continue();
+            IsPause = false;
+            PauseText = "暂停";
+        }
+        else
+        {
+            downloader.Pause();
+            IsPause = true;
+            PauseText = "继续";
+        }
+        RefreshProgressVisual();
+    }
+
+    private void SetDownloadError(Exception exception)
+    {
+        void ApplyError()
+        {
+            IsBusy = false;
+            IsPause = false;
+            IsError = true;
+            PauseSwitchEnable = false;
+            ErrorMessage = $"下载失败：{exception.Message}";
+            DownloadText = "未能获取更新包";
+            RefreshProgressVisual();
+            ReplaceDownloader(null);
         }
 
-        [RelayCommand]
-        void PauseSwitch()
+        if (ViewPage.Dispatcher.CheckAccess())
+            ApplyError();
+        else
+            ViewPage.Dispatcher.Invoke(ApplyError);
+    }
+
+    private void RefreshProgressVisual()
+    {
+        ViewPage.progress.SetBusy();
+        ViewPage.progress.SetPause();
+        ViewPage.progress.SetError();
+        ViewPage.progress.Update();
+    }
+
+    private void ReplaceDownloader(XFEDownloader? nextDownloader)
+    {
+        if (ReferenceEquals(downloader, nextDownloader))
+            return;
+
+        if (downloader is not null)
         {
-            if (Downloader is not null)
-            {
-                if (Downloader.IsPaused)
-                {
-                    Downloader?.Continue();
-                    IsPause = false;
-                    ViewPage.progress.SetPause();
-                    PauseText = "暂停";
-                }
-                else
-                {
-                    Downloader?.Pause();
-                    IsPause = true;
-                    ViewPage.progress.SetPause();
-                    PauseText = "继续";
-                }
-            }
+            downloader.BufferDownloaded -= Downloader_BufferDownloaded;
+            downloader.Dispose();
         }
 
-        [RelayCommand]
-        async Task Retry()
-        {
-            var url = SystemProfile.DownloadUrl;
-            if (!url.IsNullOrEmpty())
-            {
-                Downloader = new()
-                {
-                    DownloadUrl = url,
-                    SavePath = Path.Combine(SystemProfile.InstallPath, "InstallPackage.zip")
-                };
-            }
-            await StartDownload();
-        }
+        downloader = nextDownloader;
+        if (downloader is not null)
+            downloader.BufferDownloaded += Downloader_BufferDownloaded;
+    }
+
+    public void Dispose()
+    {
+        if (isDisposed)
+            return;
+        isDisposed = true;
+        ReplaceDownloader(null);
+        GC.SuppressFinalize(this);
     }
 }

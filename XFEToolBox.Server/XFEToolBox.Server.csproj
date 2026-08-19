@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="XFEExtension.NetCore.ServerInteractive" Version="3.2.2" />
+    <PackageReference Include="XFEExtension.NetCore.ServerInteractive" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

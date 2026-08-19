@@ -20,6 +20,8 @@ public class ToolBoxUserFaceInfo : IUserFaceInfo
 
     public bool IsAdministrator => Role == ToolBoxUserRole.Administrator;
 
+    public long Version { get; set; }
+
     public static ToolBoxUserFaceInfo FromUser(IUserInfo user)
     {
         var result = new ToolBoxUserFaceInfo

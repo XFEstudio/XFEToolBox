@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="XFEExtension.NetCore" Version="5.1.0" />
+    <PackageReference Include="XFEExtension.NetCore" Version="5.2.0" />
     <PackageReference Include="XFEExtension.NetCore.TodoHighLight" Version="1.0.0" />
-    <PackageReference Include="XFEExtension.NetCore.XUnit" Version="4.0.0" />
+    <PackageReference Include="XFEExtension.NetCore.XUnit" Version="4.0.2" />
   </ItemGroup>
 
   <ItemGroup>

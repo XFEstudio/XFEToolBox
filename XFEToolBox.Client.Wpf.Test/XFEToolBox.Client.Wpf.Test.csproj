@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <Compile Include="..\XFEToolBox\Utilities\BufferedConsoleRenderer.cs" Link="Utilities\BufferedConsoleRenderer.cs" />
+    <Compile Include="..\XFEToolBox.Client.Installer\Utilities\InstallationService.cs" Link="Installer\InstallationService.cs" />
+    <Compile Include="..\XFEToolBox.Client.Installer\Utilities\ZipHelper.cs" Link="Installer\ZipHelper.cs" />
   </ItemGroup>
 
 </Project>

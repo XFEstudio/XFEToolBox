@@ -15,6 +15,7 @@ internal static class ToolProjectRunService
 {
     private const int MaximumPackageEntryCount = 512;
     private const long MaximumExtractedPackageBytes = 128L * 1024 * 1024;
+    private static readonly TimeSpan RuntimeStartupObservationWindow = TimeSpan.FromSeconds(2);
     private static readonly JsonSerializerOptions ManifestJsonOptions = new(JsonSerializerDefaults.Web);
 
     public static async Task<ToolRunResult> BuildAsync(
@@ -158,12 +159,36 @@ internal static class ToolProjectRunService
             {
                 WorkingDirectory = workspaceRoot,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
             };
             runInfo.ArgumentList.Add(runtimeAssembly);
             var runtimeProcess = Process.Start(runInfo)
                                  ?? throw new InvalidOperationException("工具运行进程启动失败。");
-            _ = CleanupAfterExitAsync(runtimeProcess, runtimeRoot, temporaryWorkspaceRoot);
+            var runtimeStandardOutputTask = runtimeProcess.StandardOutput.ReadToEndAsync();
+            var runtimeStandardErrorTask = runtimeProcess.StandardError.ReadToEndAsync();
+            var exitTask = runtimeProcess.WaitForExitAsync(cancellationToken);
+            var startupObservationTask = Task.Delay(RuntimeStartupObservationWindow, cancellationToken);
+            if (await Task.WhenAny(exitTask, startupObservationTask) == exitTask)
+            {
+                await exitTask;
+                var runtimeOutput = (await runtimeStandardOutputTask) + Environment.NewLine + (await runtimeStandardErrorTask);
+                var exitCode = runtimeProcess.ExitCode;
+                runtimeProcess.Dispose();
+                TryDeleteDirectory(runtimeRoot);
+                if (temporaryWorkspaceRoot is not null)
+                    TryDeleteDirectory(temporaryWorkspaceRoot);
+                return new ToolRunResult(false, FormatRuntimeFailure(runtimeOutput, exitCode), null);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+            _ = CleanupAfterExitAsync(
+                runtimeProcess,
+                runtimeRoot,
+                temporaryWorkspaceRoot,
+                runtimeStandardOutputTask,
+                runtimeStandardErrorTask);
             return new ToolRunResult(true, "工具已完成编译并在独立窗口中运行。", runtimeProcess.Id);
         }
         catch (Exception exception)
@@ -237,7 +262,7 @@ internal static class ToolProjectRunService
                 : manifest.Subtitle.Trim());
         var iconPath = JsonSerializer.Serialize(toolIconPath);
         var themeResourceUri = JsonSerializer.Serialize(
-            $"pack://application:,,,/{hostAssemblyName};component/Resources/Style/ToolThemeResources.xaml");
+            "pack://application:,,,/XFEToolBox.WpfCore;component/Resources/Style/ToolThemeResources.xaml");
         var mainStyleResourceUri = JsonSerializer.Serialize(
             $"pack://application:,,,/{hostAssemblyName};component/Resources/Style/MainStyle.xaml");
         var defaultIconResourceUri = JsonSerializer.Serialize(
@@ -609,11 +634,14 @@ internal static class ToolProjectRunService
     private static async Task CleanupAfterExitAsync(
         Process process,
         string runtimeRoot,
-        string? temporaryWorkspaceRoot)
+        string? temporaryWorkspaceRoot,
+        Task<string> standardOutputTask,
+        Task<string> standardErrorTask)
     {
         try
         {
             await process.WaitForExitAsync();
+            await Task.WhenAll(standardOutputTask, standardErrorTask);
             process.Dispose();
         }
         catch
@@ -900,6 +928,24 @@ internal static class ToolProjectRunService
         if (importantLines.Length == 0)
             importantLines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).TakeLast(6).ToArray();
         return "工具编译未通过：\n" + string.Join(Environment.NewLine, importantLines);
+    }
+
+    private static string FormatRuntimeFailure(string output, int exitCode)
+    {
+        var importantLines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(line => line.Contains("Exception", StringComparison.OrdinalIgnoreCase)
+                           || line.Contains("error", StringComparison.OrdinalIgnoreCase)
+                           || line.Contains("错误", StringComparison.OrdinalIgnoreCase)
+                           || line.Contains("找不到", StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToArray();
+        if (importantLines.Length == 0)
+            importantLines = output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).TakeLast(8).ToArray();
+
+        var details = importantLines.Length == 0
+            ? "工具进程在窗口显示前意外退出。"
+            : string.Join(Environment.NewLine, importantLines);
+        return $"工具启动失败（退出代码 {exitCode}）：\n{details}";
     }
 
     private static string EscapeXml(string value) => SecurityElement.Escape(value) ?? value;

@@ -1,27 +1,22 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows;
-using System.Windows.Media;
 using XFEToolBox.Client.Installer.Views.Windows;
 
-namespace XFEToolBox.Client.Installer.ViewModel.Windows
-{
-    public partial class PopupWindowViewModel(PopupWindow viewPage) : ViewModelBase
-    {
-        [ObservableProperty]
-        object? content;
-        [ObservableProperty]
-        Brush popupBackground = new SolidColorBrush(Color.FromRgb(152, 152, 231));
-        [ObservableProperty]
-        Brush popupBorder = new SolidColorBrush(Color.FromRgb(80, 80, 183));
-        [ObservableProperty]
-        Brush popupContentBackground = new SolidColorBrush(Colors.White);
-        [ObservableProperty]
-        Thickness popupThickness = new(2);
-        [ObservableProperty]
-        Visibility closeButtonVisibility = Visibility.Visible;
-        [ObservableProperty]
-        Visibility moveButtonVisibility = Visibility.Visible;
+namespace XFEToolBox.Client.Installer.ViewModel.Windows;
 
-        public PopupWindow ViewPage { get; set; } = viewPage;
-    }
+public partial class PopupWindowViewModel(PopupWindow viewPage) : ViewModelBase
+{
+    [ObservableProperty]
+    private object? content;
+
+    [ObservableProperty]
+    private string popupTitle = "XFE工具箱安装程序";
+
+    [ObservableProperty]
+    private Visibility closeButtonVisibility = Visibility.Visible;
+
+    [ObservableProperty]
+    private Visibility moveButtonVisibility = Visibility.Visible;
+
+    public PopupWindow ViewPage { get; } = viewPage;
 }

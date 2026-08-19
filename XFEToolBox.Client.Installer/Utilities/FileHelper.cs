@@ -22,7 +22,17 @@ namespace XFEToolBox.Client.Installer.Utilities
             return size;
         }
 
-        public static bool IsRootPath(string path) => RootPath.Any(rootPath => rootPath == path);
+        public static bool IsRootPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            var fullPath = Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var rootPath = Path.GetPathRoot(fullPath)?
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return string.Equals(fullPath, rootPath, StringComparison.OrdinalIgnoreCase);
+        }
 
         public static bool CreateShortCut(string linkFilePath, string targetPath, string? arguments = null,
             string? description = null, string? iconLocation = null, string? workingDirectory = null)

@@ -30,6 +30,10 @@
         /// </summary>
         public static string DownloadUrl { get; set; } = string.Empty;
         /// <summary>
+        /// 启动参数校验失败时展示给用户的错误。
+        /// </summary>
+        public static string StartupError { get; set; } = string.Empty;
+        /// <summary>
         /// 安装目录
         /// </summary>
         public static string InstallPath { get; set; } = System.IO.Path.Combine(

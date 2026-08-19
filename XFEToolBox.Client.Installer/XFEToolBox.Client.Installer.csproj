@@ -9,7 +9,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\Icon\Icon.ico</ApplicationIcon>
     <AssemblyName>Installer</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.1.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,17 +27,18 @@
     <None Remove="Resources\Image\wrench.png" />
     <None Remove="Resources\Resource\EULA.txt" />
     <None Remove="Resources\Resource\PrivateService.txt" />
+    <None Remove="Resources\Resource\Source.zip" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\Resource\EULA.txt" />
     <EmbeddedResource Include="Resources\Resource\PrivateService.txt" />
+    <EmbeddedResource Include="Resources\Resource\Source.zip" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="XFEExtension.NetCore" Version="3.2.7" />
-    <PackageReference Include="XFEExtension.NetCore.InputSimulator" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>

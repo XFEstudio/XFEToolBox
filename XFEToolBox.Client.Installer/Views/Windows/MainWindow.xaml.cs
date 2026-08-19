@@ -1,62 +1,57 @@
-﻿using System.Windows;
-using XFEExtension.NetCore.InputSimulator;
+using System.Windows;
 using XFEToolBox.Client.Installer.Profiles;
+using XFEToolBox.Client.Installer.Utilities;
 using XFEToolBox.Client.Installer.ViewModel.Windows;
 using XFEToolBox.Client.Installer.Views.Pages;
+using XFEToolBox.WpfCore.Windowing;
 
-namespace XFEToolBox.Client.Installer.Views.Windows
+namespace XFEToolBox.Client.Installer.Views.Windows;
+
+public partial class MainWindow : Window
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window
+    public static MainWindow? Current { get; private set; }
+    public MainWindowViewModel ViewModel { get; }
+
+    public MainWindow()
     {
-        public static MainWindow? Current { get; private set; }
-        public MainWindowViewModel ViewModel { get; private set; }
-        public MainWindow()
+        Current = this;
+        ViewModel = new MainWindowViewModel(this);
+        DataContext = ViewModel;
+        InitializeComponent();
+        Width = SystemProfile.MainWindowWidth;
+        Height = SystemProfile.MainWindowHeight;
+        WindowWorkAreaHelper.Attach(this);
+    }
+
+    public void SetModalShade(bool isVisible) =>
+        ModalShade.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        contentFrame.Content = SystemProfile.StartMode switch
         {
-            ViewModel = new MainWindowViewModel(Current = this);
-            DataContext = ViewModel;
-            InitializeComponent();
-            Width = SystemProfile.MainWindowWidth;
-            Height = SystemProfile.MainWindowHeight;
-        }
+            "Upgrade" => new DownloadProgressPage(),
+            _ => new InstallPage()
+        };
 
-        private void MinimizeImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.Minimize();
+        if (string.IsNullOrWhiteSpace(SystemProfile.StartupError))
+            return;
 
-        private void CloseWindowImage_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e) => MainWindowViewModel.CloseWindow();
-
-        private void DragTabBorder_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        Dispatcher.BeginInvoke(() =>
         {
-            if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
-            {
-                if (WindowState == WindowState.Maximized)
-                {
-                    WindowState = WindowState.Normal;
-                    var mousePosition = InputSimulator.GetMousePosition();
-                    Left = mousePosition.X / SystemProfile.CurrentWindowDPIScale - Width / 2;
-                    Top = mousePosition.Y / SystemProfile.CurrentWindowDPIScale - 10;
-                }
-                DragMove();
-            }
-        }
+            PopupHelper.ShowConfirmDialog(SystemProfile.StartupError, confirmText: "关闭安装器");
+            Close();
+        });
+    }
 
-        private void DragTabBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (ViewModel.CheckDoubleClick(500))
-                _ = WindowState == WindowState.Maximized ? WindowState = WindowState.Normal : WindowState = WindowState.Maximized;
-        }
+    private void CaptionBar_CloseRequested(object? sender, EventArgs e) => Close();
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            ViewModel.GetDPIScale();
-            contentFrame.Content = SystemProfile.StartMode switch
-            {
-                "Upgrade" => new DownloadProgressPage(),
-                _ => new InstallPage(),
-            };
-        }
+    private void WindowResizeGrip_ResizeCompleted(object? sender, EventArgs e)
+    {
+        if (WindowState != WindowState.Normal)
+            return;
 
-        private void CornerBorder_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e) => ViewModel.InitializeToResize();
+        SystemProfile.MainWindowWidth = Width;
+        SystemProfile.MainWindowHeight = Height;
     }
 }
