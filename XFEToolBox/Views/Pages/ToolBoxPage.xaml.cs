@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
@@ -418,6 +419,7 @@ public partial class ToolBoxPage : Page
 
             card.CacheState = "已打开";
             StatusText.Text = $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
+            RecentUsageIconCache.Remember(RecentUsageKind.Tool, card.Id, card.IconSource);
             RecentUsageService.RecordTool(card.Package);
             return true;
         }
@@ -469,14 +471,11 @@ public partial class ToolBoxPage : Page
         {
             var separator = dataUrl.IndexOf(',');
             if (separator < 0) return DefaultToolIcon;
-            using var stream = new MemoryStream(Convert.FromBase64String(dataUrl[(separator + 1)..]));
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = stream;
-            image.EndInit();
-            image.Freeze();
-            return image;
+            var header = dataUrl[5..separator];
+            var mediaType = header.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault();
+            var bytes = Convert.FromBase64String(dataUrl[(separator + 1)..]);
+            return WebImageSourceLoader.Decode(bytes, mediaType, "tool-icon");
         }
         catch
         {

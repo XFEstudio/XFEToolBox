@@ -5,18 +5,31 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Profiles.CacheProfiles;
 using XFEToolBox.Client.Utilities;
-using XFEToolBox.Core.Downloads;
-using XFEToolBox.Core.Tools;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
 public partial class RecentUsageCardViewModel : ObservableObject
 {
+    private static readonly object CatalogIconSyncRoot = new();
+    private static string? cachedToolCatalogJson;
+    private static string? cachedSoftwareCatalogJson;
+    private static IReadOnlyDictionary<string, string> cachedToolIcons =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    private static IReadOnlyDictionary<string, string> cachedSoftwareIcons =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
     public RecentUsageCardViewModel(RecentUsageEntry entry)
     {
         Entry = entry;
-        IconSource = CreateFallbackIcon(entry);
-        _ = LoadConfiguredIconAsync(entry);
+        if (RecentUsageIconCache.TryGet(entry.Kind, entry.TargetId, out var cachedIcon))
+        {
+            IconSource = cachedIcon;
+        }
+        else
+        {
+            IconSource = CreateFallbackIcon(entry);
+            _ = LoadConfiguredIconAsync(entry);
+        }
     }
 
     public RecentUsageEntry Entry { get; }
@@ -39,17 +52,20 @@ public partial class RecentUsageCardViewModel : ObservableObject
 
     private async Task LoadConfiguredIconAsync(RecentUsageEntry entry)
     {
-        var reference = string.IsNullOrWhiteSpace(entry.IconReference)
-            ? ResolveCatalogIcon(entry)
-            : entry.IconReference;
-        if (string.IsNullOrWhiteSpace(reference) || reference.StartsWith('/'))
-            return;
-
         try
         {
+            var reference = string.IsNullOrWhiteSpace(entry.IconReference)
+                ? await Task.Run(() => ResolveCatalogIcon(entry))
+                : entry.IconReference;
+            if (string.IsNullOrWhiteSpace(reference) || reference.StartsWith('/'))
+                return;
+
             var image = await WebImageSourceLoader.LoadAsync(reference);
             if (image is not null)
+            {
+                RecentUsageIconCache.Remember(entry.Kind, entry.TargetId, image);
                 IconSource = image;
+            }
         }
         catch
         {
@@ -72,32 +88,62 @@ public partial class RecentUsageCardViewModel : ObservableObject
 
     private static string ResolveCatalogIcon(RecentUsageEntry entry)
     {
-        try
+        var toolCatalogJson = AppCacheProfile.ToolCatalogJson;
+        var softwareCatalogJson = AppCacheProfile.SoftwareCatalogJson;
+        lock (CatalogIconSyncRoot)
         {
-            if (entry.Kind == RecentUsageKind.Tool && !string.IsNullOrWhiteSpace(AppCacheProfile.ToolCatalogJson))
+            if (!ReferenceEquals(cachedToolCatalogJson, toolCatalogJson))
             {
-                var tools = JsonSerializer.Deserialize<ToolPackageSummary[]>(
-                    AppCacheProfile.ToolCatalogJson,
-                    new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                return tools?.FirstOrDefault(item =>
-                    string.Equals(item.Id, entry.TargetId, StringComparison.OrdinalIgnoreCase))?.IconDataUrl ?? string.Empty;
+                cachedToolCatalogJson = toolCatalogJson;
+                cachedToolIcons = BuildIconIndex(toolCatalogJson, isToolCatalog: true);
             }
 
-            if (entry.Kind == RecentUsageKind.Software && !string.IsNullOrWhiteSpace(AppCacheProfile.SoftwareCatalogJson))
+            if (!ReferenceEquals(cachedSoftwareCatalogJson, softwareCatalogJson))
             {
-                var catalog = JsonSerializer.Deserialize<SoftwareCatalogResponse>(
-                    AppCacheProfile.SoftwareCatalogJson,
-                    new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                return catalog?.Items.FirstOrDefault(item =>
-                    string.Equals(item.Id, entry.TargetId, StringComparison.OrdinalIgnoreCase))?.IconUrl ?? string.Empty;
+                cachedSoftwareCatalogJson = softwareCatalogJson;
+                cachedSoftwareIcons = BuildIconIndex(softwareCatalogJson, isToolCatalog: false);
             }
+
+            var icons = entry.Kind == RecentUsageKind.Tool ? cachedToolIcons : cachedSoftwareIcons;
+            return icons.TryGetValue(entry.TargetId, out var iconReference) ? iconReference : string.Empty;
+        }
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildIconIndex(string? json, bool isToolCatalog)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var items = isToolCatalog
+                ? document.RootElement
+                : document.RootElement.TryGetProperty("items", out var softwareItems)
+                    ? softwareItems
+                    : default;
+            if (items.ValueKind != JsonValueKind.Array)
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var iconPropertyName = isToolCatalog ? "iconDataUrl" : "iconUrl";
+            foreach (var item in items.EnumerateArray())
+            {
+                if (!item.TryGetProperty("id", out var idProperty) ||
+                    !item.TryGetProperty(iconPropertyName, out var iconProperty))
+                    continue;
+
+                var id = idProperty.GetString();
+                var icon = iconProperty.GetString();
+                if (!string.IsNullOrWhiteSpace(id) && !string.IsNullOrWhiteSpace(icon))
+                    result[id] = icon;
+            }
+            return result;
         }
         catch (JsonException)
         {
-            // 缓存失效时使用对应类型的内置图标。
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
-
-        return string.Empty;
     }
 
     private static string GetBundledSoftwareIcon(string id) => id.ToLowerInvariant() switch

@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Profiles.CacheProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
@@ -341,6 +342,7 @@ public partial class DownloadPage : Page
 
     private static void ShowSoftwareDetails(SoftwareCardViewModel card)
     {
+        RecentUsageIconCache.Remember(RecentUsageKind.Software, card.Id, card.IconSource);
         RecentUsageService.RecordSoftware(card.Software);
         PopupHelper.ShowDialog(new DownloadInfoPage(card.Software, card.IconSource), new PopupWindowOptions
         {

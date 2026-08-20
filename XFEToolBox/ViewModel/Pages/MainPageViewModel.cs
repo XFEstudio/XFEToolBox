@@ -31,6 +31,7 @@ public partial class MainPageViewModel : ObservableObject
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
     private bool hasAdminOverviewSnapshot;
+    private bool hasRecentUsageSnapshot;
 
     public MainPage MainPage { get; }
 
@@ -70,7 +71,8 @@ public partial class MainPageViewModel : ObservableObject
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        RefreshRecentUsage();
+        if (!hasRecentUsageSnapshot)
+            RefreshRecentUsage();
         var tasks = new List<Task> { LoadAdminOverviewAsync() };
         if (!MainPage.mainCarousel.HasItems) tasks.Add(ReloadAsync());
         await Task.WhenAll(tasks);
@@ -83,7 +85,6 @@ public partial class MainPageViewModel : ObservableObject
 
     private void ClientSession_SessionChanged(object? sender, EventArgs e) => MainPage.Dispatcher.InvokeAsync(async () =>
     {
-        RefreshRecentUsage();
         await LoadAdminOverviewAsync();
         if (ClientSession.IsAdministrator && MainPage.IsVisible) adminRefreshTimer.Start();
         else adminRefreshTimer.Stop();
@@ -126,19 +127,48 @@ public partial class MainPageViewModel : ObservableObject
 
     private void RefreshRecentUsage()
     {
-        var recent = RecentUsageService.GetRecent()
+        var entries = RecentUsageService.GetRecent()
             .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software)
             .Take(MaximumVisibleRecentItems)
-            .Select(entry => new RecentUsageCardViewModel(entry))
             .ToArray();
+        var existing = RecentItems.ToDictionary(
+            item => CreateRecentUsageKey(item.Entry),
+            StringComparer.OrdinalIgnoreCase);
+        var recent = entries.Select(entry =>
+        {
+            var key = CreateRecentUsageKey(entry);
+            return existing.TryGetValue(key, out var card) && EntriesEquivalent(card.Entry, entry)
+                ? card
+                : new RecentUsageCardViewModel(entry);
+        }).ToArray();
 
-        RecentItems.Clear();
-        foreach (var item in recent) RecentItems.Add(item);
+        for (var index = 0; index < recent.Length; index++)
+        {
+            if (index >= RecentItems.Count)
+                RecentItems.Add(recent[index]);
+            else if (!ReferenceEquals(RecentItems[index], recent[index]))
+                RecentItems[index] = recent[index];
+        }
+        while (RecentItems.Count > recent.Length)
+            RecentItems.RemoveAt(RecentItems.Count - 1);
 
+        hasRecentUsageSnapshot = true;
         RecentItemsVisibility = recent.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentEmptyVisibility = recent.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentUsageCountText = $"{recent.Length} 项";
     }
+
+    private static string CreateRecentUsageKey(RecentUsageEntry entry) =>
+        $"{entry.Kind}:{entry.TargetId}";
+
+    private static bool EntriesEquivalent(RecentUsageEntry left, RecentUsageEntry right) =>
+        left.Kind == right.Kind
+        && string.Equals(left.TargetId, right.TargetId, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(left.Name, right.Name, StringComparison.Ordinal)
+        && string.Equals(left.Description, right.Description, StringComparison.Ordinal)
+        && string.Equals(left.Detail, right.Detail, StringComparison.Ordinal)
+        && string.Equals(left.IconReference, right.IconReference, StringComparison.Ordinal)
+        && left.LastUsedAtUtc == right.LastUsedAtUtc;
 
     private async Task LoadAdminOverviewAsync()
     {
