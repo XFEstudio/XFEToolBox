@@ -6,6 +6,7 @@ using XFEToolBox.Server.Core.Exceptions;
 using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
 using XFEToolBox.Server.Core.Utilities;
+using XFEExtension.NetCore.CyberComm;
 
 var tests = new (string Name, Action Run)[]
 {
@@ -14,6 +15,7 @@ var tests = new (string Name, Action Run)[]
     ("语义化版本按预期排序", SemanticVersionsAreOrdered),
     ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage),
     ("文件仓库拒绝覆盖已存在的工具版本", RepositoryRejectsDuplicateVersion),
+    ("Socket 传输可安全配置工具下载响应", SocketDownloadResponseIsConfigured),
     ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad)
 };
 
@@ -131,6 +133,35 @@ static void RepositoryRejectsDuplicateVersion()
     {
         Directory.Delete(root, recursive: true);
     }
+}
+
+static void SocketDownloadResponseIsConfigured()
+{
+    var response = new CyberCommHttpResponse();
+    ServerHttpResponseHelper.ConfigureDownload(
+        response,
+        legacyResponse: null,
+        "application/vnd.xfestudio.xfetool",
+        1234,
+        "text-encryption-1.0.1.xfetool",
+        "abc123");
+
+    Assert(
+        response.Headers["Content-Type"] == "application/vnd.xfestudio.xfetool",
+        "工具包响应类型未设置。");
+    Assert(response.Headers["Content-Length"] == "1234", "工具包响应长度未设置。");
+    Assert(
+        response.Headers["Content-Disposition"] == "attachment; filename=\"text-encryption-1.0.1.xfetool\"",
+        "工具包下载文件名未设置。");
+    Assert(response.Headers["ETag"] == "\"abc123\"", "工具包 ETag 未设置。");
+
+    ServerHttpResponseHelper.ConfigureDownload(
+        response: null,
+        legacyResponse: null,
+        "application/vnd.xfestudio.xfetool",
+        0,
+        "empty.xfetool",
+        "empty");
 }
 
 static void SystemCpuUsageIsMeasuredUnderLoad()

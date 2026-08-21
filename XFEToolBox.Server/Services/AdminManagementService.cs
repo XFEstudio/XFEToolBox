@@ -213,7 +213,7 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
                 stream,
                 GetNullableBoolean("published") ?? true,
                 GetNullableBoolean("overwrite") ?? false);
-            Args.Response.StatusCode = (int)HttpStatusCode.Created;
+            ReturnArgs.StatusCode = HttpStatusCode.Created;
             await Close(ToolPackageContractMapper.ToUploadResult(package));
         }
         catch (ToolPackageValidationException exception)

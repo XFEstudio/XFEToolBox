@@ -77,7 +77,7 @@ public partial class ToolAdminService : ServerCoreStandardServiceBase
                 stream,
                 published,
                 overwrite);
-            Args.Response.StatusCode = (int)HttpStatusCode.Created;
+            ReturnArgs.StatusCode = HttpStatusCode.Created;
             await Close(ToolPackageContractMapper.ToUploadResult(package));
         }
         catch (ToolPackageValidationException exception)
@@ -127,7 +127,7 @@ public partial class ToolAdminService : ServerCoreStandardServiceBase
             return false;
         }
 
-        if (requirePost && !string.Equals(Args.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+        if (requirePost && !string.Equals(Args.RequestMethod, "POST", StringComparison.OrdinalIgnoreCase))
         {
             await CloseWithError("此接口只接受 POST 请求。", HttpStatusCode.MethodNotAllowed);
             return false;

@@ -113,11 +113,15 @@ public partial class ToolCatalogService : ServerCoreStandardServiceBase
             return;
         }
 
-        Args.Response.ContentType = "application/vnd.xfestudio.xfetool";
-        Args.Response.ContentLength64 = package.Package.PackageSize;
-        Args.Response.Headers["Content-Disposition"] =
-            $"attachment; filename=\"{package.Package.Manifest.Id}-{package.Package.Manifest.Version}.xfetool\"";
-        Args.Response.Headers["ETag"] = $"\"{package.Package.Sha256}\"";
+#pragma warning disable CS0618 // Keep HttpListener compatibility while preferring the current socket response.
+        ServerHttpResponseHelper.ConfigureDownload(
+            Args.Context?.Response,
+            Args.Response,
+            "application/vnd.xfestudio.xfetool",
+            package.Package.PackageSize,
+            $"{package.Package.Manifest.Id}-{package.Package.Manifest.Version}.xfetool",
+            package.Package.Sha256);
+#pragma warning restore CS0618
         await using var stream = new FileStream(
             package.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
