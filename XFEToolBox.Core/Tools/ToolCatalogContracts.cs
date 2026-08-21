@@ -45,6 +45,17 @@ public sealed class ToolPackageVersionInfo
     public required string DownloadUrl { get; init; }
 }
 
+/// <summary>
+/// 工具包流式下载进度。服务器未返回长度且目录也没有包大小时，
+/// <see cref="TotalBytes"/> 为 <see langword="null"/>。
+/// </summary>
+public sealed record ToolPackageDownloadProgress(long BytesReceived, long? TotalBytes)
+{
+    public double? Percentage => TotalBytes is > 0
+        ? Math.Clamp(BytesReceived * 100d / TotalBytes.Value, 0, 100)
+        : null;
+}
+
 public sealed class ToolPackageUploadResult
 {
     public required ToolPackageManifest Manifest { get; init; }

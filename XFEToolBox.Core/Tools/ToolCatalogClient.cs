@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -41,9 +42,19 @@ public sealed class ToolCatalogClient(HttpClient httpClient)
     /// <summary>
     /// Downloads a package and verifies it against the catalog SHA-256 before returning.
     /// </summary>
+    public Task DownloadPackageAsync(
+        ToolPackageVersionInfo package,
+        Stream destination,
+        CancellationToken cancellationToken = default)
+        => DownloadPackageAsync(package, destination, progress: null, cancellationToken);
+
+    /// <summary>
+    /// Downloads a package, reports streamed byte progress, and verifies the catalog SHA-256.
+    /// </summary>
     public async Task DownloadPackageAsync(
         ToolPackageVersionInfo package,
         Stream destination,
+        IProgress<ToolPackageDownloadProgress>? progress,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(package);
@@ -60,14 +71,30 @@ public sealed class ToolCatalogClient(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
 
         await using var source = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var totalBytes = response.Content.Headers.ContentLength is > 0
+            ? response.Content.Headers.ContentLength
+            : package.PackageSize > 0 ? package.PackageSize : null;
+        progress?.Report(new ToolPackageDownloadProgress(0, totalBytes));
+
         using var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         var buffer = new byte[81920];
+        var received = 0L;
+        var reportTimer = Stopwatch.StartNew();
+        var lastReportAt = TimeSpan.Zero;
         int read;
         while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
         {
             await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
             sha256.AppendData(buffer, 0, read);
+            received += read;
+            if (reportTimer.Elapsed - lastReportAt >= TimeSpan.FromMilliseconds(100))
+            {
+                progress?.Report(new ToolPackageDownloadProgress(received, totalBytes));
+                lastReportAt = reportTimer.Elapsed;
+            }
         }
+
+        progress?.Report(new ToolPackageDownloadProgress(received, totalBytes));
 
         var actualHash = Convert.ToHexString(sha256.GetHashAndReset()).ToLowerInvariant();
         if (!string.Equals(actualHash, package.Sha256, StringComparison.OrdinalIgnoreCase))

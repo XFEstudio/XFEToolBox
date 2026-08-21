@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using WpfAnimatedGif;
 using XFEToolBox.Client.Utilities;
 
 namespace XFEToolBox.Client.Wpf.Test;
@@ -33,8 +36,15 @@ public static class WebImageSourceLoaderTests
                     File.ReadAllBytes(icoPath),
                     "image/x-icon",
                     "favicon.ico");
-                Ensure(icoImage is BitmapSource { IsFrozen: true } bitmap && bitmap.PixelWidth >= 32,
-                    "ICO 没有选择可清晰显示的位图帧。");
+                Ensure(icoImage is DrawingImage
+                       {
+                           IsFrozen: true,
+                           Drawing: ImageDrawing
+                           {
+                               ImageSource: BitmapSource { PixelWidth: >= 32 }
+                           }
+                       },
+                    "ICO 没有选择清晰的位图帧并包装成可安全跨线程显示的图像。");
 
                 var dataUri = "data:image/svg+xml," + Uri.EscapeDataString(SvgMarkup);
                 var dataImage = AwaitWithDispatcher(WebImageSourceLoader.LoadAsync(dataUri), TimeSpan.FromSeconds(10));
@@ -81,6 +91,85 @@ public static class WebImageSourceLoaderTests
             WebImageSourceLoader.Decode(new byte[WebImageSourceLoader.MaximumImageBytes + 1], "image/png"));
         EnsureThrows<InvalidDataException>(() =>
             WebImageSourceLoader.Decode(Encoding.UTF8.GetBytes("not an image"), "application/octet-stream"));
+    }
+
+    [Test]
+    public static void BackgroundDecodedPngCanBeDisplayedByAnimatedImageBehavior()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            Window? window = null;
+            DispatcherUnhandledExceptionEventHandler? dispatcherFailureHandler = null;
+            try
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                Exception? dispatcherFailure = null;
+                dispatcherFailureHandler = (_, eventArgs) =>
+                {
+                    dispatcherFailure = eventArgs.Exception;
+                    eventArgs.Handled = true;
+                };
+                dispatcher.UnhandledException += dispatcherFailureHandler;
+
+                var dataUri = "data:image/png;base64," + Convert.ToBase64String(CreatePng());
+                var source = AwaitWithDispatcher(
+                    WebImageSourceLoader.LoadAsync(dataUri),
+                    TimeSpan.FromSeconds(10));
+                var image = new Image { Width = 32, Height = 32 };
+                var fallback = WebImageSourceLoader.Decode(
+                    Encoding.UTF8.GetBytes(SvgMarkup),
+                    "image/svg+xml",
+                    "fallback.svg");
+                ImageBehavior.SetAnimatedSource(image, fallback);
+                window = new Window
+                {
+                    Width = 80,
+                    Height = 80,
+                    Left = -10_000,
+                    Top = -10_000,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual,
+                    Content = image
+                };
+
+                window.Show();
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+                Ensure(ReferenceEquals(image.Source, fallback),
+                    "主页卡片的初始回退图标没有完成显示。");
+
+                // 模拟 RecentUsageCardViewModel 在卡片 Loaded 后异步换成目录中的真实工具图标。
+                ImageBehavior.SetAnimatedSource(image, source);
+                PumpDispatcher(dispatcher);
+                window.UpdateLayout();
+
+                Ensure(dispatcherFailure is null,
+                    $"后台解码的静态 PNG 进入动画兼容显示路径时触发 UI 异常：{dispatcherFailure}");
+                Ensure(ReferenceEquals(image.Source, source),
+                    "后台解码的静态 PNG 没有替换主页卡片的回退图标。");
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+            finally
+            {
+                window?.Close();
+                if (dispatcherFailureHandler is not null)
+                    Dispatcher.CurrentDispatcher.UnhandledException -= dispatcherFailureHandler;
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "Background decoded recent icon display test"
+        };
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(15)), "后台解码的最近使用图标显示测试超时。");
+        if (failure is not null)
+            throw new InvalidOperationException($"后台解码的最近使用图标无法显示：{failure.Message}", failure);
     }
 
     [Test]
@@ -192,6 +281,24 @@ public static class WebImageSourceLoaderTests
         using var output = new MemoryStream();
         encoder.Save(output);
         return output.ToArray();
+    }
+
+    private static byte[] CreatePng()
+    {
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(CreateSolidFrame(0x98, 0x98, 0xE7));
+        using var output = new MemoryStream();
+        encoder.Save(output);
+        return output.ToArray();
+    }
+
+    private static void PumpDispatcher(Dispatcher dispatcher)
+    {
+        var frame = new DispatcherFrame();
+        _ = dispatcher.BeginInvoke(
+            DispatcherPriority.ApplicationIdle,
+            new Action(() => frame.Continue = false));
+        Dispatcher.PushFrame(frame);
     }
 
     private static BitmapFrame CreateSolidFrame(byte red, byte green, byte blue)

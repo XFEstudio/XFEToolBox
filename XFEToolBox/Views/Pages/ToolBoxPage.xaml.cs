@@ -384,7 +384,13 @@ public partial class ToolBoxPage : Page
             cachePath = GetCachePath(card.Package);
             if (!await IsCachedPackageValidAsync(cachePath, package.Sha256))
             {
-                card.CacheState = "正在获取…";
+                card.IsDownloading = true;
+                card.IsDownloadIndeterminate = package.PackageSize <= 0;
+                card.DownloadProgress = 0;
+                card.DownloadProgressText = package.PackageSize > 0
+                    ? $"0 B / {FormatDataSize(package.PackageSize)}"
+                    : "正在连接下载服务器…";
+                card.CacheState = "下载 0%";
                 StatusText.Text = $"正在获取 {card.Name} {card.LatestVersion}…";
                 var cacheDirectory = Path.GetDirectoryName(cachePath)!;
                 Directory.CreateDirectory(cacheDirectory);
@@ -393,18 +399,35 @@ public partial class ToolBoxPage : Page
                 using var client = new HttpClient
                 {
                     BaseAddress = new Uri(ClientSession.ApiAddress + "/"),
-                    Timeout = TimeSpan.FromMinutes(2)
+                    Timeout = TimeSpan.FromMinutes(10)
                 };
                 var catalogClient = new ToolCatalogClient(client);
+                var downloadProgress = new Progress<ToolPackageDownloadProgress>(item =>
+                {
+                    card.IsDownloadIndeterminate = item.TotalBytes is null or <= 0;
+                    card.DownloadProgress = item.Percentage ?? 0;
+                    card.DownloadProgressText = item.TotalBytes is > 0
+                        ? $"{FormatDataSize(item.BytesReceived)} / {FormatDataSize(item.TotalBytes.Value)}"
+                        : $"已下载 {FormatDataSize(item.BytesReceived)}";
+                    card.CacheState = item.Percentage is { } percentage
+                        ? $"下载 {percentage:0}%"
+                        : "正在下载…";
+                    StatusText.Text = $"正在下载 {card.Name} · {card.DownloadProgressText}";
+                });
                 await using (var output = new FileStream(
                                  temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920,
                                  FileOptions.Asynchronous | FileOptions.SequentialScan))
                 {
-                    await catalogClient.DownloadPackageAsync(package, output);
+                    await catalogClient.DownloadPackageAsync(package, output, downloadProgress);
                     await output.FlushAsync();
                 }
+                card.CacheState = "正在校验…";
+                card.DownloadProgress = 100;
+                card.IsDownloadIndeterminate = false;
+                card.DownloadProgressText = "下载完成，校验通过";
                 File.Move(temporaryPath, cachePath, overwrite: true);
                 temporaryPath = null;
+                card.IsDownloading = false;
             }
 
             card.CacheState = "正在打开…";
@@ -431,6 +454,7 @@ public partial class ToolBoxPage : Page
         }
         finally
         {
+            card.IsDownloading = false;
             card.IsEnabled = true;
             if (temporaryPath is not null && File.Exists(temporaryPath))
                 File.Delete(temporaryPath);

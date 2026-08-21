@@ -8,6 +8,10 @@ public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource ic
 {
     private bool _isEnabled = true;
     private string _cacheState = isCached ? "点击打开" : "获取并打开";
+    private bool _isDownloading;
+    private bool _isDownloadIndeterminate;
+    private double _downloadProgress;
+    private string _downloadProgressText = string.Empty;
 
     public ToolPackageSummary Package { get; } = package;
     public string Id => Package.Id;
@@ -28,5 +32,29 @@ public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource ic
     {
         get => _cacheState;
         set => SetProperty(ref _cacheState, value);
+    }
+
+    public bool IsDownloading
+    {
+        get => _isDownloading;
+        set => SetProperty(ref _isDownloading, value);
+    }
+
+    public bool IsDownloadIndeterminate
+    {
+        get => _isDownloadIndeterminate;
+        set => SetProperty(ref _isDownloadIndeterminate, value);
+    }
+
+    public double DownloadProgress
+    {
+        get => _downloadProgress;
+        set => SetProperty(ref _downloadProgress, Math.Clamp(value, 0, 100));
+    }
+
+    public string DownloadProgressText
+    {
+        get => _downloadProgressText;
+        set => SetProperty(ref _downloadProgressText, value);
     }
 }

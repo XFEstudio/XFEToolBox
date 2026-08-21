@@ -189,7 +189,21 @@ public static class WebImageSourceLoader
                 ?? throw new InvalidDataException("图标中没有可显示的位图帧。");
             if (frame.CanFreeze)
                 frame.Freeze();
-            return frame;
+
+            // WpfAnimatedGif 会为每个 BitmapSource 访问其 Decoder。静态位图在后台线程
+            // 解码后，即使帧已冻结，Decoder 仍属于创建线程，UI 线程访问时会抛出异常。
+            // 仅动态 GIF 需要保留 BitmapFrame；其他格式包装为 DrawingImage 后既能跨线程
+            // 显示，也会让动画行为直接把它赋给 Image.Source，而不再访问 Decoder。
+            if (decoder is GifBitmapDecoder { Frames.Count: > 1 })
+                return frame;
+
+            var drawing = new ImageDrawing(frame, new Rect(0, 0, frame.Width, frame.Height));
+            if (drawing.CanFreeze)
+                drawing.Freeze();
+            var image = new DrawingImage(drawing);
+            if (image.CanFreeze)
+                image.Freeze();
+            return image;
         }
         catch (Exception exception) when (exception is NotSupportedException or FileFormatException or ArgumentException)
         {
