@@ -774,15 +774,17 @@ var result = PopupHelper.ShowDialog(
 | `ShowConfirmDialog(object content, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")` | 确定对话框，可选取消按钮 |
 | `ShowConfirmDialog(string text, Color textColor, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")` | 文本版本，自定义颜色 |
 | `ShowConfirmDialog(string text, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")` | 文本版本，默认黑色 |
+| `ShowConfirmDialog(string text, PopupWindowOptions options, ...)` | 文本版本，并使用完整窗口配置 |
 | `ShowYesOrNoDialog(object content, bool showCancelButton = false, string yesText = "是", string noText = "否")` | 是/否对话框，可选取消按钮 |
 | `ShowYesOrNoDialog(string text, Color textColor, ...)` | 文本与颜色版本 |
 | `ShowYesOrNoDialog(string text, bool showCancelButton = false, ...)` | 默认文本版本 |
+| `ShowYesOrNoDialog(string text, PopupWindowOptions options, ...)` | 文本版本，并使用完整窗口配置 |
 | `ShowDialog(object content, double width = 320, double height = 230)` | 使用默认外壳显示任意内容 |
 | `ShowDialog(object content, PopupWindowOptions options)` | 完整配置版本 |
 
 返回值均为 `MessageBoxResult?`。确认、是、否、取消分别使用 `OK`、`Yes`、`No`、`Cancel`；标题栏关闭或 `Esc` 返回 `None`，窗口在结果赋值前被外部关闭时也可能为 `null`。
 
-> 当前源码中的 `string` 便捷重载仍会查找旧资源键 `ConsoleScrollBar`，而工具主题没有提供该键。在该兼容问题修复前，工具应使用 `object content` 重载并自行传入采用主题画刷的 `TextBlock` / `ScrollViewer`，上方示例即为安全写法。
+文本便捷重载会优先复用工具箱滚动条样式；精简工具宿主未提供相应资源键时会自动回退到隐式或系统样式，不会因缺少资源而中断工具运行。
 
 ### `PopupWindowOptions`
 

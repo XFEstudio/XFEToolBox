@@ -16,7 +16,7 @@ public class ProgressRing : RangeBase
 
     public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
         nameof(IsActive), typeof(bool), typeof(ProgressRing),
-        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender, OnAnimationStateChanged));
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender, OnAnimationStateChanged));
 
     public static readonly DependencyProperty IsIndeterminateProperty = DependencyProperty.Register(
         nameof(IsIndeterminate), typeof(bool), typeof(ProgressRing),
@@ -26,6 +26,13 @@ public class ProgressRing : RangeBase
         nameof(RingThickness), typeof(double), typeof(ProgressRing),
         new FrameworkPropertyMetadata(3d, FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
             null, CoerceRingThickness));
+
+    static ProgressRing()
+    {
+        ValueProperty.OverrideMetadata(
+            typeof(ProgressRing),
+            new FrameworkPropertyMetadata(0d, FrameworkPropertyMetadataOptions.AffectsRender));
+    }
 
     public ProgressRing()
     {
@@ -69,10 +76,7 @@ public class ProgressRing : RangeBase
 
         drawingContext.DrawEllipse(null, trackPen, center, radius, radius);
 
-        if (!IsActive)
-            drawingContext.PushOpacity(0.34);
-
-        if (IsIndeterminate)
+        if (IsActive && IsIndeterminate)
         {
             DrawArc(drawingContext, progressPen, center, radius, -90 + (double)GetValue(RotationAngleProperty), 96);
         }
@@ -86,8 +90,6 @@ public class ProgressRing : RangeBase
                 DrawArc(drawingContext, progressPen, center, radius, -90, progress * 359.9);
         }
 
-        if (!IsActive)
-            drawingContext.Pop();
     }
 
     protected override void OnMinimumChanged(double oldMinimum, double newMinimum)
