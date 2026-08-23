@@ -34,6 +34,10 @@ namespace XFEToolBox.Client.Views.Windows;
 
 public partial class ToolCodeEditorWindow : Window
 {
+    private const int EAccessDenied = unchecked((int)0x80070005);
+    private static readonly object WebViewEnvironmentSync = new();
+    private static Task<CoreWebView2Environment>? _sharedWebViewEnvironmentTask;
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
@@ -167,7 +171,8 @@ public partial class ToolCodeEditorWindow : Window
             await ReloadFileListAsync();
 
             SetHostStatus("正在启动 Monaco Editor…");
-            await EditorWebView.EnsureCoreWebView2Async();
+            var webViewEnvironment = await GetSharedWebViewEnvironmentAsync();
+            await EditorWebView.EnsureCoreWebView2Async(webViewEnvironment);
             var editorAssets = Path.Combine(AppContext.BaseDirectory, "Resources", "Editor");
             if (!File.Exists(Path.Combine(editorAssets, "editor.html")))
                 throw new FileNotFoundException("找不到本地 Monaco 编辑器资源。", editorAssets);
@@ -190,10 +195,57 @@ public partial class ToolCodeEditorWindow : Window
         }
         catch (Exception exception)
         {
-            EditorLoadingDetail.Text = $"编辑器启动失败：{exception.Message}\n请确认已安装 Microsoft Edge WebView2 Runtime。";
+            EditorLoadingDetail.Text = FormatWebViewInitializationError(exception);
             SetHostStatus("启动失败");
         }
     }
+
+    private static Task<CoreWebView2Environment> GetSharedWebViewEnvironmentAsync()
+    {
+        lock (WebViewEnvironmentSync)
+        {
+            if (_sharedWebViewEnvironmentTask is null
+                || _sharedWebViewEnvironmentTask.IsCanceled
+                || _sharedWebViewEnvironmentTask.IsFaulted)
+                _sharedWebViewEnvironmentTask = CreateSharedWebViewEnvironmentAsync();
+            return _sharedWebViewEnvironmentTask;
+        }
+    }
+
+    private static async Task<CoreWebView2Environment> CreateSharedWebViewEnvironmentAsync()
+    {
+        var userDataFolder = GetWebViewUserDataFolder();
+        Directory.CreateDirectory(userDataFolder);
+
+        var writeProbePath = Path.Combine(userDataFolder, $".write-probe-{Guid.NewGuid():N}.tmp");
+        using (new FileStream(
+                   writeProbePath,
+                   FileMode.CreateNew,
+                   FileAccess.Write,
+                   FileShare.None,
+                   bufferSize: 1,
+                   FileOptions.DeleteOnClose))
+        {
+        }
+
+        return await CoreWebView2Environment.CreateAsync(
+            browserExecutableFolder: null,
+            userDataFolder: userDataFolder);
+    }
+
+    private static string FormatWebViewInitializationError(Exception exception)
+    {
+        if (exception is WebView2RuntimeNotFoundException)
+            return "编辑器启动失败：未检测到 Microsoft Edge WebView2 Runtime。\n请安装或修复 WebView2 Runtime 后重试。";
+
+        if (exception is UnauthorizedAccessException || exception.HResult == EAccessDenied)
+            return $"编辑器启动失败：WebView2 缓存目录拒绝访问。\n目录：{GetWebViewUserDataFolder()}\n请确认当前用户对该目录具有读写权限。";
+
+        return $"编辑器启动失败：{exception.Message}\nWebView2 缓存目录：{GetWebViewUserDataFolder()}";
+    }
+
+    private static string GetWebViewUserDataFolder() =>
+        Path.Combine(AppPath.AppLocalData, "WebView2", "CodeEditor");
 
     private async void CoreWebView2_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
@@ -863,7 +915,8 @@ public partial class ToolCodeEditorWindow : Window
     {
         if (!_markdownPreviewInitialized)
         {
-            await MarkdownPreviewWebView.EnsureCoreWebView2Async();
+            var webViewEnvironment = await GetSharedWebViewEnvironmentAsync();
+            await MarkdownPreviewWebView.EnsureCoreWebView2Async(webViewEnvironment);
             MarkdownPreviewWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             MarkdownPreviewWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
             MarkdownPreviewWebView.CoreWebView2.NewWindowRequested += (_, args) =>
