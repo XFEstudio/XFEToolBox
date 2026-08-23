@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -16,6 +17,7 @@ internal static class ToolProjectRunService
     private const int MaximumPackageEntryCount = 512;
     private const long MaximumExtractedPackageBytes = 128L * 1024 * 1024;
     private static readonly TimeSpan RuntimeStartupObservationWindow = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan RuntimeRelaunchDetectionWindow = TimeSpan.FromSeconds(1.5);
     private static readonly JsonSerializerOptions ManifestJsonOptions = new(JsonSerializerDefaults.Web);
 
     public static async Task<ToolRunResult> BuildAsync(
@@ -29,6 +31,7 @@ internal static class ToolProjectRunService
             $"{manifest.Name} · 生成验证",
             temporaryWorkspaceRoot: null,
             launchAfterBuild: false,
+            runAsAdministrator: false,
             cancellationToken);
     }
 
@@ -43,6 +46,7 @@ internal static class ToolProjectRunService
             $"{manifest.Name} · 运行预览",
             temporaryWorkspaceRoot: null,
             launchAfterBuild: true,
+            runAsAdministrator: false,
             cancellationToken);
     }
 
@@ -51,6 +55,7 @@ internal static class ToolProjectRunService
         string expectedToolId,
         string expectedVersion,
         string expectedSha256,
+        bool runAsAdministrator = false,
         CancellationToken cancellationToken = default)
     {
         var packageWorkspaceRoot = Path.Combine(
@@ -75,6 +80,7 @@ internal static class ToolProjectRunService
                 manifest.Name,
                 packageWorkspaceRoot,
                 launchAfterBuild: true,
+                runAsAdministrator,
                 cancellationToken);
         }
         catch (Exception exception)
@@ -90,6 +96,7 @@ internal static class ToolProjectRunService
         string windowTitle,
         string? temporaryWorkspaceRoot,
         bool launchAfterBuild,
+        bool runAsAdministrator,
         CancellationToken cancellationToken)
     {
         var runtimeRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox", "CodeStudioRuns", Guid.NewGuid().ToString("N"));
@@ -155,19 +162,23 @@ internal static class ToolProjectRunService
                 return new ToolRunResult(true, "工具工程已成功生成。", null);
             }
 
-            var runInfo = new ProcessStartInfo("dotnet")
-            {
-                WorkingDirectory = workspaceRoot,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            runInfo.ArgumentList.Add(runtimeAssembly);
+            var runtimeExecutable = Path.Combine(outputRoot, assemblyName + ".exe");
+            if (!File.Exists(runtimeExecutable))
+                throw new FileNotFoundException("编译成功，但没有找到工具运行程序。", runtimeExecutable);
+
+            var runInfo = ToolRuntimeProcessStartInfoFactory.Create(
+                runtimeExecutable,
+                workspaceRoot,
+                runAsAdministrator);
             var runtimeProcess = Process.Start(runInfo)
                                  ?? throw new InvalidOperationException("工具运行进程启动失败。");
-            var runtimeStandardOutputTask = runtimeProcess.StandardOutput.ReadToEndAsync();
-            var runtimeStandardErrorTask = runtimeProcess.StandardError.ReadToEndAsync();
+            var runtimeStandardOutputTask = runInfo.RedirectStandardOutput
+                ? runtimeProcess.StandardOutput.ReadToEndAsync()
+                : Task.FromResult(string.Empty);
+            var runtimeStandardErrorTask = runInfo.RedirectStandardError
+                ? runtimeProcess.StandardError.ReadToEndAsync()
+                : Task.FromResult(string.Empty);
+            var runtimeProcessName = Path.GetFileNameWithoutExtension(runtimeExecutable);
             var exitTask = runtimeProcess.WaitForExitAsync(cancellationToken);
             var startupObservationTask = Task.Delay(RuntimeStartupObservationWindow, cancellationToken);
             if (await Task.WhenAny(exitTask, startupObservationTask) == exitTask)
@@ -175,7 +186,20 @@ internal static class ToolProjectRunService
                 await exitTask;
                 var runtimeOutput = (await runtimeStandardOutputTask) + Environment.NewLine + (await runtimeStandardErrorTask);
                 var exitCode = runtimeProcess.ExitCode;
+                var replacementProcess = await FindReplacementProcessAsync(runtimeProcessName, runtimeProcess.Id);
                 runtimeProcess.Dispose();
+                if (replacementProcess is not null)
+                {
+                    _ = CleanupAfterExitAsync(
+                        replacementProcess,
+                        runtimeRoot,
+                        temporaryWorkspaceRoot,
+                        Task.FromResult(string.Empty),
+                        Task.FromResult(string.Empty),
+                        runtimeProcessName);
+                    return new ToolRunResult(true, "工具已切换到新的权限进程。", replacementProcess.Id);
+                }
+
                 TryDeleteDirectory(runtimeRoot);
                 if (temporaryWorkspaceRoot is not null)
                     TryDeleteDirectory(temporaryWorkspaceRoot);
@@ -188,8 +212,16 @@ internal static class ToolProjectRunService
                 runtimeRoot,
                 temporaryWorkspaceRoot,
                 runtimeStandardOutputTask,
-                runtimeStandardErrorTask);
+                runtimeStandardErrorTask,
+                runtimeProcessName);
             return new ToolRunResult(true, "工具已完成编译并在独立窗口中运行。", runtimeProcess.Id);
+        }
+        catch (Win32Exception exception) when (exception.NativeErrorCode == 1223)
+        {
+            TryDeleteDirectory(runtimeRoot);
+            if (temporaryWorkspaceRoot is not null)
+                TryDeleteDirectory(temporaryWorkspaceRoot);
+            return new ToolRunResult(false, "已取消管理员权限请求，工具没有启动。", null);
         }
         catch (Exception exception)
         {
@@ -216,7 +248,9 @@ internal static class ToolProjectRunService
                    <PropertyGroup>
                      <OutputType>WinExe</OutputType>
                      <TargetFramework>net10.0-windows</TargetFramework>
-                     <UseWPF>true</UseWPF>
+                      <UseWPF>true</UseWPF>
+                      <UseAppHost>true</UseAppHost>
+                      <SelfContained>false</SelfContained>
                      <Nullable>enable</Nullable>
                      <ImplicitUsings>enable</ImplicitUsings>
                      <AssemblyName>{{assemblyName}}</AssemblyName>
@@ -636,13 +670,22 @@ internal static class ToolProjectRunService
         string runtimeRoot,
         string? temporaryWorkspaceRoot,
         Task<string> standardOutputTask,
-        Task<string> standardErrorTask)
+        Task<string> standardErrorTask,
+        string runtimeProcessName)
     {
+        var originalProcessId = process.Id;
         try
         {
             await process.WaitForExitAsync();
             await Task.WhenAll(standardOutputTask, standardErrorTask);
             process.Dispose();
+
+            var replacementProcess = await FindReplacementProcessAsync(runtimeProcessName, originalProcessId);
+            if (replacementProcess is not null)
+            {
+                using (replacementProcess)
+                    await replacementProcess.WaitForExitAsync();
+            }
         }
         catch
         {
@@ -654,6 +697,38 @@ internal static class ToolProjectRunService
             if (temporaryWorkspaceRoot is not null)
                 TryDeleteDirectory(temporaryWorkspaceRoot);
         }
+    }
+
+    private static async Task<Process?> FindReplacementProcessAsync(string processName, int excludedProcessId)
+    {
+        var deadline = DateTime.UtcNow + RuntimeRelaunchDetectionWindow;
+        do
+        {
+            foreach (var candidate in Process.GetProcessesByName(processName))
+            {
+                if (candidate.Id == excludedProcessId)
+                {
+                    candidate.Dispose();
+                    continue;
+                }
+
+                try
+                {
+                    if (!candidate.HasExited)
+                        return candidate;
+                }
+                catch
+                {
+                    // 进程可能在枚举后立即退出，继续等待真正的替代进程。
+                }
+
+                candidate.Dispose();
+            }
+
+            await Task.Delay(100);
+        } while (DateTime.UtcNow < deadline);
+
+        return null;
     }
 
     private static async Task VerifyPackageHashAsync(

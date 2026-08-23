@@ -24,6 +24,7 @@
     <Compile Include="..\XFEToolBox.Client.Installer\Utilities\InstallationService.cs" Link="Installer\InstallationService.cs" />
     <Compile Include="..\XFEToolBox.Client.Installer\Utilities\ZipHelper.cs" Link="Installer\ZipHelper.cs" />
     <Compile Include="..\XFEToolBox\Utilities\WebImageSourceLoader.cs" Link="Utilities\WebImageSourceLoader.cs" />
+    <Compile Include="..\XFEToolBox\Utilities\ToolRuntimeProcessStartInfoFactory.cs" Link="Utilities\ToolRuntimeProcessStartInfoFactory.cs" />
     <Compile Include="..\XFEToolBox\Models\RecentUsageEntry.cs" Link="Models\RecentUsageEntry.cs" />
     <Compile Include="..\XFEToolBox\Utilities\RecentUsageIconCache.cs" Link="Utilities\RecentUsageIconCache.cs" />
   </ItemGroup>

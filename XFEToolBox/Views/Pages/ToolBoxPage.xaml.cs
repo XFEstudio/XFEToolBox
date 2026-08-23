@@ -8,11 +8,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.Client.Profiles.CacheProfiles;
+using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
 
@@ -162,7 +164,7 @@ public partial class ToolBoxPage : Page
                 string.Equals(card.Id, tool.Id, StringComparison.OrdinalIgnoreCase)
                 && ToolSummariesEquivalent(card.Package, tool));
             if (existing is not null) return existing;
-            return new ToolCardViewModel(tool, CreateIconSource(tool.IconDataUrl), File.Exists(GetCachePath(tool)));
+            return CreateToolCard(tool);
         }).ToArray();
 
         _tools.Clear();
@@ -332,8 +334,40 @@ public partial class ToolBoxPage : Page
             return false;
         }
 
-        card ??= new ToolCardViewModel(summary, CreateIconSource(summary.IconDataUrl), File.Exists(GetCachePath(summary)));
+        card ??= CreateToolCard(summary);
         return await OpenToolAsync(card);
+    }
+
+    private static ToolCardViewModel CreateToolCard(ToolPackageSummary summary) => new(
+        summary,
+        CreateIconSource(summary.IconDataUrl),
+        ElevationShieldIcon.Source,
+        File.Exists(GetCachePath(summary)),
+        ToolLaunchPreferenceService.GetRunAsAdministrator(summary.Id));
+
+    private void ToolConfigurationMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: ToolCardViewModel card }) return;
+
+        var configurationPage = new ToolConfigurationPopupPage(
+            card.Name,
+            card.RunAsAdministrator,
+            card.UacIconSource);
+        var result = PopupHelper.ShowDialog(configurationPage, new PopupWindowOptions
+        {
+            Title = "工具配置",
+            Subtitle = card.Name,
+            Width = 470,
+            Height = 330
+        });
+        if (result != MessageBoxResult.OK) return;
+
+        ToolLaunchPreferenceService.SetRunAsAdministrator(card.Id, configurationPage.RunAsAdministrator);
+        card.RunAsAdministrator = configurationPage.RunAsAdministrator;
+        StatusText.Text = card.RunAsAdministrator
+            ? $"{card.Name} 已配置为以管理员身份打开。"
+            : $"{card.Name} 已配置为以普通权限打开。";
     }
 
     private void ClearToolDataMenuItem_Click(object sender, RoutedEventArgs e)
@@ -431,17 +465,22 @@ public partial class ToolBoxPage : Page
             }
 
             card.CacheState = "正在打开…";
-            StatusText.Text = $"正在编译并打开 {card.Name}…";
+            StatusText.Text = card.RunAsAdministrator
+                ? $"正在准备 {card.Name}，随后将请求管理员权限…"
+                : $"正在编译并打开 {card.Name}…";
             var runResult = await ToolProjectRunService.BuildPackageAndRunAsync(
                 cachePath,
                 card.Id,
                 package.Version,
-                package.Sha256);
+                package.Sha256,
+                card.RunAsAdministrator);
             if (!runResult.Success)
                 throw new InvalidOperationException(runResult.Message);
 
             card.CacheState = "已打开";
-            StatusText.Text = $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
+            StatusText.Text = card.RunAsAdministrator
+                ? $"{card.Name} {card.LatestVersion} 已以管理员身份打开。"
+                : $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
             RecentUsageIconCache.Remember(RecentUsageKind.Tool, card.Id, card.IconSource);
             RecentUsageService.RecordTool(card.Package);
             return true;

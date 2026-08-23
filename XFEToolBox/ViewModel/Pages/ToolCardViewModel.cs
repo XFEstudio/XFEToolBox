@@ -4,7 +4,12 @@ using XFEToolBox.Core.Tools;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
-public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource iconSource, bool isCached) : ObservableObject
+public sealed class ToolCardViewModel(
+    ToolPackageSummary package,
+    ImageSource iconSource,
+    ImageSource uacIconSource,
+    bool isCached,
+    bool runAsAdministrator) : ObservableObject
 {
     private bool _isEnabled = true;
     private string _cacheState = isCached ? "点击打开" : "获取并打开";
@@ -12,6 +17,7 @@ public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource ic
     private bool _isDownloadIndeterminate;
     private double _downloadProgress;
     private string _downloadProgressText = string.Empty;
+    private bool _runAsAdministrator = runAsAdministrator;
 
     public ToolPackageSummary Package { get; } = package;
     public string Id => Package.Id;
@@ -21,6 +27,13 @@ public sealed class ToolCardViewModel(ToolPackageSummary package, ImageSource ic
     public string Category => Package.Category;
     public string LatestVersion => Package.LatestVersion;
     public ImageSource IconSource { get; } = iconSource;
+    public ImageSource UacIconSource { get; } = uacIconSource;
+
+    public bool RunAsAdministrator
+    {
+        get => _runAsAdministrator;
+        set => SetProperty(ref _runAsAdministrator, value);
+    }
 
     public bool IsEnabled
     {
