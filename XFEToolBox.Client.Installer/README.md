@@ -26,3 +26,12 @@
 - Installer 会将压缩包下载为安装目录下的 `InstallPackage.zip`，解压覆盖完成后删除临时压缩包，并启动 `XFEToolBox.exe`
 - 发布升级包时不要增加二级目录；压缩包根目录应直接包含 `XFEToolBox.exe` 及其依赖文件
 - 在线升级包不要覆盖正在运行的 `Installer.exe`；Installer 自身需要更新时，应在后续安装包发布流程中单独替换
+
+## 推荐发布流程
+
+1. 先以 `-p:EmbedInstallationPackage=false` 发布一个不内嵌 `Source.zip` 的升级用 Installer。
+2. 发布 XFEToolBox 客户端，并把上述 Installer 放入客户端发布目录。
+3. 将客户端发布目录根内容压缩为 `Source.zip`，不要增加二级目录。
+4. 恢复默认配置发布最终 Installer；默认会把新的 `Source.zip` 内嵌到单文件安装器中。
+
+安装时若目标目录中的 `XFEToolBox.exe` 仍在运行，Installer 会先尝试正常关闭，超时后仅终止路径完全匹配的目标进程；不会按进程名结束其他目录中的同名程序。升级包中若包含正在运行的 Installer 本身，该文件会被跳过，其余应用文件继续安装。

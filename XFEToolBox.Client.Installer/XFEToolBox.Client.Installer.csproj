@@ -9,7 +9,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\Icon\Icon.ico</ApplicationIcon>
     <AssemblyName>Installer</AssemblyName>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
+    <EmbedInstallationPackage Condition="'$(EmbedInstallationPackage)' == ''">true</EmbedInstallationPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +34,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Resource\EULA.txt" />
     <EmbeddedResource Include="Resources\Resource\PrivateService.txt" />
-    <EmbeddedResource Include="Resources\Resource\Source.zip" />
+    <EmbeddedResource Include="Resources\Resource\Source.zip"
+                      Condition="'$(EmbedInstallationPackage)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>

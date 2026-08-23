@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 
@@ -8,6 +9,8 @@ namespace XFEToolBox.Client.Installer.Utilities;
 /// </summary>
 public static class InstallationService
 {
+    private const int FileOperationRetryCount = 8;
+
     public static void InstallPackage(Stream packageStream, string installPath, string executableName)
     {
         ArgumentNullException.ThrowIfNull(packageStream);
@@ -32,7 +35,8 @@ public static class InstallationService
             if (!File.Exists(stagedExecutable))
                 throw new InvalidDataException($"安装包根目录中缺少 {executableName}。请确认压缩包没有额外的二级目录。");
 
-            EnsureCurrentInstallerWillNotBeOverwritten(stagingRoot, targetRoot);
+            ExcludeRunningInstallerFromStaging(stagingRoot, targetRoot);
+            StopRunningTargetApplication(Path.Combine(targetRoot, executableName));
             ApplyStagedFiles(stagingRoot, targetRoot);
 
             var installedExecutable = Path.Combine(targetRoot, executableName);
@@ -45,26 +49,97 @@ public static class InstallationService
         }
     }
 
-    private static void EnsureCurrentInstallerWillNotBeOverwritten(string stagingRoot, string targetRoot)
+    public static string GetDetailedErrorMessage(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        var messages = new List<string>();
+        CollectExceptionMessages(exception, messages);
+        return string.Join(Environment.NewLine, messages.Distinct(StringComparer.CurrentCulture));
+    }
+
+    private static void CollectExceptionMessages(Exception exception, ICollection<string> messages)
+    {
+        if (!string.IsNullOrWhiteSpace(exception.Message))
+            messages.Add(exception.Message.Trim());
+        if (exception is AggregateException aggregateException)
+        {
+            foreach (var innerException in aggregateException.InnerExceptions)
+                CollectExceptionMessages(innerException, messages);
+            return;
+        }
+        if (exception.InnerException is not null)
+            CollectExceptionMessages(exception.InnerException, messages);
+    }
+
+    private static void ExcludeRunningInstallerFromStaging(string stagingRoot, string targetRoot)
     {
         var currentProcessPath = Environment.ProcessPath;
         if (string.IsNullOrWhiteSpace(currentProcessPath))
             return;
 
         var currentPath = Path.GetFullPath(currentProcessPath);
-        foreach (var stagedFile in Directory.EnumerateFiles(stagingRoot, "*", SearchOption.AllDirectories))
+        foreach (var stagedFile in Directory.EnumerateFiles(stagingRoot, "*", SearchOption.AllDirectories).ToArray())
         {
             var relativePath = Path.GetRelativePath(stagingRoot, stagedFile);
             var targetPath = Path.GetFullPath(Path.Combine(targetRoot, relativePath));
             if (targetPath.Equals(currentPath, StringComparison.OrdinalIgnoreCase))
-                throw new IOException("升级包包含正在运行的 Installer.exe，无法安全覆盖。请从升级包中移除安装器后重试。");
+            {
+                File.Delete(stagedFile);
+                Debug.WriteLine($"[Installer] 已跳过正在运行的安装器文件：{relativePath}");
+            }
+        }
+    }
+
+    private static void StopRunningTargetApplication(string executablePath)
+    {
+        var expectedPath = Path.GetFullPath(executablePath);
+        var processName = Path.GetFileNameWithoutExtension(expectedPath);
+        foreach (var process in Process.GetProcessesByName(processName))
+        {
+            using (process)
+            {
+                if (process.Id == Environment.ProcessId)
+                    continue;
+
+                string? processPath;
+                try
+                {
+                    processPath = process.MainModule?.FileName;
+                }
+                catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or NotSupportedException)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(processPath)
+                    || !Path.GetFullPath(processPath).Equals(expectedPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                try
+                {
+                    if (process.HasExited)
+                        continue;
+                    if (process.CloseMainWindow() && process.WaitForExit(5000))
+                        continue;
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                    if (!process.WaitForExit(5000))
+                        throw new TimeoutException("进程未在 5 秒内退出。");
+                }
+                catch (Exception exception) when (exception is Win32Exception or InvalidOperationException or NotSupportedException or TimeoutException)
+                {
+                    throw new IOException(
+                        $"无法关闭正在运行的 {Path.GetFileName(expectedPath)} (PID {process.Id})。请手动退出应用后重试。",
+                        exception);
+                }
+            }
         }
     }
 
     private static void ApplyStagedFiles(string stagingRoot, string targetRoot)
     {
         var backupRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox.Installer.Backup", Guid.NewGuid().ToString("N"));
-        var appliedFiles = new List<(string TargetPath, string? BackupPath)>();
+        var appliedFiles = new List<AppliedFile>();
         var transientFiles = new List<string>();
         Directory.CreateDirectory(targetRoot);
         Directory.CreateDirectory(backupRoot);
@@ -83,32 +158,61 @@ public static class InstallationService
                 Directory.CreateDirectory(Path.GetDirectoryName(targetFile)!);
 
                 string? backupFile = null;
+                FileAttributes? originalAttributes = null;
                 if (File.Exists(targetFile))
                 {
+                    originalAttributes = File.GetAttributes(targetFile);
                     backupFile = Path.Combine(backupRoot, relativePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(backupFile)!);
-                    File.Copy(targetFile, backupFile, overwrite: true);
+                    ExecuteFileOperationWithRetry(
+                        () => File.Copy(targetFile, backupFile, overwrite: true),
+                        targetFile,
+                        "备份");
                 }
 
                 var transientFile = targetFile + $".xfe-install-{Guid.NewGuid():N}.tmp";
                 transientFiles.Add(transientFile);
-                File.Copy(sourceFile, transientFile, overwrite: true);
-                File.Move(transientFile, targetFile, overwrite: true);
+                ExecuteFileOperationWithRetry(
+                    () => File.Copy(sourceFile, transientFile, overwrite: true),
+                    targetFile,
+                    "准备");
+                try
+                {
+                    MakeFileReplaceable(targetFile);
+                    ExecuteFileOperationWithRetry(
+                        () => File.Move(transientFile, targetFile, overwrite: true),
+                        targetFile,
+                        "替换");
+                }
+                catch
+                {
+                    if (originalAttributes is { } attributes && File.Exists(targetFile))
+                    {
+                        try { File.SetAttributes(targetFile, attributes); }
+                        catch { /* 主异常会包含具体失败文件，属性恢复失败交由后续重试处理。 */ }
+                    }
+                    throw;
+                }
                 transientFiles.Remove(transientFile);
-                appliedFiles.Add((targetFile, backupFile));
+                appliedFiles.Add(new AppliedFile(targetFile, backupFile, originalAttributes));
             }
         }
         catch (Exception installException)
         {
             Exception? rollbackException = null;
-            foreach (var (targetPath, backupPath) in appliedFiles.AsEnumerable().Reverse())
+            foreach (var appliedFile in appliedFiles.AsEnumerable().Reverse())
             {
                 try
                 {
-                    if (backupPath is not null && File.Exists(backupPath))
-                        File.Copy(backupPath, targetPath, overwrite: true);
-                    else if (File.Exists(targetPath))
-                        File.Delete(targetPath);
+                    MakeFileReplaceable(appliedFile.TargetPath);
+                    if (appliedFile.BackupPath is not null && File.Exists(appliedFile.BackupPath))
+                    {
+                        File.Copy(appliedFile.BackupPath, appliedFile.TargetPath, overwrite: true);
+                        if (appliedFile.OriginalAttributes is { } originalAttributes)
+                            File.SetAttributes(appliedFile.TargetPath, originalAttributes);
+                    }
+                    else if (File.Exists(appliedFile.TargetPath))
+                        File.Delete(appliedFile.TargetPath);
                 }
                 catch (Exception exception)
                 {
@@ -119,7 +223,9 @@ public static class InstallationService
             if (rollbackException is not null)
                 throw new AggregateException("写入安装文件失败，且部分旧文件未能自动恢复。", installException, rollbackException);
 
-            throw new IOException("写入安装文件失败，原有文件已恢复。", installException);
+            throw new IOException(
+                $"写入安装文件失败，原有文件已恢复。{Environment.NewLine}{GetDetailedErrorMessage(installException)}",
+                installException);
         }
         finally
         {
@@ -139,6 +245,39 @@ public static class InstallationService
         }
     }
 
+    private static void ExecuteFileOperationWithRetry(Action operation, string targetPath, string operationName)
+    {
+        Exception? lastException = null;
+        for (var attempt = 1; attempt <= FileOperationRetryCount; attempt++)
+        {
+            try
+            {
+                operation();
+                return;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                lastException = exception;
+                if (attempt < FileOperationRetryCount)
+                    Thread.Sleep(100 * attempt);
+            }
+        }
+
+        throw new IOException(
+            $"无法{operationName}文件“{targetPath}”。请确认文件未被其他程序占用且当前用户具有写入权限。",
+            lastException);
+    }
+
+    private static void MakeFileReplaceable(string path)
+    {
+        if (!File.Exists(path))
+            return;
+        var attributes = File.GetAttributes(path);
+        var replaceableAttributes = attributes & ~(FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System);
+        if (replaceableAttributes != attributes)
+            File.SetAttributes(path, replaceableAttributes);
+    }
+
     private static void TryDeleteDirectory(string path)
     {
         try
@@ -151,4 +290,9 @@ public static class InstallationService
             Debug.WriteLine($"[Installer] 无法清理临时目录 {path}：{exception}");
         }
     }
+
+    private sealed record AppliedFile(
+        string TargetPath,
+        string? BackupPath,
+        FileAttributes? OriginalAttributes);
 }

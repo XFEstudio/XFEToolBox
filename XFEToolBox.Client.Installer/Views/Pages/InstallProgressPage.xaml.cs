@@ -54,7 +54,7 @@ public partial class InstallProgressPage : Page
             progress.IsError = true;
             progress.SetBusy();
             progress.SetError();
-            errorMessageText.Text = $"{exception.Message}\n\n请检查安装目录权限和安装包完整性后重试。";
+            errorMessageText.Text = $"{InstallationService.GetDetailedErrorMessage(exception)}\n\n请根据上面的具体文件和原因处理后重试。";
             installGrid.Visibility = Visibility.Collapsed;
             successGrid.Visibility = Visibility.Collapsed;
             errorGrid.Visibility = Visibility.Visible;
