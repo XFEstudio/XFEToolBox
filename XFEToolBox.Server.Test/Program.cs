@@ -41,6 +41,7 @@ static void ValidPackagePasses()
     using var package = CreatePackage();
     var result = CreateValidator().Inspect(package);
     Assert(result.Manifest.Id == "base64-generator", "工具 ID 不正确。");
+    Assert(result.Manifest.RequiresAdministrator, "管理员启动要求没有从 manifest 保留下来。");
     Assert(result.Files.Contains("src/Views/Base64Tool.xaml"), "未发现入口 XAML。");
     Assert(result.Files.Contains("src/ViewModels/Base64ToolViewModel.cs"), "未发现 ViewModel。");
     Assert(result.IconDataUrl?.StartsWith("data:image/png;base64,", StringComparison.Ordinal) == true, "工具图标未被读取。");
@@ -206,6 +207,7 @@ static MemoryStream CreatePackage(Action<ZipArchive>? customize = null)
             Category = "编码",
             Tags = ["base64"],
             MinimumHostVersion = "0.2.0",
+            RequiresAdministrator = true,
             Entry = new ToolEntryManifest
             {
                 ViewXaml = "src/Views/Base64Tool.xaml",

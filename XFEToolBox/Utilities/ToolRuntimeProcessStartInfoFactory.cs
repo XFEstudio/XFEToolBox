@@ -5,6 +5,9 @@ namespace XFEToolBox.Client.Utilities;
 
 internal static class ToolRuntimeProcessStartInfoFactory
 {
+    public static bool ResolveRunAsAdministrator(bool userPreference, bool manifestRequirement) =>
+        userPreference || manifestRequirement;
+
     public static ProcessStartInfo Create(
         string runtimeExecutable,
         string workingDirectory,

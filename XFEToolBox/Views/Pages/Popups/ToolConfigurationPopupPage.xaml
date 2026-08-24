@@ -30,7 +30,10 @@
                 <StackPanel Grid.Column="1" Margin="10,0,0,0">
                     <CheckBox x:Name="RunAsAdministratorCheckBox" Content="以管理员身份打开" FontWeight="SemiBold"/>
                     <TextBlock Margin="0,7,0,0" Foreground="#77778C" FontSize="9.5" TextWrapping="Wrap"
-                               Text="启用后，工具箱会在工具首次启动时显示 UAC 确认，并直接创建管理员工具进程。编译和下载仍由普通权限完成。"/>
+                               Text="启用后，工具箱会在启动时向 Windows 请求 UAC 提权，并验证工具获得了管理员令牌。若工具箱已提权或系统策略自动批准，Windows 不会重复显示确认界面。"/>
+                    <TextBlock x:Name="ManifestRequirementText" Margin="0,7,0,0" Foreground="#B06A42" FontSize="9.5"
+                               FontWeight="SemiBold" TextWrapping="Wrap" Visibility="Collapsed"
+                               Text="该工具的 manifest.json 强制要求管理员权限，此选项不能关闭。"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -6,6 +6,33 @@ namespace XFEToolBox.Client.Wpf.Test;
 public static class ToolRuntimeProcessStartInfoFactoryTests
 {
     [Test]
+    public static void UserAndManifestAdministratorModesAreBothEffective()
+    {
+        Ensure(!ToolRuntimeProcessStartInfoFactory.ResolveRunAsAdministrator(false, false),
+            "未配置管理员模式时不应提权。 ");
+        Ensure(ToolRuntimeProcessStartInfoFactory.ResolveRunAsAdministrator(true, false),
+            "用户勾选管理员模式后没有进入提权启动。 ");
+        Ensure(ToolRuntimeProcessStartInfoFactory.ResolveRunAsAdministrator(false, true),
+            "manifest 强制管理员模式后没有进入提权启动。 ");
+        Ensure(ToolRuntimeProcessStartInfoFactory.ResolveRunAsAdministrator(true, true),
+            "用户配置和 manifest 同时启用时丢失管理员模式。 ");
+    }
+
+    [Test]
+    public static void AdministratorPreferenceSurvivesSerializationAndIsCaseInsensitive()
+    {
+        var json = ToolLaunchPreferenceStore.SetRunAsAdministrator(null, "xfestudio.sample-tool", true);
+        Ensure(ToolLaunchPreferenceStore.GetRunAsAdministrator(json, "XFESTUDIO.SAMPLE-TOOL"),
+            "管理员启动配置写入后没有读回。 ");
+
+        json = ToolLaunchPreferenceStore.SetRunAsAdministrator(json, "xfestudio.sample-tool", false);
+        Ensure(!ToolLaunchPreferenceStore.GetRunAsAdministrator(json, "xfestudio.sample-tool"),
+            "关闭管理员模式后配置仍然生效。 ");
+        Ensure(!ToolLaunchPreferenceStore.GetRunAsAdministrator("{invalid", "xfestudio.sample-tool"),
+            "损坏的旧配置不应导致工具被意外提权。 ");
+    }
+
+    [Test]
     public static void AdministratorLaunchUsesShellRunAsAndTheCompiledAppHost()
     {
         var executable = Path.GetFullPath(Path.Combine("runtime", "Tool.exe"));

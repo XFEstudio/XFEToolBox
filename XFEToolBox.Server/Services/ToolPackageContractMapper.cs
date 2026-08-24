@@ -15,6 +15,7 @@ internal static class ToolPackageContractMapper
         Category = package.Manifest.Category,
         LatestVersion = package.Manifest.Version,
         Tags = package.Manifest.Tags,
+        RequiresAdministrator = package.Manifest.RequiresAdministrator,
         UpdatedAtUtc = package.UploadedAtUtc
     };
 

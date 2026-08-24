@@ -108,6 +108,10 @@ internal static class ToolProjectRunService
             var assemblyName = $"XFEToolRuntime_{Guid.NewGuid():N}";
             var hostAssemblyName = typeof(ToolProjectRunService).Assembly.GetName().Name
                                    ?? throw new InvalidOperationException("无法确定宿主程序集名称。");
+            var requiresElevatedProcess = launchAfterBuild &&
+                                          ToolRuntimeProcessStartInfoFactory.ResolveRunAsAdministrator(
+                                              runAsAdministrator,
+                                              manifest.RequiresAdministrator);
             var preparedWorkspaceRoot = Path.Combine(runtimeRoot, "source");
             await PrepareWorkspaceAsync(
                 workspaceRoot,
@@ -118,7 +122,11 @@ internal static class ToolProjectRunService
             var entryPath = Path.Combine(runtimeRoot, "RuntimeEntry.g.cs");
             var toolIconPath = ResolveToolIconPath(preparedWorkspaceRoot, manifest.Icon);
             await File.WriteAllTextAsync(projectPath, CreateProjectFile(preparedWorkspaceRoot, assemblyName, hostAssemblyName), new UTF8Encoding(false), cancellationToken);
-            await File.WriteAllTextAsync(entryPath, CreateRuntimeEntry(manifest, hostAssemblyName, windowTitle, toolIconPath), new UTF8Encoding(false), cancellationToken);
+            await File.WriteAllTextAsync(
+                entryPath,
+                CreateRuntimeEntry(manifest, hostAssemblyName, windowTitle, toolIconPath, requiresElevatedProcess),
+                new UTF8Encoding(false),
+                cancellationToken);
 
             var buildInfo = new ProcessStartInfo("dotnet")
             {
@@ -169,7 +177,7 @@ internal static class ToolProjectRunService
             var runInfo = ToolRuntimeProcessStartInfoFactory.Create(
                 runtimeExecutable,
                 workspaceRoot,
-                runAsAdministrator);
+                requiresElevatedProcess);
             var runtimeProcess = Process.Start(runInfo)
                                  ?? throw new InvalidOperationException("工具运行进程启动失败。");
             var runtimeStandardOutputTask = runInfo.RedirectStandardOutput
@@ -283,7 +291,8 @@ internal static class ToolProjectRunService
         ToolPackageManifest manifest,
         string hostAssemblyName,
         string windowTitle,
-        string? toolIconPath)
+        string? toolIconPath,
+        bool requiresElevatedProcess)
     {
         var window = NormalizeWindowSettings(manifest.Window);
         var toolId = JsonSerializer.Serialize(manifest.Id.Trim());
@@ -309,9 +318,11 @@ internal static class ToolProjectRunService
         var allowMaximize = JsonSerializer.Serialize(window.AllowMaximize);
         var showMinimizeButton = JsonSerializer.Serialize(window.ShowMinimizeButton);
         var showCloseButton = JsonSerializer.Serialize(window.ShowCloseButton);
+        var requiresAdministrator = JsonSerializer.Serialize(requiresElevatedProcess);
         return $$"""
                  using System.IO;
                  using System.Reflection;
+                 using System.Security.Principal;
                  using System.Windows;
                  using System.Windows.Controls;
                  using System.Windows.Media;
@@ -340,6 +351,8 @@ internal static class ToolProjectRunService
                          });
                          try
                          {
+                             if ({{requiresAdministrator}} && !IsCurrentProcessAdministrator())
+                                 throw new UnauthorizedAccessException("工具要求管理员权限，但运行进程没有获得管理员令牌。");
                              ToolDataStore.Initialize({{toolId}});
                              var viewType = Assembly.GetExecutingAssembly().GetType({{viewClass}}, throwOnError: true)!;
                              var instance = Activator.CreateInstance(viewType)
@@ -367,6 +380,12 @@ internal static class ToolProjectRunService
                          {
                              MessageBox.Show(exception.ToString(), "工具运行失败", MessageBoxButton.OK, MessageBoxImage.Error);
                          }
+                     }
+
+                     private static bool IsCurrentProcessAdministrator()
+                     {
+                         using var identity = WindowsIdentity.GetCurrent();
+                         return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
                      }
 
                      private static void ConfigureWindow(Application application, Window window, object content)

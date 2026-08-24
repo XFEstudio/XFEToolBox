@@ -698,7 +698,22 @@
                                             <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
                                                 <StackPanel>
                                                     <TextBlock Text="权限与格式" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="勾选工具运行所需的宿主能力；包格式版本由当前编辑器维护。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <TextBlock Text="配置启动权限并勾选工具运行所需的宿主能力；包格式版本由当前编辑器维护。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Border Margin="0,0,0,14" Padding="12" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                            <Border Width="28" Height="28" Background="#ECECFA" CornerRadius="9" VerticalAlignment="Top">
+                                                                <TextBlock Text="◆" Foreground="#7777C9" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                                <CheckBox x:Name="ManifestRequiresAdministratorCheckBox" Content="强制以管理员身份启动"
+                                                                          Style="{StaticResource ManifestPermissionCheckBox}"
+                                                                          Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                                <TextBlock Text="启用后会写入 requiresAdministrator；用户将看到 UAC 图标，且不能关闭管理员模式。"
+                                                                           Foreground="#8B8B9D" FontSize="9" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
                                                     <Grid>
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
                                                         <StackPanel>

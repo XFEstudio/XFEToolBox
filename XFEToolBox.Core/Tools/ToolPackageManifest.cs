@@ -38,6 +38,12 @@ public sealed class ToolPackageManifest
 
     public string? ReleaseNotes { get; init; }
 
+    /// <summary>
+    /// Requires the host to display elevation state and launch this tool through Windows UAC.
+    /// Users cannot override this requirement with a per-tool preference.
+    /// </summary>
+    public bool RequiresAdministrator { get; init; }
+
     public required ToolEntryManifest Entry { get; init; }
 
     /// <summary>

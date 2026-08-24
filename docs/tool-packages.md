@@ -117,6 +117,7 @@ base64-generator.xfetool
   "tags": ["base64", "编码"],
   "minimumHostVersion": "0.2.0",
   "releaseNotes": "首个版本。",
+  "requiresAdministrator": false,
   "entry": {
     "viewXaml": "Code/Views/MainPage.xaml",
     "viewClass": "XFEToolBox.Tools.Base64.MainPage",
@@ -154,11 +155,14 @@ base64-generator.xfetool
 | `tags` | `string[]` | `[]` | 最多 20 项，每项 1–40 字符 |
 | `minimumHostVersion` | `string?` | `null` | 非空时必须是 SemVer；当前服务端会校验格式，但客户端尚未据此阻止运行 |
 | `releaseNotes` | `string?` | `null` | 当前版本说明 |
+| `requiresAdministrator` | `bool` | `false` | 为 `true` 时工具卡片显示 UAC 盾牌，宿主强制通过 Windows UAC 以管理员身份启动；用户不能在工具配置中关闭 |
 | `entry` | `ToolEntryManifest` | 必填 | 入口视图配置，见下表 |
 | `window` | `ToolWindowManifest` | 默认对象 | 独立宿主窗口配置，见下表 |
 | `requestedPermissions` | `string[]` | `[]` | 最多 32 项，每项 1–64 字符；当前为声明信息，不代表已获得或被限制的权限 |
 
 Code Studio 可视化设计器提供的通用权限名称为：`FileSystem`、`Network`、`Clipboard`、`Process`、`Shell`、`Registry`、`Notifications`、`Environment`、`InputSimulation`、`Camera`、`Microphone`、`Location`。名称比较不区分大小写，也允许保留自定义权限名。
+
+`requiresAdministrator` 也可以在代码工坊的 `manifest.json · 可视化配置` →“权限与格式”中勾选。该字段属于工具作者声明的强制策略，与用户在工具卡片“工具配置”中的可选管理员模式不同；任一项启用都会以管理员身份启动，但清单强制策略不能被用户覆盖。
 
 ### `entry`
 

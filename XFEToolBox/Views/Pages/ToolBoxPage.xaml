@@ -228,7 +228,7 @@
                         <Border x:Name="UacBadge" Width="22" Height="22" Padding="2" Background="White"
                                 BorderBrush="#D6D6E8" BorderThickness="1" CornerRadius="8"
                                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed"
-                                ToolTip="此工具将以管理员身份打开">
+                                ToolTip="{Binding AdministratorLaunchDescription}">
                             <Image Source="{Binding UacIconSource}" Stretch="Uniform"/>
                         </Border>
                     </Grid>

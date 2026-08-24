@@ -18,6 +18,8 @@ public sealed class ToolPackageSummary
 
     public required string[] Tags { get; init; }
 
+    public bool RequiresAdministrator { get; init; }
+
     public DateTimeOffset UpdatedAtUtc { get; init; }
 }
 

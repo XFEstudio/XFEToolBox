@@ -352,7 +352,8 @@ public partial class ToolBoxPage : Page
 
         var configurationPage = new ToolConfigurationPopupPage(
             card.Name,
-            card.RunAsAdministrator,
+            card.UserRunAsAdministrator,
+            card.RequiresAdministrator,
             card.UacIconSource);
         var result = PopupHelper.ShowDialog(configurationPage, new PopupWindowOptions
         {
@@ -363,9 +364,11 @@ public partial class ToolBoxPage : Page
         });
         if (result != MessageBoxResult.OK) return;
 
-        ToolLaunchPreferenceService.SetRunAsAdministrator(card.Id, configurationPage.RunAsAdministrator);
-        card.RunAsAdministrator = configurationPage.RunAsAdministrator;
-        StatusText.Text = card.RunAsAdministrator
+        ToolLaunchPreferenceService.SetRunAsAdministrator(card.Id, configurationPage.UserRunAsAdministrator);
+        card.UserRunAsAdministrator = configurationPage.UserRunAsAdministrator;
+        StatusText.Text = card.RequiresAdministrator
+            ? $"{card.Name} 的项目清单强制要求管理员权限。"
+            : card.RunAsAdministrator
             ? $"{card.Name} 已配置为以管理员身份打开。"
             : $"{card.Name} 已配置为以普通权限打开。";
     }
@@ -414,6 +417,7 @@ public partial class ToolBoxPage : Page
             var package = detailsResponse.Result?.Versions.FirstOrDefault(item => item.Version == card.LatestVersion);
             if (detailsResponse.StatusCode != HttpStatusCode.OK || package is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(detailsResponse.Message) ? "服务器没有返回对应版本。" : detailsResponse.Message);
+            var runAsAdministrator = card.RunAsAdministrator || detailsResponse.Result!.Manifest.RequiresAdministrator;
 
             cachePath = GetCachePath(card.Package);
             if (!await IsCachedPackageValidAsync(cachePath, package.Sha256))
@@ -465,20 +469,20 @@ public partial class ToolBoxPage : Page
             }
 
             card.CacheState = "正在打开…";
-            StatusText.Text = card.RunAsAdministrator
-                ? $"正在准备 {card.Name}，随后将请求管理员权限…"
+            StatusText.Text = runAsAdministrator
+                ? $"正在准备 {card.Name}，随后将向 Windows 请求管理员权限…"
                 : $"正在编译并打开 {card.Name}…";
             var runResult = await ToolProjectRunService.BuildPackageAndRunAsync(
                 cachePath,
                 card.Id,
                 package.Version,
                 package.Sha256,
-                card.RunAsAdministrator);
+                runAsAdministrator);
             if (!runResult.Success)
                 throw new InvalidOperationException(runResult.Message);
 
             card.CacheState = "已打开";
-            StatusText.Text = card.RunAsAdministrator
+            StatusText.Text = runAsAdministrator
                 ? $"{card.Name} {card.LatestVersion} 已以管理员身份打开。"
                 : $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
             RecentUsageIconCache.Remember(RecentUsageKind.Tool, card.Id, card.IconSource);

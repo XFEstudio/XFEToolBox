@@ -1451,6 +1451,7 @@ public partial class ToolCodeEditorWindow : Window
             ReplaceManifestTags(manifest.Tags ?? []);
             ManifestMinimumHostVersionBox.Text = manifest.MinimumHostVersion ?? string.Empty;
             ManifestReleaseNotesBox.Text = manifest.ReleaseNotes ?? string.Empty;
+            ManifestRequiresAdministratorCheckBox.IsChecked = manifest.RequiresAdministrator;
             ManifestViewXamlBox.Text = entry.ViewXaml;
             ManifestViewClassBox.Text = entry.ViewClass;
             ManifestViewCodeBehindBox.Text = entry.ViewCodeBehind;
@@ -1533,6 +1534,7 @@ public partial class ToolCodeEditorWindow : Window
             Tags = _manifestTags.ToArray(),
             MinimumHostVersion = NullIfWhiteSpace(ManifestMinimumHostVersionBox.Text),
             ReleaseNotes = NullIfWhiteSpace(ManifestReleaseNotesBox.Text),
+            RequiresAdministrator = ManifestRequiresAdministratorCheckBox.IsChecked == true,
             Entry = new ToolEntryManifest
             {
                 ViewXaml = ManifestViewXamlBox.Text.Trim().Replace('\\', '/'),

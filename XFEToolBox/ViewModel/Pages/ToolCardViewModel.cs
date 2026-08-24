@@ -17,7 +17,7 @@ public sealed class ToolCardViewModel(
     private bool _isDownloadIndeterminate;
     private double _downloadProgress;
     private string _downloadProgressText = string.Empty;
-    private bool _runAsAdministrator = runAsAdministrator;
+    private bool _userRunAsAdministrator = runAsAdministrator;
 
     public ToolPackageSummary Package { get; } = package;
     public string Id => Package.Id;
@@ -29,11 +29,24 @@ public sealed class ToolCardViewModel(
     public ImageSource IconSource { get; } = iconSource;
     public ImageSource UacIconSource { get; } = uacIconSource;
 
-    public bool RunAsAdministrator
+    public bool RequiresAdministrator => Package.RequiresAdministrator;
+
+    public bool UserRunAsAdministrator
     {
-        get => _runAsAdministrator;
-        set => SetProperty(ref _runAsAdministrator, value);
+        get => _userRunAsAdministrator;
+        set
+        {
+            if (!SetProperty(ref _userRunAsAdministrator, value)) return;
+            OnPropertyChanged(nameof(RunAsAdministrator));
+            OnPropertyChanged(nameof(AdministratorLaunchDescription));
+        }
     }
+
+    public bool RunAsAdministrator => RequiresAdministrator || UserRunAsAdministrator;
+
+    public string AdministratorLaunchDescription => RequiresAdministrator
+        ? "工具清单要求以管理员身份启动，用户无法关闭"
+        : "已由用户配置为以管理员身份打开";
 
     public bool IsEnabled
     {
