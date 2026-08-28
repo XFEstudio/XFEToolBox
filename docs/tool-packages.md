@@ -117,6 +117,9 @@ base64-generator.xfetool
   "tags": ["base64", "编码"],
   "minimumHostVersion": "0.2.0",
   "releaseNotes": "首个版本。",
+  "nugetPackages": [
+    { "id": "Example.Package", "version": "1.2.3" }
+  ],
   "requiresAdministrator": false,
   "entry": {
     "viewXaml": "Code/Views/MainPage.xaml",
@@ -155,6 +158,7 @@ base64-generator.xfetool
 | `tags` | `string[]` | `[]` | 最多 20 项，每项 1–40 字符 |
 | `minimumHostVersion` | `string?` | `null` | 非空时必须是 SemVer；当前服务端会校验格式，但客户端尚未据此阻止运行 |
 | `releaseNotes` | `string?` | `null` | 当前版本说明 |
+| `nugetPackages` | `ToolNuGetPackageReference[]` | `[]` | 当前项目独立使用的 NuGet 包；最多 64 项，包 ID 不区分大小写且不能重复，版本必须是精确版本 |
 | `requiresAdministrator` | `bool` | `false` | 为 `true` 时工具卡片显示 UAC 盾牌，宿主强制通过 Windows UAC 以管理员身份启动；用户不能在工具配置中关闭 |
 | `entry` | `ToolEntryManifest` | 必填 | 入口视图配置，见下表 |
 | `window` | `ToolWindowManifest` | 默认对象 | 独立宿主窗口配置，见下表 |
@@ -163,6 +167,12 @@ base64-generator.xfetool
 Code Studio 可视化设计器提供的通用权限名称为：`FileSystem`、`Network`、`Clipboard`、`Process`、`Shell`、`Registry`、`Notifications`、`Environment`、`InputSimulation`、`Camera`、`Microphone`、`Location`。名称比较不区分大小写，也允许保留自定义权限名。
 
 `requiresAdministrator` 也可以在代码工坊的 `manifest.json · 可视化配置` →“权限与格式”中勾选。该字段属于工具作者声明的强制策略，与用户在工具卡片“工具配置”中的可选管理员模式不同；任一项启用都会以管理员身份启动，但清单强制策略不能被用户覆盖。
+
+### `nugetPackages`
+
+每个项目可以在 Code Studio 的 `manifest.json · 可视化配置` →“NuGet 包”中独立添加、更新或移除包。运行和生成验证时，工具箱会把这些引用写入该工具自己的临时 `.csproj`，再使用标准 `dotnet restore/build` 流程解析依赖；发布到 `.xfetool` 后，包引用仍保存在清单中。
+
+包 ID 仅允许字母、数字、点、短横线和下划线，长度不超过 100；`version` 必须固定为 `1.2.3`、`1.2.3-beta.1` 这类精确版本，不接受 `*`、`[1.0,2.0)` 等浮动版本或范围。项目显式引用 `CommunityToolkit.Mvvm` 时可以覆盖工具箱内置的默认版本。NuGet 包可能携带构建目标并在还原/编译阶段运行，因此只应添加可信来源的包。
 
 ### `entry`
 

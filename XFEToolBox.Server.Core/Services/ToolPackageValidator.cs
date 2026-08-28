@@ -140,6 +140,7 @@ public sealed partial class ToolPackageValidator(ToolPackageValidationOptions op
             throw new ToolPackageValidationException("minimumHostVersion 必须是有效的 SemVer 版本。");
         if (manifest.Tags is null || manifest.Tags.Length > 20 || manifest.Tags.Any(tag => string.IsNullOrWhiteSpace(tag) || tag.Length > 40))
             throw new ToolPackageValidationException("标签最多 20 个，且每个标签长度为 1-40 个字符。");
+        ValidateNuGetPackages(manifest.NuGetPackages);
         if (manifest.RequestedPermissions is null || manifest.RequestedPermissions.Length > 32 || manifest.RequestedPermissions.Any(permission => string.IsNullOrWhiteSpace(permission) || permission.Length > 64))
             throw new ToolPackageValidationException("请求的权限列表不合法。");
 
@@ -157,6 +158,23 @@ public sealed partial class ToolPackageValidator(ToolPackageValidationOptions op
         else if (!string.IsNullOrWhiteSpace(manifest.Entry.ViewModelClass))
         {
             throw new ToolPackageValidationException("设置 viewModelClass 时也必须设置 viewModel 文件。");
+        }
+    }
+
+    private static void ValidateNuGetPackages(IReadOnlyCollection<ToolNuGetPackageReference>? packages)
+    {
+        if (packages is null || packages.Count > ToolNuGetPackageRules.MaximumPackageCount)
+            throw new ToolPackageValidationException($"NuGet 包最多允许 {ToolNuGetPackageRules.MaximumPackageCount} 个。");
+
+        var packageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in packages)
+        {
+            if (package is null || !ToolNuGetPackageRules.IsValidPackageId(package.Id))
+                throw new ToolPackageValidationException("NuGet 包 ID 不合法。");
+            if (!ToolNuGetPackageRules.IsValidExactVersion(package.Version))
+                throw new ToolPackageValidationException($"NuGet 包 {package.Id} 必须使用精确版本，例如 1.2.3 或 1.2.3-beta.1。");
+            if (!packageIds.Add(package.Id))
+                throw new ToolPackageValidationException($"NuGet 包不能重复：{package.Id}。");
         }
     }
 

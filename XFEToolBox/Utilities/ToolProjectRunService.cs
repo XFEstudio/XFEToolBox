@@ -126,7 +126,11 @@ internal static class ToolProjectRunService
             var projectPath = Path.Combine(runtimeRoot, "ToolRuntime.csproj");
             var entryPath = Path.Combine(runtimeRoot, "RuntimeEntry.g.cs");
             var toolIconPath = ResolveToolIconPath(preparedWorkspaceRoot, manifest.Icon);
-            await File.WriteAllTextAsync(projectPath, CreateProjectFile(preparedWorkspaceRoot, assemblyName, hostAssemblyName), new UTF8Encoding(false), cancellationToken);
+            await File.WriteAllTextAsync(
+                projectPath,
+                CreateProjectFile(preparedWorkspaceRoot, assemblyName, hostAssemblyName, manifest.NuGetPackages),
+                new UTF8Encoding(false),
+                cancellationToken);
             await File.WriteAllTextAsync(
                 entryPath,
                 CreateRuntimeEntry(manifest, hostAssemblyName, windowTitle, toolIconPath, requiresElevatedProcess),
@@ -252,7 +256,11 @@ internal static class ToolProjectRunService
         }
     }
 
-    private static string CreateProjectFile(string workspaceRoot, string assemblyName, string hostAssemblyName)
+    internal static string CreateProjectFile(
+        string workspaceRoot,
+        string assemblyName,
+        string hostAssemblyName,
+        IReadOnlyCollection<ToolNuGetPackageReference>? nugetPackages)
     {
         var root = EscapeXml(Path.GetFullPath(workspaceRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var coreAssembly = EscapeXml(typeof(ToolPackageManifest).Assembly.Location);
@@ -263,6 +271,27 @@ internal static class ToolProjectRunService
         var xfeExtensionAssembly = EscapeXml(Path.Combine(
             Path.GetDirectoryName(clientAssemblyPath)!,
             "XFEExtension.NetCore.dll"));
+        var packageReferences = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["CommunityToolkit.Mvvm"] = "8.4.2"
+        };
+        if (nugetPackages?.Count > ToolNuGetPackageRules.MaximumPackageCount)
+            throw new InvalidDataException($"NuGet 包最多允许 {ToolNuGetPackageRules.MaximumPackageCount} 个。");
+        var customPackageIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in nugetPackages ?? [])
+        {
+            if (!ToolNuGetPackageRules.IsValidPackageId(package.Id)
+                || !ToolNuGetPackageRules.IsValidExactVersion(package.Version))
+                throw new InvalidDataException($"NuGet 包引用不合法：{package.Id} {package.Version}。");
+            if (!customPackageIds.Add(package.Id))
+                throw new InvalidDataException($"NuGet 包不能重复：{package.Id}。");
+            packageReferences[package.Id.Trim()] = package.Version.Trim();
+        }
+        var packageReferenceXml = string.Join(
+            Environment.NewLine,
+            packageReferences
+                .OrderBy(package => package.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(package => $"    <PackageReference Include=\"{EscapeXml(package.Key)}\" Version=\"{EscapeXml(package.Value)}\" />"));
         return $$"""
                  <Project Sdk="Microsoft.NET.Sdk">
                    <PropertyGroup>
@@ -288,7 +317,7 @@ internal static class ToolProjectRunService
                                Exclude="{{root}}\bin\**;{{root}}\obj\**" Link="Source\%(RecursiveDir)%(Filename)%(Extension)" />
                    </ItemGroup>
                    <ItemGroup>
-                     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+                 {{packageReferenceXml}}
                      <Reference Include="XFEToolBox.Core"><HintPath>{{coreAssembly}}</HintPath><Private>true</Private></Reference>
                       <Reference Include="XFEToolBox.Client.Core"><HintPath>{{clientCoreAssembly}}</HintPath><Private>true</Private></Reference>
                       <Reference Include="XFEToolBox.WpfCore"><HintPath>{{wpfCoreAssembly}}</HintPath><Private>true</Private></Reference>

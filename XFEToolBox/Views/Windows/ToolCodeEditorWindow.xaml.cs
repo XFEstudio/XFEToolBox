@@ -89,6 +89,7 @@ public partial class ToolCodeEditorWindow : Window
     private readonly ObservableCollection<EditorExplorerItem> _files = [];
     private readonly ObservableCollection<EditorExplorerItem> _explorerItems = [];
     private readonly ObservableCollection<string> _manifestTags = [];
+    private readonly ObservableCollection<ToolNuGetPackageReference> _manifestNuGetPackages = [];
     private List<string> _explorerOrder = [];
     private ICollectionView? _fileView;
     private string _workspaceRoot = string.Empty;
@@ -131,6 +132,7 @@ public partial class ToolCodeEditorWindow : Window
         _fileView.Filter = FileMatchesFilter;
         FileList.ItemsSource = _fileView;
         ManifestTagsItems.ItemsSource = _manifestTags;
+        ManifestNuGetPackagesItems.ItemsSource = _manifestNuGetPackages;
         SaveButton.IsEnabled = false;
         EditorThemeButton.IsEnabled = false;
         PreviewButton.IsEnabled = false;
@@ -1488,6 +1490,9 @@ public partial class ToolCodeEditorWindow : Window
             ManifestIconBox.Text = manifest.Icon ?? string.Empty;
             ManifestCategoryBox.Text = manifest.Category;
             ReplaceManifestTags(manifest.Tags ?? []);
+            ReplaceManifestNuGetPackages(manifest.NuGetPackages ?? []);
+            ManifestNuGetPackageIdBox.Text = string.Empty;
+            ManifestNuGetPackageVersionBox.Text = string.Empty;
             ManifestMinimumHostVersionBox.Text = manifest.MinimumHostVersion ?? string.Empty;
             ManifestReleaseNotesBox.Text = manifest.ReleaseNotes ?? string.Empty;
             ManifestRequiresAdministratorCheckBox.IsChecked = manifest.RequiresAdministrator;
@@ -1571,6 +1576,7 @@ public partial class ToolCodeEditorWindow : Window
             Icon = NullIfWhiteSpace(ManifestIconBox.Text),
             Category = ManifestCategoryBox.Text.Trim(),
             Tags = _manifestTags.ToArray(),
+            NuGetPackages = _manifestNuGetPackages.ToArray(),
             MinimumHostVersion = NullIfWhiteSpace(ManifestMinimumHostVersionBox.Text),
             ReleaseNotes = NullIfWhiteSpace(ManifestReleaseNotesBox.Text),
             RequiresAdministrator = ManifestRequiresAdministratorCheckBox.IsChecked == true,
@@ -1749,6 +1755,74 @@ public partial class ToolCodeEditorWindow : Window
         if (_manifestTags.Any(existing => existing.Equals(tag, StringComparison.OrdinalIgnoreCase)))
             return "这个标签已经存在。";
         return null;
+    }
+
+    private void ReplaceManifestNuGetPackages(IEnumerable<ToolNuGetPackageReference> packages)
+    {
+        _manifestNuGetPackages.Clear();
+        foreach (var package in packages.Where(package => package is not null))
+        {
+            _manifestNuGetPackages.Add(new ToolNuGetPackageReference
+            {
+                Id = package.Id?.Trim() ?? string.Empty,
+                Version = package.Version?.Trim() ?? string.Empty
+            });
+        }
+    }
+
+    private void AddManifestNuGetPackageButton_Click(object sender, RoutedEventArgs e)
+    {
+        var packageId = ManifestNuGetPackageIdBox.Text.Trim();
+        var packageVersion = ManifestNuGetPackageVersionBox.Text.Trim();
+        if (!ToolNuGetPackageRules.IsValidPackageId(packageId))
+        {
+            ManifestNuGetPackageValidationText.Text = $"包 ID 只能包含字母、数字、点、短横线和下划线，且不超过 {ToolNuGetPackageRules.MaximumPackageIdLength} 个字符。";
+            return;
+        }
+        if (!ToolNuGetPackageRules.IsValidExactVersion(packageVersion))
+        {
+            ManifestNuGetPackageValidationText.Text = "请输入精确版本，例如 2.6.0 或 2.6.0-beta.1；不支持 * 和版本范围。";
+            return;
+        }
+
+        var existingIndex = -1;
+        for (var index = 0; index < _manifestNuGetPackages.Count; index++)
+        {
+            if (!_manifestNuGetPackages[index].Id.Equals(packageId, StringComparison.OrdinalIgnoreCase))
+                continue;
+            existingIndex = index;
+            break;
+        }
+
+        var package = new ToolNuGetPackageReference { Id = packageId, Version = packageVersion };
+        if (existingIndex >= 0)
+        {
+            _manifestNuGetPackages[existingIndex] = package;
+            ManifestNuGetPackageValidationText.Text = $"已更新 {packageId} 的版本。";
+        }
+        else
+        {
+            if (_manifestNuGetPackages.Count >= ToolNuGetPackageRules.MaximumPackageCount)
+            {
+                ManifestNuGetPackageValidationText.Text = $"每个工具最多添加 {ToolNuGetPackageRules.MaximumPackageCount} 个 NuGet 包。";
+                return;
+            }
+            _manifestNuGetPackages.Add(package);
+            ManifestNuGetPackageValidationText.Text = $"已添加 {packageId}。";
+        }
+
+        ManifestNuGetPackageIdBox.Text = string.Empty;
+        ManifestNuGetPackageVersionBox.Text = string.Empty;
+        MarkManifestDesignerChanged();
+    }
+
+    private void RemoveManifestNuGetPackageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: ToolNuGetPackageReference package })
+            return;
+        _manifestNuGetPackages.Remove(package);
+        ManifestNuGetPackageValidationText.Text = $"已移除 {package.Id}。";
+        MarkManifestDesignerChanged();
     }
 
     private void LoadManifestPermissions(IEnumerable<string> permissions)
