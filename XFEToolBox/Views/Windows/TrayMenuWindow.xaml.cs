@@ -22,9 +22,13 @@ public partial class TrayMenuWindow : Window
 
     public void ShowAtCursor()
     {
-        if (!IsVisible) Show();
-        Activate();
+        // 先把尚未显示的 HWND 移到鼠标所在显示器，确保 WPF 按目标屏幕 DPI
+        // 完成首次布局，避免从主屏移动后被 Windows 进行位图拉伸。
         PositionNearCursor();
+        if (!IsVisible) Show();
+        // DPI 切换可能改变原生窗口尺寸，再按实际尺寸校正一次边缘位置。
+        PositionNearCursor();
+        Activate();
     }
 
     private void OpenHomeButton_Click(object sender, RoutedEventArgs e) => Run(showHome);

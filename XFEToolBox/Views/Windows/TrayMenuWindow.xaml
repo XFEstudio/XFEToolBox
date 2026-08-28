@@ -1,9 +1,12 @@
 <Window x:Class="XFEToolBox.Client.Views.Windows.TrayMenuWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Width="246" Height="232" WindowStyle="None" AllowsTransparency="True"
+        Width="246" Height="258" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ShowInTaskbar="False" Topmost="True"
         ResizeMode="NoResize" WindowStartupLocation="Manual"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextHintingMode="Fixed"
+        RenderOptions.BitmapScalingMode="HighQuality"
         Deactivated="Window_Deactivated" PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
         <Style x:Key="TrayActionButtonStyle" TargetType="Button">
@@ -80,7 +83,7 @@
                     </Grid>
                 </Button>
                 <Border Height="1" Margin="10,4" Background="#E5E5F1"/>
-                <Button Style="{StaticResource TrayActionButtonStyle}" Click="ExitButton_Click">
+                <Button Style="{StaticResource TrayActionButtonStyle}" Margin="0,2,0,8" Click="ExitButton_Click">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="31"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <TextBlock Text="×" Foreground="#D26F82" FontSize="19" VerticalAlignment="Center"/>
