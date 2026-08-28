@@ -1,7 +1,10 @@
 ﻿using XFEToolBox.Core.Model;
 
 using System.Diagnostics;
+using System.Net;
+using System.Security.Cryptography;
 using XFEToolBox.Client.Core.Console;
+using XFEToolBox.Core.Tools;
 
 namespace XFEToolBox.Test;
 
@@ -63,9 +66,62 @@ public class Program
         Console.WriteLine($"控制台输出缓冲吞吐：{throughput:N0} 条/秒（{outputCount:N0} 条，共 {stopwatch.Elapsed.TotalMilliseconds:N1} ms）");
     }
 
+    [SMTest]
+    public static void ToolPackageDownloadReportsByteProgress()
+    {
+        var payload = Enumerable.Range(0, 240_000).Select(index => (byte)(index % 251)).ToArray();
+        var expectedHash = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant();
+        using var httpClient = new HttpClient(new PackageDownloadHandler(payload))
+        {
+            BaseAddress = new Uri("https://toolbox.test/")
+        };
+        var client = new ToolCatalogClient(httpClient);
+        var reports = new List<ToolPackageDownloadProgress>();
+        var progress = new InlineProgress<ToolPackageDownloadProgress>(reports.Add);
+        var package = new ToolPackageVersionInfo
+        {
+            ToolId = "test.progress",
+            Version = "1.0.0",
+            Sha256 = expectedHash,
+            PackageSize = payload.Length,
+            UploadedAtUtc = DateTimeOffset.UtcNow,
+            Published = true,
+            DownloadUrl = "api/v1/tools/download"
+        };
+        using var destination = new MemoryStream();
+
+        client.DownloadPackageAsync(package, destination, progress).GetAwaiter().GetResult();
+
+        Ensure(destination.ToArray().SequenceEqual(payload), "工具包下载内容与服务器响应不一致。");
+        Ensure(reports.Count >= 2 && reports[0].BytesReceived == 0, "工具包下载没有上报初始进度。");
+        var completed = reports[^1];
+        Ensure(completed.BytesReceived == payload.Length && completed.TotalBytes == payload.Length,
+            "工具包下载没有上报最终字节数。");
+        Ensure(Math.Abs(completed.Percentage.GetValueOrDefault() - 100) < 0.001,
+            "工具包下载完成进度不是 100%。");
+    }
+
     private static void Ensure(bool condition, string message)
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private sealed class PackageDownloadHandler(byte[] payload) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(payload),
+                RequestMessage = request
+            };
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 }

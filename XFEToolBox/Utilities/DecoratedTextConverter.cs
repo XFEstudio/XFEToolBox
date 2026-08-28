@@ -3,7 +3,9 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace XFEToolBox.Client.Utilities;
@@ -99,19 +101,20 @@ public partial class DecoratedTextConverter
                     {
                         Margin = new Thickness(3)
                     };
-                    foldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new(220) });
-                    foldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new(20) });
+                    foldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new(300) });
+                    foldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new(34) });
                     foldGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new(1, GridUnitType.Star) });
                     foldGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     foldGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                     var titleTextBlock = new TextBlock
                     {
-                        Margin = new Thickness(5, 2, 5, 2),
+                        Margin = new Thickness(11, 3, 11, 3),
                         Text = foldBlockDecSpan.Title,
                         TextTrimming = TextTrimming.CharacterEllipsis,
                         Foreground = new SolidColorBrush(foldBlockDecSpan.Color),
                         VerticalAlignment = VerticalAlignment.Center,
-                        HorizontalAlignment = HorizontalAlignment.Center
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        FontWeight = FontWeights.SemiBold
                     };
                     var titleBorder = new Border
                     {
@@ -120,22 +123,46 @@ public partial class DecoratedTextConverter
                         Child = titleTextBlock
                     };
                     foldGrid.Children.Add(titleBorder);
-                    var buttonText = new TextBlock
+                    var chevronRotation = new RotateTransform();
+                    var chevron = new Path
                     {
-                        Text = "▼",
-                        FontSize = 18
+                        Data = Geometry.Parse("M 1,3 L 6,8 L 11,3"),
+                        Stroke = new SolidColorBrush(foldBlockDecSpan.Color),
+                        StrokeThickness = 1.8,
+                        StrokeStartLineCap = PenLineCap.Round,
+                        StrokeEndLineCap = PenLineCap.Round,
+                        StrokeLineJoin = PenLineJoin.Round,
+                        Width = 12,
+                        Height = 10,
+                        Stretch = Stretch.None,
+                        RenderTransformOrigin = new Point(0.5, 0.5),
+                        RenderTransform = chevronRotation
                     };
                     var button = new Button
                     {
-                        MinWidth = 32,
+                        Style = CreateFoldButtonStyle(),
+                        Width = 34,
+                        MinWidth = 0,
                         Height = 30,
                         Padding = new Thickness(0),
-                        Content = buttonText
+                        Margin = new Thickness(0),
+                        Background = Brushes.Transparent,
+                        BorderBrush = new SolidColorBrush(Color.FromArgb(
+                            54,
+                            foldBlockDecSpan.Color.R,
+                            foldBlockDecSpan.Color.G,
+                            foldBlockDecSpan.Color.B)),
+                        BorderThickness = new Thickness(1, 0, 0, 0),
+                        Cursor = Cursors.Hand,
+                        FocusVisualStyle = null,
+                        ToolTip = "展开详情",
+                        Content = chevron
                     };
                     var foldButtonBorder = new Border
                     {
-                        Background = new SolidColorBrush(foldBlockDecSpan.Color),
+                        Background = new SolidColorBrush(foldBlockDecSpan.BackgroundColor),
                         CornerRadius = new CornerRadius(0, 5, 5, 0),
+                        ClipToBounds = true,
                         Child = button
                     };
                     Grid.SetColumn(foldButtonBorder, 1);
@@ -169,19 +196,21 @@ public partial class DecoratedTextConverter
                         {
                             contentBorder.Visibility = Visibility.Collapsed;
                             titleBorder.CornerRadius = new(5, 0, 0, 5);
-                            buttonText.Text = "▼";
+                            foldButtonBorder.CornerRadius = new(0, 5, 5, 0);
+                            chevronRotation.Angle = 0;
+                            button.ToolTip = "展开详情";
                         }
                         else
                         {
                             contentBorder.Visibility = Visibility.Visible;
                             titleBorder.CornerRadius = new(5, 0, 0, 0);
-                            buttonText.Text = "▲";
+                            foldButtonBorder.CornerRadius = new(0, 5, 0, 0);
+                            chevronRotation.Angle = 180;
+                            button.ToolTip = "折叠详情";
                         }
                     };
                     Grid.SetColumnSpan(contentBorder, 3);
                     Grid.SetRow(contentBorder, 1);
-                    Grid.SetRow(contentBorder, 1);
-                    Grid.SetColumnSpan(contentBorder, 3);
                     foldGrid.Children.Add(contentBorder);
                     inLineList.Add(new Span(new Run("\n")));
                     inLineList.Add(foldGrid);
@@ -204,6 +233,41 @@ public partial class DecoratedTextConverter
             });
         }
         return inLineList;
+    }
+
+    private static Style CreateFoldButtonStyle()
+    {
+        var surface = new FrameworkElementFactory(typeof(Border), "Surface");
+        surface.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        surface.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        surface.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
+        content.SetValue(ContentPresenter.ContentTemplateProperty, new TemplateBindingExtension(ContentControl.ContentTemplateProperty));
+        content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        surface.AppendChild(content);
+
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = surface };
+        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(
+            Border.BackgroundProperty,
+            new SolidColorBrush(Color.FromArgb(38, 255, 255, 255)),
+            "Surface"));
+        template.Triggers.Add(hoverTrigger);
+        var pressedTrigger = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        pressedTrigger.Setters.Add(new Setter(
+            Border.BackgroundProperty,
+            new SolidColorBrush(Color.FromArgb(68, 255, 255, 255)),
+            "Surface"));
+        template.Triggers.Add(pressedTrigger);
+
+        var style = new Style(typeof(Button));
+        style.Setters.Add(new Setter(Control.TemplateProperty, template));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        return style;
     }
     /// <summary>
     /// 转为行内组件列表

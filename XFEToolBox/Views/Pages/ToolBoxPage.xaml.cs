@@ -8,10 +8,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.Client.Profiles.CacheProfiles;
+using XFEToolBox.Client.Views.Pages.Popups;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
 
@@ -161,7 +164,7 @@ public partial class ToolBoxPage : Page
                 string.Equals(card.Id, tool.Id, StringComparison.OrdinalIgnoreCase)
                 && ToolSummariesEquivalent(card.Package, tool));
             if (existing is not null) return existing;
-            return new ToolCardViewModel(tool, CreateIconSource(tool.IconDataUrl), File.Exists(GetCachePath(tool)));
+            return CreateToolCard(tool);
         }).ToArray();
 
         _tools.Clear();
@@ -331,8 +334,56 @@ public partial class ToolBoxPage : Page
             return false;
         }
 
-        card ??= new ToolCardViewModel(summary, CreateIconSource(summary.IconDataUrl), File.Exists(GetCachePath(summary)));
+        card ??= CreateToolCard(summary);
         return await OpenToolAsync(card);
+    }
+
+    private static ToolCardViewModel CreateToolCard(ToolPackageSummary summary) => new(
+        summary,
+        CreateIconSource(summary.IconDataUrl),
+        ElevationShieldIcon.Source,
+        File.Exists(GetCachePath(summary)),
+        ToolLaunchPreferenceService.GetRunAsAdministrator(summary.Id));
+
+    private void ToolConfigurationMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: ToolCardViewModel card }) return;
+
+        var configurationPage = new ToolConfigurationPopupPage(
+            card.Name,
+            card.UserRunAsAdministrator,
+            card.RequiresAdministrator,
+            card.UacIconSource);
+        var result = PopupHelper.ShowDialog(configurationPage, new PopupWindowOptions
+        {
+            Title = "工具配置",
+            Subtitle = card.Name,
+            Width = 470,
+            Height = 330
+        });
+        if (result != MessageBoxResult.OK) return;
+
+        ToolLaunchPreferenceService.SetRunAsAdministrator(card.Id, configurationPage.UserRunAsAdministrator);
+        card.UserRunAsAdministrator = configurationPage.UserRunAsAdministrator;
+        StatusText.Text = card.RequiresAdministrator
+            ? $"{card.Name} 的项目清单强制要求管理员权限。"
+            : card.RunAsAdministrator
+            ? $"{card.Name} 已配置为以管理员身份打开。"
+            : $"{card.Name} 已配置为以普通权限打开。";
+    }
+
+    private void TogglePinnedToolMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: ToolCardViewModel card }) return;
+        var wasPinned = PinnedItemService.IsPinned(LauncherItemKind.Tool, card.Id);
+        var success = wasPinned
+            ? PinnedItemService.Unpin(LauncherItemKind.Tool, card.Id)
+            : PinnedItemService.TryPin(LauncherItemKind.Tool, card.Id);
+        StatusText.Text = !success
+            ? $"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项。"
+            : wasPinned ? $"已取消固定 {card.Name}。" : $"已将 {card.Name} 固定到主页。";
     }
 
     private void ClearToolDataMenuItem_Click(object sender, RoutedEventArgs e)
@@ -367,11 +418,15 @@ public partial class ToolBoxPage : Page
 
     private async Task<bool> OpenToolAsync(ToolCardViewModel card)
     {
+        using var activity = ActivityCenterService.Start(
+            $"准备工具 {card.Name}", XFEToolBox.Client.Models.ActivityKind.ToolPackage, canCancel: true);
+        var cancellationToken = activity.CancellationToken;
         string? temporaryPath = null;
         string? cachePath = null;
         card.IsEnabled = false;
         card.CacheState = "正在校验…";
         StatusText.Text = $"正在准备 {card.Name}…";
+        activity.Report(null, StatusText.Text);
 
         try
         {
@@ -379,11 +434,18 @@ public partial class ToolBoxPage : Page
             var package = detailsResponse.Result?.Versions.FirstOrDefault(item => item.Version == card.LatestVersion);
             if (detailsResponse.StatusCode != HttpStatusCode.OK || package is null)
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(detailsResponse.Message) ? "服务器没有返回对应版本。" : detailsResponse.Message);
+            var runAsAdministrator = card.RunAsAdministrator || detailsResponse.Result!.Manifest.RequiresAdministrator;
 
             cachePath = GetCachePath(card.Package);
             if (!await IsCachedPackageValidAsync(cachePath, package.Sha256))
             {
-                card.CacheState = "正在获取…";
+                card.IsDownloading = true;
+                card.IsDownloadIndeterminate = package.PackageSize <= 0;
+                card.DownloadProgress = 0;
+                card.DownloadProgressText = package.PackageSize > 0
+                    ? $"0 B / {FormatDataSize(package.PackageSize)}"
+                    : "正在连接下载服务器…";
+                card.CacheState = "下载 0%";
                 StatusText.Text = $"正在获取 {card.Name} {card.LatestVersion}…";
                 var cacheDirectory = Path.GetDirectoryName(cachePath)!;
                 Directory.CreateDirectory(cacheDirectory);
@@ -392,43 +454,78 @@ public partial class ToolBoxPage : Page
                 using var client = new HttpClient
                 {
                     BaseAddress = new Uri(ClientSession.ApiAddress + "/"),
-                    Timeout = TimeSpan.FromMinutes(2)
+                    Timeout = TimeSpan.FromMinutes(10)
                 };
                 var catalogClient = new ToolCatalogClient(client);
+                var downloadProgress = new Progress<ToolPackageDownloadProgress>(item =>
+                {
+                    card.IsDownloadIndeterminate = item.TotalBytes is null or <= 0;
+                    card.DownloadProgress = item.Percentage ?? 0;
+                    card.DownloadProgressText = item.TotalBytes is > 0
+                        ? $"{FormatDataSize(item.BytesReceived)} / {FormatDataSize(item.TotalBytes.Value)}"
+                        : $"已下载 {FormatDataSize(item.BytesReceived)}";
+                    card.CacheState = item.Percentage is { } percentage
+                        ? $"下载 {percentage:0}%"
+                        : "正在下载…";
+                    StatusText.Text = $"正在下载 {card.Name} · {card.DownloadProgressText}";
+                    activity.Report(item.Percentage, StatusText.Text);
+                });
                 await using (var output = new FileStream(
                                  temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920,
                                  FileOptions.Asynchronous | FileOptions.SequentialScan))
                 {
-                    await catalogClient.DownloadPackageAsync(package, output);
-                    await output.FlushAsync();
+                    await catalogClient.DownloadPackageAsync(package, output, downloadProgress, cancellationToken);
+                    await output.FlushAsync(cancellationToken);
                 }
+                card.CacheState = "正在校验…";
+                card.DownloadProgress = 100;
+                card.IsDownloadIndeterminate = false;
+                card.DownloadProgressText = "下载完成，校验通过";
                 File.Move(temporaryPath, cachePath, overwrite: true);
                 temporaryPath = null;
+                card.IsDownloading = false;
             }
 
             card.CacheState = "正在打开…";
-            StatusText.Text = $"正在编译并打开 {card.Name}…";
+            StatusText.Text = runAsAdministrator
+                ? $"正在准备 {card.Name}，随后将向 Windows 请求管理员权限…"
+                : $"正在编译并打开 {card.Name}…";
             var runResult = await ToolProjectRunService.BuildPackageAndRunAsync(
                 cachePath,
                 card.Id,
                 package.Version,
-                package.Sha256);
+                package.Sha256,
+                runAsAdministrator,
+                cancellationToken);
             if (!runResult.Success)
                 throw new InvalidOperationException(runResult.Message);
 
             card.CacheState = "已打开";
-            StatusText.Text = $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
+            StatusText.Text = runAsAdministrator
+                ? $"{card.Name} {card.LatestVersion} 已以管理员身份打开。"
+                : $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
+            RecentUsageIconCache.Remember(RecentUsageKind.Tool, card.Id, card.IconSource);
             RecentUsageService.RecordTool(card.Package);
+            activity.Succeed(StatusText.Text);
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            card.CacheState = "已取消";
+            StatusText.Text = $"已取消打开 {card.Name}。";
+            activity.Cancel(StatusText.Text);
+            return false;
         }
         catch (Exception exception)
         {
             card.CacheState = cachePath is not null && File.Exists(cachePath) ? "重试打开" : "重试获取";
             StatusText.Text = $"打开失败：{exception.Message}";
+            activity.Fail(StatusText.Text);
             return false;
         }
         finally
         {
+            card.IsDownloading = false;
             card.IsEnabled = true;
             if (temporaryPath is not null && File.Exists(temporaryPath))
                 File.Delete(temporaryPath);
@@ -469,14 +566,11 @@ public partial class ToolBoxPage : Page
         {
             var separator = dataUrl.IndexOf(',');
             if (separator < 0) return DefaultToolIcon;
-            using var stream = new MemoryStream(Convert.FromBase64String(dataUrl[(separator + 1)..]));
-            var image = new BitmapImage();
-            image.BeginInit();
-            image.CacheOption = BitmapCacheOption.OnLoad;
-            image.StreamSource = stream;
-            image.EndInit();
-            image.Freeze();
-            return image;
+            var header = dataUrl[5..separator];
+            var mediaType = header.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault();
+            var bytes = Convert.FromBase64String(dataUrl[(separator + 1)..]);
+            return WebImageSourceLoader.Decode(bytes, mediaType, "tool-icon");
         }
         catch
         {

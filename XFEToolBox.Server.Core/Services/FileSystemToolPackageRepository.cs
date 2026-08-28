@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using XFEToolBox.Core.Tools;
 using XFEToolBox.Server.Core.Exceptions;
 using XFEToolBox.Server.Core.Models;
 using XFEToolBox.Server.Core.Options;
@@ -100,7 +101,38 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
         Stream packageStream,
         bool published,
         bool overwrite,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        await SaveCoreAsync(
+            packageStream,
+            published,
+            overwrite,
+            reviewStatus: published ? ToolPackageReviewStatus.Approved : ToolPackageReviewStatus.Pending,
+            submittedByUserId: null,
+            submittedByUserName: null,
+            cancellationToken);
+
+    public async Task<StoredToolPackage> SaveSubmissionAsync(
+        Stream packageStream,
+        string submittedByUserId,
+        string submittedByUserName,
+        CancellationToken cancellationToken = default) =>
+        await SaveCoreAsync(
+            packageStream,
+            published: false,
+            overwrite: false,
+            ToolPackageReviewStatus.Pending,
+            submittedByUserId,
+            submittedByUserName,
+            cancellationToken);
+
+    private async Task<StoredToolPackage> SaveCoreAsync(
+        Stream packageStream,
+        bool published,
+        bool overwrite,
+        ToolPackageReviewStatus reviewStatus,
+        string? submittedByUserId,
+        string? submittedByUserName,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(packageStream);
         var incomingPath = Path.Combine(_incomingRoot, $"{Guid.NewGuid():N}.xfetool");
@@ -123,7 +155,10 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
                 IconDataUrl = inspection.IconDataUrl,
                 PackageSize = packageSize,
                 UploadedAtUtc = DateTimeOffset.UtcNow,
-                Published = published
+                Published = published,
+                ReviewStatus = reviewStatus,
+                SubmittedByUserId = submittedByUserId,
+                SubmittedByUserName = submittedByUserName
             };
 
             await _writeLock.WaitAsync(cancellationToken);
@@ -175,15 +210,13 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
         {
             var current = await FindAsync(toolId, version, publishedOnly: false, cancellationToken)
                 ?? throw new ToolPackageNotFoundException($"找不到工具 {toolId} 的 {version} 版本。");
-            var changed = new StoredToolPackage
-            {
-                Manifest = current.Manifest,
-                Sha256 = current.Sha256,
-                IconDataUrl = current.IconDataUrl,
-                PackageSize = current.PackageSize,
-                UploadedAtUtc = current.UploadedAtUtc,
-                Published = published
-            };
+            var changed = CopyWithReview(
+                current,
+                published ? ToolPackageReviewStatus.Approved : ToolPackageReviewStatus.Rejected,
+                published,
+                current.ReviewedByUserId,
+                current.ReviewedByUserName,
+                current.ReviewMessage);
             await WriteMetadataAtomicallyAsync(
                 Path.Combine(GetVersionRoot(toolId, version), MetadataFileName),
                 changed,
@@ -195,6 +228,65 @@ public sealed partial class FileSystemToolPackageRepository : IToolPackageReposi
             _writeLock.Release();
         }
     }
+
+    public async Task<StoredToolPackage> SetReviewStatusAsync(
+        string toolId,
+        string version,
+        ToolPackageReviewStatus reviewStatus,
+        string reviewedByUserId,
+        string reviewedByUserName,
+        string? reviewMessage = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (reviewStatus == ToolPackageReviewStatus.Pending)
+            throw new ArgumentOutOfRangeException(nameof(reviewStatus), "管理员审核结果只能是通过或拒绝。");
+
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var current = await FindAsync(toolId, version, publishedOnly: false, cancellationToken)
+                ?? throw new ToolPackageNotFoundException($"找不到工具 {toolId} 的 {version} 版本。");
+            var changed = CopyWithReview(
+                current,
+                reviewStatus,
+                reviewStatus == ToolPackageReviewStatus.Approved,
+                reviewedByUserId,
+                reviewedByUserName,
+                reviewMessage);
+            await WriteMetadataAtomicallyAsync(
+                Path.Combine(GetVersionRoot(toolId, version), MetadataFileName),
+                changed,
+                cancellationToken);
+            return changed;
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    private static StoredToolPackage CopyWithReview(
+        StoredToolPackage current,
+        ToolPackageReviewStatus reviewStatus,
+        bool published,
+        string? reviewedByUserId,
+        string? reviewedByUserName,
+        string? reviewMessage) => new()
+    {
+        Manifest = current.Manifest,
+        Sha256 = current.Sha256,
+        IconDataUrl = current.IconDataUrl,
+        PackageSize = current.PackageSize,
+        UploadedAtUtc = current.UploadedAtUtc,
+        Published = published,
+        ReviewStatus = reviewStatus,
+        SubmittedByUserId = current.SubmittedByUserId,
+        SubmittedByUserName = current.SubmittedByUserName,
+        ReviewedByUserId = reviewedByUserId,
+        ReviewedByUserName = reviewedByUserName,
+        ReviewedAtUtc = DateTimeOffset.UtcNow,
+        ReviewMessage = reviewMessage
+    };
 
     private async Task<(long Size, string Sha256)> CopyIncomingPackageAsync(
         Stream source,

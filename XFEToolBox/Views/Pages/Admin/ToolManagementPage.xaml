@@ -3,6 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
       xmlns:utilities="clr-namespace:XFEToolBox.Client.Utilities"
+      xmlns:tools="clr-namespace:XFEToolBox.Core.Tools;assembly=XFEToolBox.Core"
       Background="Transparent" Title="" Loaded="Page_Loaded">
     <Page.Resources>
         <utilities:ByteSizeConverter x:Key="ByteSizeConverter"/>
@@ -32,8 +33,8 @@
                 </Grid>
             </Border>
             <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="工具发布" Style="{StaticResource AdminPageTitle}"/>
-                <TextBlock Text="上传、校验并控制工具版本的公开状态" Style="{StaticResource AdminPageSubtitle}"/>
+                <TextBlock Text="工具审核与发布" Style="{StaticResource AdminPageTitle}"/>
+                <TextBlock Text="审核用户投稿，并管理工具版本的公开状态" Style="{StaticResource AdminPageSubtitle}"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Content="控件画廊" Margin="0,0,8,0"
@@ -56,7 +57,7 @@
                 <Grid Margin="2,0,2,11">
                     <StackPanel>
                         <TextBlock Text="工具版本" Style="{StaticResource AdminSectionTitle}"/>
-                        <TextBlock Text="选中版本后，可在页面底部切换发布或下架" Style="{StaticResource AdminSectionSubtitle}"/>
+                        <TextBlock Text="用户投稿默认等待审核；只有管理员通过后才会公开" Style="{StaticResource AdminSectionSubtitle}"/>
                     </StackPanel>
                     <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="10,5"
                             Background="#EEEEF8" CornerRadius="10">
@@ -109,20 +110,31 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="发布状态" SortMemberPath="Package.Published" Width="112"
+                                <DataGridTemplateColumn Header="投稿账号" SortMemberPath="Package.SubmittedByUserName" Width="118">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Package.SubmittedByUserName, TargetNullValue=管理员上传}"
+                                                       Style="{StaticResource ToolBoxDataGridSecondaryTextStyle}" TextTrimming="CharacterEllipsis"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="审核状态" SortMemberPath="Package.ReviewStatus" Width="112"
                                                         HeaderStyle="{StaticResource AdminDataGridCenteredHeader}">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                <CheckBox IsChecked="{Binding Package.Published, Mode=OneWay}" Style="{StaticResource AdminGridCheckBox}"
-                                                          IsHitTestVisible="False" Focusable="False"/>
-                                                <TextBlock x:Name="PublicationText" Text="未发布" Margin="5,0,0,0" Foreground="#9999AA"
-                                                           FontSize="9.5" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                            <Border x:Name="ReviewBadge" Padding="9,4" Background="#FFF4D9" CornerRadius="9" HorizontalAlignment="Center">
+                                                <TextBlock x:Name="ReviewText" Text="待审核" Foreground="#A77A27" FontSize="9.5" FontWeight="SemiBold"/>
+                                            </Border>
                                             <DataTemplate.Triggers>
-                                                <DataTrigger Binding="{Binding Package.Published}" Value="True">
-                                                    <Setter TargetName="PublicationText" Property="Text" Value="已发布"/>
-                                                    <Setter TargetName="PublicationText" Property="Foreground" Value="#4B966D"/>
+                                                <DataTrigger Binding="{Binding Package.ReviewStatus}" Value="{x:Static tools:ToolPackageReviewStatus.Approved}">
+                                                    <Setter TargetName="ReviewText" Property="Text" Value="已通过"/>
+                                                    <Setter TargetName="ReviewText" Property="Foreground" Value="#3F8A61"/>
+                                                    <Setter TargetName="ReviewBadge" Property="Background" Value="#E5F5EB"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Package.ReviewStatus}" Value="{x:Static tools:ToolPackageReviewStatus.Rejected}">
+                                                    <Setter TargetName="ReviewText" Property="Text" Value="已拒绝"/>
+                                                    <Setter TargetName="ReviewText" Property="Foreground" Value="#B25A68"/>
+                                                    <Setter TargetName="ReviewBadge" Property="Background" Value="#FBE9EC"/>
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>
                                         </DataTemplate>
@@ -179,22 +191,28 @@
                     <TextBlock x:Name="StatusText" Foreground="#ECFFFFFF" FontSize="10.5"
                                VerticalAlignment="Center" TextWrapping="Wrap"/>
                 </StackPanel>
-                <Button Grid.Column="1" controls:ButtonAssist.IsPrimary="True"
-                        HorizontalAlignment="Right" MinWidth="150" Click="TogglePublicationButton_Click">
-                    <Button.Style>
-                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                            <Setter Property="Content" Value="发布选中版本"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedItem, ElementName=ToolGrid}" Value="{x:Null}">
-                                    <Setter Property="IsEnabled" Value="False"/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding SelectedItem.Package.Published, ElementName=ToolGrid}" Value="True">
-                                    <Setter Property="Content" Value="下架选中版本"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Button.Style>
-                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button MinWidth="104" Margin="0,0,8,0" Content="拒绝 / 下架" Click="RejectReviewButton_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem, ElementName=ToolGrid}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedItem.Package.ReviewStatus, ElementName=ToolGrid}" Value="{x:Static tools:ToolPackageReviewStatus.Rejected}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button controls:ButtonAssist.IsPrimary="True" MinWidth="104" Content="通过审核" Click="ApproveReviewButton_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedItem, ElementName=ToolGrid}" Value="{x:Null}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedItem.Package.ReviewStatus, ElementName=ToolGrid}" Value="{x:Static tools:ToolPackageReviewStatus.Approved}"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
     </Grid>

@@ -13,7 +13,7 @@ namespace XFEToolBox.Client.Installer.Utilities
 
         public static void ExtraZipStream(Stream stream, string targetPath)
         {
-            using var zipArchive = new ZipArchive(stream);
+            using var zipArchive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
             ExtraZip(zipArchive, targetPath);
         }
 

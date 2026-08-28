@@ -1,5 +1,12 @@
 namespace XFEToolBox.Core.Tools;
 
+public enum ToolPackageReviewStatus
+{
+    Pending,
+    Approved,
+    Rejected
+}
+
 public sealed class ToolPackageSummary
 {
     public required string Id { get; init; }
@@ -17,6 +24,8 @@ public sealed class ToolPackageSummary
     public required string LatestVersion { get; init; }
 
     public required string[] Tags { get; init; }
+
+    public bool RequiresAdministrator { get; init; }
 
     public DateTimeOffset UpdatedAtUtc { get; init; }
 }
@@ -42,7 +51,30 @@ public sealed class ToolPackageVersionInfo
 
     public bool Published { get; init; }
 
+    public ToolPackageReviewStatus ReviewStatus { get; init; }
+
+    public string? SubmittedByUserId { get; init; }
+
+    public string? SubmittedByUserName { get; init; }
+
+    public string? ReviewedByUserName { get; init; }
+
+    public DateTimeOffset? ReviewedAtUtc { get; init; }
+
+    public string? ReviewMessage { get; init; }
+
     public required string DownloadUrl { get; init; }
+}
+
+/// <summary>
+/// 工具包流式下载进度。服务器未返回长度且目录也没有包大小时，
+/// <see cref="TotalBytes"/> 为 <see langword="null"/>。
+/// </summary>
+public sealed record ToolPackageDownloadProgress(long BytesReceived, long? TotalBytes)
+{
+    public double? Percentage => TotalBytes is > 0
+        ? Math.Clamp(BytesReceived * 100d / TotalBytes.Value, 0, 100)
+        : null;
 }
 
 public sealed class ToolPackageUploadResult

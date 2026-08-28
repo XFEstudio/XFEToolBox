@@ -15,6 +15,7 @@ using XFEToolBox.Client.Utilities;
 using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Views.Pages;
 using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
@@ -22,15 +23,16 @@ public partial class MainPageViewModel : ObservableObject
 {
     private const int MaximumAttempts = 3;
     private const int CoverDownloadAttempts = 2;
-    private const int PopularVideoCount = 3;
-    private const int LatestVideoCount = 2;
-    private const int TutorialVideoCount = 2;
+    private const int PopularVideoCount = 1;
+    private const int LatestVideoCount = 1;
+    private const int TutorialVideoCount = 1;
     private const int ExpectedCarouselItemCount = PopularVideoCount + LatestVideoCount + TutorialVideoCount;
-    private const int MaximumVisibleRecentItems = 8;
+    private const int MaximumVisibleRecentItems = 4;
     private Task? loadingTask;
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
     private bool hasAdminOverviewSnapshot;
+    private bool hasRecentUsageSnapshot;
 
     public MainPage MainPage { get; }
 
@@ -41,6 +43,11 @@ public partial class MainPageViewModel : ObservableObject
         MainPage.Unloaded += MainPage_Unloaded;
         ClientSession.SessionChanged += ClientSession_SessionChanged;
         RecentUsageService.Changed += RecentUsageService_Changed;
+        PinnedItemService.Changed += DashboardData_Changed;
+        ActivityCenterService.Changed += DashboardData_Changed;
+        if (Application.Current is App app)
+            app.GlobalHotkeyStatusChanged += (_, _) => MainPage.Dispatcher.InvokeAsync(
+                () => OnPropertyChanged(nameof(LauncherHotkeyHint)));
         adminRefreshTimer = new DispatcherTimer(DispatcherPriority.Background, MainPage.Dispatcher)
         {
             Interval = TimeSpan.FromSeconds(2)
@@ -66,14 +73,28 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty] private Visibility recentItemsVisibility = Visibility.Collapsed;
     [ObservableProperty] private Visibility recentEmptyVisibility = Visibility.Visible;
     [ObservableProperty] private string recentUsageCountText = "0 项";
+    [ObservableProperty] private Visibility quickAccessVisibility = Visibility.Collapsed;
+    [ObservableProperty] private Visibility activitySectionVisibility = Visibility.Collapsed;
+    [ObservableProperty] private Visibility latestToolsVisibility = Visibility.Collapsed;
+    [ObservableProperty] private string activityCountText = "暂无活动";
     public ObservableCollection<RecentUsageCardViewModel> RecentItems { get; } = [];
+    public ObservableCollection<LauncherItemViewModel> QuickAccessItems { get; } = [];
+    public ObservableCollection<LauncherItemViewModel> RecentlyUpdatedTools { get; } = [];
+    public ObservableCollection<ActivityItem> ActivityItems { get; } = [];
+    public string LauncherHotkeyHint => SystemProfile.LauncherHotkeyEnabled
+        ? SystemProfile.LauncherHotkey.Replace("+", " + ", StringComparison.Ordinal)
+        : "快捷键已禁用";
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        RefreshRecentUsage();
-        var tasks = new List<Task> { LoadAdminOverviewAsync() };
-        if (!MainPage.mainCarousel.HasItems) tasks.Add(ReloadAsync());
-        await Task.WhenAll(tasks);
+        if (!hasRecentUsageSnapshot)
+            RefreshRecentUsage();
+        await RefreshDashboardAsync();
+        if (!MainPage.mainCarousel.HasItems)
+            _ = MainPage.Dispatcher.InvokeAsync(
+                async () => await ReloadAsync(),
+                DispatcherPriority.ContextIdle);
+        await LoadAdminOverviewAsync();
         if (ClientSession.IsAdministrator) adminRefreshTimer.Start();
     }
 
@@ -83,14 +104,20 @@ public partial class MainPageViewModel : ObservableObject
 
     private void ClientSession_SessionChanged(object? sender, EventArgs e) => MainPage.Dispatcher.InvokeAsync(async () =>
     {
-        RefreshRecentUsage();
         await LoadAdminOverviewAsync();
         if (ClientSession.IsAdministrator && MainPage.IsVisible) adminRefreshTimer.Start();
         else adminRefreshTimer.Stop();
     });
 
     private void RecentUsageService_Changed(object? sender, EventArgs e) =>
-        MainPage.Dispatcher.InvokeAsync(RefreshRecentUsage);
+        MainPage.Dispatcher.InvokeAsync(async () =>
+        {
+            RefreshRecentUsage();
+            await RefreshDashboardAsync();
+        });
+
+    private void DashboardData_Changed(object? sender, EventArgs e) =>
+        MainPage.Dispatcher.InvokeAsync(RefreshDashboardAsync);
 
     public async Task OpenRecentItemAsync(RecentUsageCardViewModel card)
     {
@@ -109,6 +136,10 @@ public partial class MainPageViewModel : ObservableObject
                     MainWindow.Current.ViewModel.NavigateToPageCommand.Execute("download");
                     await DownloadPage.Current.OpenSoftwareByIdAsync(card.Entry.TargetId);
                     break;
+
+                case RecentUsageKind.Project:
+                    await ToolWorkshopService.OpenProjectAsync(card.Entry.TargetId);
+                    break;
             }
         }
         finally
@@ -124,21 +155,84 @@ public partial class MainPageViewModel : ObservableObject
 
     public void OpenToolBox() => MainWindow.Current?.ViewModel.NavigateToPageCommand.Execute("tool");
 
+    public void OpenCommandPalette(string? initialQuery = null) =>
+        (Application.Current as App)?.ShowCommandPalette(initialQuery);
+
+    public async Task ExecuteLauncherItemAsync(LauncherItemViewModel item) => await item.ExecuteAsync();
+
+    public bool TogglePinned(LauncherItemViewModel item) => item.TogglePinned();
+
     private void RefreshRecentUsage()
     {
-        var recent = RecentUsageService.GetRecent()
-            .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software)
+        var entries = RecentUsageService.GetRecent()
+            .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software or RecentUsageKind.Project)
             .Take(MaximumVisibleRecentItems)
-            .Select(entry => new RecentUsageCardViewModel(entry))
             .ToArray();
+        var existing = RecentItems.ToDictionary(
+            item => CreateRecentUsageKey(item.Entry),
+            StringComparer.OrdinalIgnoreCase);
+        var recent = entries.Select(entry =>
+        {
+            var key = CreateRecentUsageKey(entry);
+            return existing.TryGetValue(key, out var card) && EntriesEquivalent(card.Entry, entry)
+                ? card
+                : new RecentUsageCardViewModel(entry);
+        }).ToArray();
 
-        RecentItems.Clear();
-        foreach (var item in recent) RecentItems.Add(item);
+        for (var index = 0; index < recent.Length; index++)
+        {
+            if (index >= RecentItems.Count)
+                RecentItems.Add(recent[index]);
+            else if (!ReferenceEquals(RecentItems[index], recent[index]))
+                RecentItems[index] = recent[index];
+        }
+        while (RecentItems.Count > recent.Length)
+            RecentItems.RemoveAt(RecentItems.Count - 1);
 
+        hasRecentUsageSnapshot = true;
         RecentItemsVisibility = recent.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentEmptyVisibility = recent.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentUsageCountText = $"{recent.Length} 项";
     }
+
+    private async Task RefreshDashboardAsync()
+    {
+        var quickAccess = (await LauncherService.GetQuickAccessAsync())
+            .Select(item => new LauncherItemViewModel(item))
+            .ToArray();
+        var latestTools = (await LauncherService.GetRecentlyUpdatedToolsAsync())
+            .Select(item => new LauncherItemViewModel(item))
+            .ToArray();
+        var activities = ActivityCenterService.GetSnapshot(4);
+
+        ReplaceItems(QuickAccessItems, quickAccess);
+        ReplaceItems(RecentlyUpdatedTools, latestTools);
+        ReplaceItems(ActivityItems, activities);
+        QuickAccessVisibility = QuickAccessItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        LatestToolsVisibility = RecentlyUpdatedTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivitySectionVisibility = ActivityItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivityCountText = ActivityCenterService.ActiveCount > 0
+            ? $"{ActivityCenterService.ActiveCount} 项进行中"
+            : ActivityItems.Count > 0 ? "最近活动" : "暂无活动";
+    }
+
+    private static void ReplaceItems<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
+    {
+        target.Clear();
+        foreach (var item in source) target.Add(item);
+    }
+
+    private static string CreateRecentUsageKey(RecentUsageEntry entry) =>
+        $"{entry.Kind}:{entry.TargetId}";
+
+    private static bool EntriesEquivalent(RecentUsageEntry left, RecentUsageEntry right) =>
+        left.Kind == right.Kind
+        && string.Equals(left.TargetId, right.TargetId, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(left.Name, right.Name, StringComparison.Ordinal)
+        && string.Equals(left.Description, right.Description, StringComparison.Ordinal)
+        && string.Equals(left.Detail, right.Detail, StringComparison.Ordinal)
+        && string.Equals(left.IconReference, right.IconReference, StringComparison.Ordinal)
+        && left.LastUsedAtUtc == right.LastUsedAtUtc;
 
     private async Task LoadAdminOverviewAsync()
     {

@@ -20,29 +20,32 @@ public static class PopupHelper
         return dialogPage;
     }
 
-    private static ScrollViewer CreateTextContent(string text, Color textColor) => new()
+    private static ScrollViewer CreateTextContent(string text, Color textColor)
     {
-        Content = new TextBlock
+        var content = new ScrollViewer
         {
-            Text = text,
-            Foreground = new SolidColorBrush(textColor),
-            Margin = new Thickness(20, 20, 20, 0),
-            TextWrapping = TextWrapping.WrapWithOverflow
-        },
-        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-        Resources = new ResourceDictionary
-        {
+            Content = new TextBlock
             {
-                typeof(ScrollBar),
-                new Style
-                {
-                    TargetType = typeof(ScrollBar),
-                    BasedOn = (Style)Application.Current.FindResource("ConsoleScrollBar")
-                }
-            }
+                Text = text,
+                Foreground = new SolidColorBrush(textColor),
+                Margin = new Thickness(20, 20, 20, 0),
+                TextWrapping = TextWrapping.WrapWithOverflow
+            },
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+
+        // 精简工具宿主只加载 ToolThemeResources，不一定包含主程序遗留的 ConsoleScrollBar 键。
+        // 优先复用可用的工具箱样式；两者都不存在时保留隐式/系统 ScrollBar 样式，不能让弹窗崩溃。
+        var scrollBarStyle = Application.Current?.TryFindResource("ConsoleScrollBar") as Style
+                             ?? Application.Current?.TryFindResource("ToolBoxScrollBarStyle") as Style;
+        if (scrollBarStyle is not null)
+        {
+            content.Resources[typeof(ScrollBar)] = new Style(typeof(ScrollBar), scrollBarStyle);
         }
-    };
+
+        return content;
+    }
 
     public static MessageBoxResult? ShowConfirmDialog(object content, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消")
         => ShowConfirmDialog(content, new PopupWindowOptions(), showCancelButton, confirmText, cancelText);
@@ -62,6 +65,9 @@ public static class PopupHelper
 
     public static MessageBoxResult? ShowConfirmDialog(string text, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") => ShowConfirmDialog(text, Colors.Black, showCancelButton, confirmText, cancelText);
 
+    public static MessageBoxResult? ShowConfirmDialog(string text, PopupWindowOptions options, bool showCancelButton = false, string confirmText = "确定", string cancelText = "取消") =>
+        ShowConfirmDialog(CreateTextContent(text, Colors.Black), options, showCancelButton, confirmText, cancelText);
+
     public static MessageBoxResult? ShowYesOrNoDialog(object content, bool showCancelButton = false, string yesText = "是", string noText = "否")
         => ShowYesOrNoDialog(content, new PopupWindowOptions(), showCancelButton, yesText, noText);
 
@@ -80,6 +86,9 @@ public static class PopupHelper
     public static MessageBoxResult? ShowYesOrNoDialog(string text, Color textColor, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(CreateTextContent(text, textColor), showCancelButton, yesText, noText);
 
     public static MessageBoxResult? ShowYesOrNoDialog(string text, bool showCancelButton = false, string yesText = "是", string noText = "否") => ShowYesOrNoDialog(text, Colors.Black, showCancelButton, yesText, noText);
+
+    public static MessageBoxResult? ShowYesOrNoDialog(string text, PopupWindowOptions options, bool showCancelButton = false, string yesText = "是", string noText = "否") =>
+        ShowYesOrNoDialog(CreateTextContent(text, Colors.Black), options, showCancelButton, yesText, noText);
 
     public static MessageBoxResult? ShowDialog(object content, double width = 320, double height = 230) =>
         ShowDialog(content, new PopupWindowOptions { Width = width, Height = height });

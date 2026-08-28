@@ -317,7 +317,7 @@
                     <MenuItem Header="工具包" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
                         <MenuItem Header="导出工具包…" InputGestureText="Ctrl+Shift+E" Click="PackageButton_Click"/>
-                        <MenuItem x:Name="PublishPackageMenuItem" Header="发布工具包" Click="PublishPackageButton_Click"/>
+                        <MenuItem x:Name="PublishPackageMenuItem" Header="发布 / 提交审核" Click="PublishPackageButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="开发" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
@@ -697,8 +697,75 @@
 
                                             <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
                                                 <StackPanel>
+                                                    <TextBlock Text="NuGet 包" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="为当前工具独立添加包引用。保存、编译和发布都会使用精确版本；请只引用可信包。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="14"/>
+                                                            <ColumnDefinition Width="180"/>
+                                                            <ColumnDefinition Width="10"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="包 ID" Style="{StaticResource ManifestFieldLabel}"/>
+                                                            <controls:TextEditor x:Name="ManifestNuGetPackageIdBox" Style="{StaticResource ManifestTextEditor}" HintText="例如 XFEExtension.NetCore.XFEConsole"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Text="精确版本" Style="{StaticResource ManifestFieldLabel}"/>
+                                                            <controls:TextEditor x:Name="ManifestNuGetPackageVersionBox" Style="{StaticResource ManifestTextEditor}" HintText="例如 2.6.0"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="4" Content="添加 / 更新" MinWidth="92" Height="38" Margin="0,19,0,0" Padding="13,0"
+                                                                Click="AddManifestNuGetPackageButton_Click"/>
+                                                    </Grid>
+                                                    <TextBlock x:Name="ManifestNuGetPackageValidationText" Text="使用精确版本可确保本地编译与发布后的工具保持一致。"
+                                                               Foreground="#858598" FontSize="9" Margin="2,8,0,0" TextWrapping="Wrap"/>
+                                                    <ItemsControl x:Name="ManifestNuGetPackagesItems" Margin="0,11,0,0">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Margin="0,0,0,7" Padding="12,9" Background="#F7F7FC" BorderBrush="#E0DFF0" BorderThickness="1" CornerRadius="10">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding Id}" Foreground="#4C4C63" FontSize="10.5" FontWeight="SemiBold"/>
+                                                                            <TextBlock Text="项目独立引用" Foreground="#9999AA" FontSize="8.5" Margin="0,2,0,0"/>
+                                                                        </StackPanel>
+                                                                        <Border Grid.Column="1" Padding="9,4" Margin="12,0" Background="#ECECFA" CornerRadius="8" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding Version}" Foreground="#6868A6" FontSize="9.5" FontFamily="Consolas"/>
+                                                                        </Border>
+                                                                        <Button Grid.Column="2" Content="移除" Tag="{Binding}" MinWidth="58" Height="30" Padding="9,0"
+                                                                                Click="RemoveManifestNuGetPackageButton_Click"/>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border Margin="0,12,0,0" Padding="16" Background="White" BorderBrush="#E4E3EF" BorderThickness="1" CornerRadius="14">
+                                                <StackPanel>
                                                     <TextBlock Text="权限与格式" Foreground="#45455A" FontSize="12.5" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="勾选工具运行所需的宿主能力；包格式版本由当前编辑器维护。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <TextBlock Text="配置启动权限并勾选工具运行所需的宿主能力；包格式版本由当前编辑器维护。" Foreground="#9696A8" FontSize="9.3" Margin="0,4,0,14"/>
+                                                    <Border Margin="0,0,0,14" Padding="12" Background="#FBFBFE" BorderBrush="#DDDDEC" BorderThickness="1" CornerRadius="10">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions><ColumnDefinition Width="34"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                            <Border Width="28" Height="28" Background="#ECECFA" CornerRadius="9" VerticalAlignment="Top">
+                                                                <TextBlock Text="◆" Foreground="#7777C9" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                                                <CheckBox x:Name="ManifestRequiresAdministratorCheckBox" Content="强制以管理员身份启动"
+                                                                          Style="{StaticResource ManifestPermissionCheckBox}"
+                                                                          Checked="ManifestWindowOptionCheckBox_Changed" Unchecked="ManifestWindowOptionCheckBox_Changed"/>
+                                                                <TextBlock Text="启用后会写入 requiresAdministrator；用户将看到 UAC 图标，且不能关闭管理员模式。"
+                                                                           Foreground="#8B8B9D" FontSize="9" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
                                                     <Grid>
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="180"/></Grid.ColumnDefinitions>
                                                         <StackPanel>

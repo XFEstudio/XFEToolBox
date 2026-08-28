@@ -64,7 +64,7 @@ public partial class RegistrationService : ServerCoreStandardServiceBase
             return;
         }
 
-        Args.Response.StatusCode = (int)HttpStatusCode.Created;
+        ReturnArgs.StatusCode = HttpStatusCode.Created;
         await Close(ToolBoxUserFaceInfo.FromUser(user));
     }
 

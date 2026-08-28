@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,7 +20,6 @@ public partial class SoftwareManagementPage : Page
 {
     public static SoftwareManagementPage Current { get; } = new();
 
-    private static readonly HttpClient IconClient = CreateIconClient();
     private static readonly SemaphoreSlim IconLoadGate = new(4);
     private readonly ObservableCollection<SoftwareCatalogItem> _software = [];
     private readonly ObservableCollection<SoftwareCatalogRow> _softwareRows = [];
@@ -253,7 +251,7 @@ public partial class SoftwareManagementPage : Page
         await IconLoadGate.WaitAsync();
         try
         {
-            var icon = await ReadIconAsync(row.Item.IconUrl);
+            var icon = await WebImageSourceLoader.LoadAsync(row.Item.IconUrl);
             if (icon is not null)
                 row.IconSource = icon;
         }
@@ -265,37 +263,6 @@ public partial class SoftwareManagementPage : Page
         {
             IconLoadGate.Release();
         }
-    }
-
-    private static async Task<ImageSource?> ReadIconAsync(string value)
-    {
-        byte[] bytes;
-        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-        {
-            var separator = value.IndexOf(',');
-            if (separator < 0)
-                return null;
-            bytes = Convert.FromBase64String(value[(separator + 1)..]);
-        }
-        else
-        {
-            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-                return null;
-            bytes = await IconClient.GetByteArrayAsync(uri);
-        }
-
-        if (bytes.Length == 0 || bytes.Length > 1024 * 1024)
-            return null;
-
-        using var stream = new MemoryStream(bytes);
-        var image = new BitmapImage();
-        image.BeginInit();
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.StreamSource = stream;
-        image.EndInit();
-        image.Freeze();
-        return image;
     }
 
     private static ImageSource? GetBundledIcon(string id)
@@ -314,13 +281,6 @@ public partial class SoftwareManagementPage : Page
         var image = new BitmapImage(new Uri($"pack://application:,,,{resource}", UriKind.Absolute));
         image.Freeze();
         return image;
-    }
-
-    private static HttpClient CreateIconClient()
-    {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("XFEToolBox/1.0");
-        return client;
     }
 
     private void NewButton_Click(object sender, RoutedEventArgs e)

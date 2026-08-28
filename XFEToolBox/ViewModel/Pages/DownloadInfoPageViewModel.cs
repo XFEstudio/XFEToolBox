@@ -8,6 +8,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
@@ -96,16 +97,7 @@ public partial class DownloadInfoPageViewModel : ObservableObject
             return;
         }
 
-        var task = DownloadDirectAsync(channel);
-        TaskManager.TaskDictionary[task.Id] = new NamedTask($"下载 {_software.Name}", task);
-        try
-        {
-            await task;
-        }
-        finally
-        {
-            TaskManager.TaskDictionary.Remove(task.Id);
-        }
+        await DownloadDirectAsync(channel);
     }
 
     private bool EnsureAgreementAccepted()
@@ -151,6 +143,9 @@ public partial class DownloadInfoPageViewModel : ObservableObject
 
     private async Task DownloadDirectAsync(SoftwareDownloadChannel channel)
     {
+        using var activity = ActivityCenterService.Start(
+            $"下载 {_software.Name}", XFEToolBox.Client.Models.ActivityKind.SoftwareDownload, canCancel: true);
+        var cancellationToken = activity.CancellationToken;
         string? temporaryPath = null;
         CanDownload = false;
         ProgressVisibility = Visibility.Visible;
@@ -163,9 +158,9 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         {
             Directory.CreateDirectory(DownloadProfile.DownloadDirectory);
             using var response = channel.Mode == SoftwareDownloadMode.Server
-                ? await DownloadFromServerAsync(channel)
+                ? await DownloadFromServerAsync(channel, cancellationToken)
                 : IsWebAddress(channel.Url)
-                    ? await DownloadClient.GetAsync(channel.Url, HttpCompletionOption.ResponseHeadersRead)
+                    ? await DownloadClient.GetAsync(channel.Url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                     : throw new InvalidOperationException("服务器返回了无效的下载地址。");
             response.EnsureSuccessStatusCode();
 
@@ -175,34 +170,36 @@ public partial class DownloadInfoPageViewModel : ObservableObject
             var contentLength = response.Content.Headers.ContentLength;
             IsProgressIndeterminate = contentLength is null or <= 0;
 
-            await using (var input = await response.Content.ReadAsStreamAsync())
+            await using (var input = await response.Content.ReadAsStreamAsync(cancellationToken))
             await using (var output = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920,
                              FileOptions.Asynchronous | FileOptions.SequentialScan))
             {
                 var buffer = new byte[81920];
                 long received = 0;
                 int read;
-                while ((read = await input.ReadAsync(buffer)) > 0)
+                while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
                 {
-                    await output.WriteAsync(buffer.AsMemory(0, read));
+                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                     received += read;
                     if (contentLength is > 0)
                     {
                         ProgressValue = received * 100d / contentLength.Value;
                         StatusText = $"正在下载… {FormatBytes(received)} / {FormatBytes(contentLength.Value)}";
+                        activity.Report(ProgressValue, StatusText);
                     }
                     else
                     {
                         StatusText = $"正在下载… 已接收 {FormatBytes(received)}";
+                        activity.Report(null, StatusText);
                     }
                 }
-                await output.FlushAsync();
+                await output.FlushAsync(cancellationToken);
             }
 
             if (!string.IsNullOrWhiteSpace(channel.Sha256))
             {
                 StatusText = "正在校验文件完整性…";
-                await VerifySha256Async(temporaryPath, channel.Sha256);
+                await VerifySha256Async(temporaryPath, channel.Sha256, cancellationToken);
             }
 
             File.Move(temporaryPath, destinationPath);
@@ -210,6 +207,7 @@ public partial class DownloadInfoPageViewModel : ObservableObject
             ProgressValue = 100;
             IsProgressIndeterminate = false;
             StatusText = $"下载完成：{Path.GetFileName(destinationPath)}";
+            activity.Succeed(StatusText);
 
             var followUpMessages = new List<string>();
             if (DownloadProfile.AutoRunWhenComplete)
@@ -224,11 +222,19 @@ public partial class DownloadInfoPageViewModel : ObservableObject
             }
             if (followUpMessages.Count > 0) StatusText += $"（{string.Join("；", followUpMessages)}）";
         }
+        catch (OperationCanceledException)
+        {
+            ProgressValue = 0;
+            IsProgressIndeterminate = false;
+            StatusText = "下载已取消。";
+            activity.Cancel(StatusText);
+        }
         catch (Exception exception)
         {
             ProgressValue = 0;
             IsProgressIndeterminate = false;
             StatusText = $"下载失败：{exception.Message}";
+            activity.Fail(StatusText);
         }
         finally
         {
@@ -238,7 +244,9 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         }
     }
 
-    private async Task<HttpResponseMessage> DownloadFromServerAsync(SoftwareDownloadChannel channel)
+    private async Task<HttpResponseMessage> DownloadFromServerAsync(
+        SoftwareDownloadChannel channel,
+        CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, $"{ClientSession.ApiAddress}/v1/software/download")
         {
@@ -249,7 +257,7 @@ public partial class DownloadInfoPageViewModel : ObservableObject
                 channelId = channel.Id
             })
         };
-        return await DownloadClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        return await DownloadClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
     private static string ResolveFileName(HttpResponseMessage response, string softwareId, SoftwareDownloadChannel channel)
@@ -285,11 +293,11 @@ public partial class DownloadInfoPageViewModel : ObservableObject
         }
     }
 
-    private static async Task VerifySha256Async(string path, string expected)
+    private static async Task VerifySha256Async(string path, string expected, CancellationToken cancellationToken)
     {
         await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 81920,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
-        var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream));
+        var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken));
         if (!string.Equals(actual, expected.Trim(), StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("SHA-256 校验失败，文件可能已损坏或被替换。");
     }

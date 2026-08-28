@@ -1,7 +1,11 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.ViewModel.Pages;
+using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Views.Pages.Popups;
+using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client.Views.Pages;
 
@@ -45,4 +49,41 @@ public partial class MainPage : Page
     }
 
     private void OpenToolBox_Click(object sender, RoutedEventArgs e) => ViewModel.OpenToolBox();
+
+    private void OpenCommandPalette_Click(object sender, RoutedEventArgs e) =>
+        ViewModel.OpenCommandPalette(HomeSearchBox.Text);
+
+    private void HomeSearchBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        ViewModel.OpenCommandPalette(HomeSearchBox.Text);
+        e.Handled = true;
+    }
+
+    private async void LauncherItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { CommandParameter: LauncherItemViewModel item })
+            await ViewModel.ExecuteLauncherItemAsync(item);
+    }
+
+    private void TogglePin_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { CommandParameter: LauncherItemViewModel item }) return;
+        if (!ViewModel.TogglePinned(item))
+            PopupHelper.ShowConfirmDialog($"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项。", confirmText: "知道了");
+    }
+
+    private void AdminServerPanel_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) =>
+        MainWindow.Current?.ViewModel.NavigateToPageCommand.Execute("serverOverview");
+
+    private void ManagePinnedItems_Click(object sender, RoutedEventArgs e) =>
+        PopupHelper.ShowDialog(new PinnedItemsPopupPage(), new PopupWindowOptions
+        {
+            Title = "快速访问",
+            Subtitle = "管理主页固定项",
+            Width = 560,
+            Height = 520,
+            ContentMargin = new Thickness(0)
+        });
 }

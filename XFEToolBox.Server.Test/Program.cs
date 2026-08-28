@@ -6,6 +6,7 @@ using XFEToolBox.Server.Core.Exceptions;
 using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
 using XFEToolBox.Server.Core.Utilities;
+using XFEExtension.NetCore.CyberComm;
 
 var tests = new (string Name, Action Run)[]
 {
@@ -13,7 +14,9 @@ var tests = new (string Name, Action Run)[]
     ("路径穿越会被拒绝", PathTraversalIsRejected),
     ("语义化版本按预期排序", SemanticVersionsAreOrdered),
     ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage),
+    ("用户投稿需经管理员审核后才会公开", RepositorySubmissionRequiresReview),
     ("文件仓库拒绝覆盖已存在的工具版本", RepositoryRejectsDuplicateVersion),
+    ("Socket 传输可安全配置工具下载响应", SocketDownloadResponseIsConfigured),
     ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad)
 };
 
@@ -39,6 +42,7 @@ static void ValidPackagePasses()
     using var package = CreatePackage();
     var result = CreateValidator().Inspect(package);
     Assert(result.Manifest.Id == "base64-generator", "工具 ID 不正确。");
+    Assert(result.Manifest.RequiresAdministrator, "管理员启动要求没有从 manifest 保留下来。");
     Assert(result.Files.Contains("src/Views/Base64Tool.xaml"), "未发现入口 XAML。");
     Assert(result.Files.Contains("src/ViewModels/Base64ToolViewModel.cs"), "未发现 ViewModel。");
     Assert(result.IconDataUrl?.StartsWith("data:image/png;base64,", StringComparison.Ordinal) == true, "工具图标未被读取。");
@@ -133,6 +137,86 @@ static void RepositoryRejectsDuplicateVersion()
     }
 }
 
+static void RepositorySubmissionRequiresReview()
+{
+    var root = Path.Combine(Path.GetTempPath(), "XFEToolBox.Server.Test", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var validationOptions = new ToolPackageValidationOptions();
+        var repository = new FileSystemToolPackageRepository(
+            new ToolPackageValidator(validationOptions),
+            validationOptions,
+            new ToolPackageStorageOptions { StorageRoot = root });
+
+        using var packageStream = CreatePackage();
+        var submitted = repository.SaveSubmissionAsync(packageStream, "user-1", "creator")
+            .GetAwaiter().GetResult();
+        Assert(!submitted.Published, "用户投稿被直接公开。");
+        Assert(submitted.ReviewStatus == ToolPackageReviewStatus.Pending, "用户投稿没有进入待审核状态。");
+        Assert(submitted.SubmittedByUserName == "creator", "投稿账号没有写入元数据。");
+        Assert(repository.ListAsync(publishedOnly: true).GetAwaiter().GetResult().Count == 0,
+            "待审核投稿出现在公开目录中。");
+
+        var approved = repository.SetReviewStatusAsync(
+            submitted.Manifest.Id,
+            submitted.Manifest.Version,
+            ToolPackageReviewStatus.Approved,
+            "admin-1",
+            "administrator").GetAwaiter().GetResult();
+        Assert(approved.Published && approved.ReviewStatus == ToolPackageReviewStatus.Approved,
+            "管理员通过后工具没有公开。");
+        Assert(approved.ReviewedByUserName == "administrator" && approved.ReviewedAtUtc.HasValue,
+            "审核人或审核时间没有写入元数据。");
+        Assert(repository.ListAsync(publishedOnly: true).GetAwaiter().GetResult().Count == 1,
+            "审核通过的工具没有出现在公开目录中。");
+
+        var rejected = repository.SetReviewStatusAsync(
+            submitted.Manifest.Id,
+            submitted.Manifest.Version,
+            ToolPackageReviewStatus.Rejected,
+            "admin-1",
+            "administrator",
+            "需要修改说明").GetAwaiter().GetResult();
+        Assert(!rejected.Published && rejected.ReviewStatus == ToolPackageReviewStatus.Rejected,
+            "管理员拒绝后工具仍处于公开状态。");
+        Assert(rejected.ReviewMessage == "需要修改说明", "审核说明没有保存。");
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void SocketDownloadResponseIsConfigured()
+{
+    var response = new CyberCommHttpResponse();
+    ServerHttpResponseHelper.ConfigureDownload(
+        response,
+        legacyResponse: null,
+        "application/vnd.xfestudio.xfetool",
+        1234,
+        "text-encryption-1.0.1.xfetool",
+        "abc123");
+
+    Assert(
+        response.Headers["Content-Type"] == "application/vnd.xfestudio.xfetool",
+        "工具包响应类型未设置。");
+    Assert(response.Headers["Content-Length"] == "1234", "工具包响应长度未设置。");
+    Assert(
+        response.Headers["Content-Disposition"] == "attachment; filename=\"text-encryption-1.0.1.xfetool\"",
+        "工具包下载文件名未设置。");
+    Assert(response.Headers["ETag"] == "\"abc123\"", "工具包 ETag 未设置。");
+
+    ServerHttpResponseHelper.ConfigureDownload(
+        response: null,
+        legacyResponse: null,
+        "application/vnd.xfestudio.xfetool",
+        0,
+        "empty.xfetool",
+        "empty");
+}
+
 static void SystemCpuUsageIsMeasuredUnderLoad()
 {
     using var loadStarted = new ManualResetEventSlim();
@@ -175,6 +259,7 @@ static MemoryStream CreatePackage(Action<ZipArchive>? customize = null)
             Category = "编码",
             Tags = ["base64"],
             MinimumHostVersion = "0.2.0",
+            RequiresAdministrator = true,
             Entry = new ToolEntryManifest
             {
                 ViewXaml = "src/Views/Base64Tool.xaml",

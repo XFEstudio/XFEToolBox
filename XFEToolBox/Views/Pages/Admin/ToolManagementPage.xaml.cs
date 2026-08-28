@@ -99,7 +99,11 @@ public partial class ToolManagementPage : Page
         }
     }
 
-    private async void TogglePublicationButton_Click(object sender, RoutedEventArgs e)
+    private async void ApproveReviewButton_Click(object sender, RoutedEventArgs e) => await ReviewSelectedAsync(true);
+
+    private async void RejectReviewButton_Click(object sender, RoutedEventArgs e) => await ReviewSelectedAsync(false);
+
+    private async Task ReviewSelectedAsync(bool approved)
     {
         if (ToolGrid.SelectedItem is not ToolPackageUploadResult package)
         {
@@ -107,8 +111,10 @@ public partial class ToolManagementPage : Page
             return;
         }
         var response = await ClientSession.Requester.Request<ToolPackageUploadResult>(
-            "adminSetPublication", package.Manifest.Id, package.Manifest.Version, !package.Package.Published);
-        StatusText.Text = response.StatusCode == HttpStatusCode.OK ? "发布状态已更新。" : response.Message;
+            "adminReviewTool", package.Manifest.Id, package.Manifest.Version, approved, null!);
+        StatusText.Text = response.StatusCode == HttpStatusCode.OK
+            ? approved ? "审核已通过，版本已公开。" : "审核已拒绝，版本不会公开。"
+            : response.Message;
         if (response.StatusCode == HttpStatusCode.OK) await RefreshAsync(keepStatus: true);
     }
 

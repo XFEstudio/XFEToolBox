@@ -67,6 +67,8 @@ internal static class ToolProjectWorkspaceService
                   "icon": "{{DefaultToolIconRelativePath}}",
                   "category": "开发工具",
                   "tags": [ "WPF" ],
+                  "nugetPackages": [],
+                  "requiresAdministrator": false,
                   "entry": {
                     "viewXaml": "Code/Views/MainPage.xaml",
                     "viewClass": "{{toolNamespace}}.MainPage",

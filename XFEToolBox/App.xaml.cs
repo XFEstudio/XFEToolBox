@@ -1,49 +1,151 @@
-﻿using System.Windows;
-using XFEExtension.NetCore.XFEConsole;
+using System.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client;
 
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
 public partial class App : Application
 {
-    public App()
-    {
-        this.InitializeComponent();
-    }
+    private SingleInstanceService? singleInstanceService;
+    private TrayIconService? trayIconService;
+    private GlobalHotkeyService? globalHotkeyService;
+    private CommandPaletteWindow? commandPaletteWindow;
+    private MainWindow? mainWindow;
+
+    public App() => InitializeComponent();
+
+    public bool IsExiting { get; private set; }
+
+    public string GlobalHotkeyStatus => globalHotkeyService?.Status ?? "快捷键服务尚未初始化";
+
+    public event EventHandler? GlobalHotkeyStatusChanged;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-
-        // 注册 UI 线程未处理异常事件
-        this.DispatcherUnhandledException += new System.Windows.Threading.DispatcherUnhandledExceptionEventHandler(App_DispatcherUnhandledException);
-
-        // 注册非 UI 线程未处理异常事件
-        AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-
-        // 注册任务调度程序未观察到的任务异常事件
+        DispatcherUnhandledException += App_DispatcherUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+
+        singleInstanceService = new SingleInstanceService();
+        if (!singleInstanceService.IsFirstInstance)
+        {
+            var command = e.Args.Contains("--palette", StringComparer.OrdinalIgnoreCase) ? "show-palette" : "show-main";
+            _ = SingleInstanceService.SendAsync(command).GetAwaiter().GetResult();
+            Shutdown();
+            return;
+        }
+
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        mainWindow = new MainWindow();
+        MainWindow = mainWindow;
+        globalHotkeyService = new GlobalHotkeyService(mainWindow, () => ShowCommandPalette());
+        globalHotkeyService.StatusChanged += (_, _) => GlobalHotkeyStatusChanged?.Invoke(this, EventArgs.Empty);
+        if (SystemProfile.LauncherHotkeyEnabled)
+            globalHotkeyService.Register(SystemProfile.LauncherHotkey);
+        else
+            globalHotkeyService.Disable();
+        trayIconService = new TrayIconService(
+            () => ShowMainWindow("home"),
+            () => ShowCommandPalette(),
+            RequestExit);
+        singleInstanceService.StartListening(message => Dispatcher.BeginInvoke(() =>
+        {
+            if (message.Equals("show-palette", StringComparison.OrdinalIgnoreCase)) ShowCommandPalette();
+            else ShowMainWindow("home");
+        }));
+
+        if (!e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase))
+            ShowMainWindow("home");
     }
 
-    void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    public void ShowMainWindow(string? pageTag = null)
     {
-        // 处理 UI 线程未处理的异常
-        //MessageBox.Show("UI线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-        e.Handled = true; // 设置为 true 表示异常已处理，防止应用程序退出
+        if (mainWindow is null) return;
+        if (!mainWindow.IsVisible) mainWindow.Show();
+        if (mainWindow.WindowState == WindowState.Minimized) mainWindow.WindowState = WindowState.Normal;
+        if (!string.IsNullOrWhiteSpace(pageTag))
+            mainWindow.NavigateAndSelect(pageTag);
+        mainWindow.Activate();
+        mainWindow.Topmost = true;
+        mainWindow.Topmost = false;
+        mainWindow.Focus();
     }
 
-    void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    public void ShowCommandPalette(string? initialQuery = null)
     {
-        // 处理非 UI 线程未处理的异常
-        //Exception ex = e.ExceptionObject as Exception;
-        //MessageBox.Show("非UI线程未处理异常：" + ex?.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        commandPaletteWindow ??= new CommandPaletteWindow();
+        commandPaletteWindow.ShowPalette(initialQuery);
     }
 
-    void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    public bool ConfigureGlobalHotkey(string gestureText)
     {
-        // 处理任务调度程序未观察到的任务异常
-        //MessageBox.Show("非主线程未处理异常：" + e.Exception.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-        e.SetObserved(); // 防止程序崩溃
+        if (!GlobalHotkeyService.TryNormalize(gestureText, out var normalized, out _)) return false;
+        SystemProfile.LauncherHotkey = normalized;
+        SystemProfile.SaveProfile();
+        if (!SystemProfile.LauncherHotkeyEnabled)
+        {
+            globalHotkeyService?.Disable();
+            return true;
+        }
+        return globalHotkeyService?.Register(normalized) == true;
     }
+
+    public void ConfigureGlobalHotkeyEnabled(bool enabled)
+    {
+        SystemProfile.LauncherHotkeyEnabled = enabled;
+        SystemProfile.SaveProfile();
+        if (enabled)
+            globalHotkeyService?.Register(SystemProfile.LauncherHotkey);
+        else
+            globalHotkeyService?.Disable();
+    }
+
+    public void HideMainWindowToTray()
+    {
+        mainWindow?.Hide();
+        if (SystemProfile.TrayCloseHintShown) return;
+        SystemProfile.TrayCloseHintShown = true;
+        SystemProfile.SaveProfile();
+        trayIconService?.ShowCloseHint();
+    }
+
+    public void RequestExit()
+    {
+        if (IsExiting) return;
+        if (ActivityCenterService.ActiveCount > 0)
+        {
+            var result = PopupHelper.ShowConfirmDialog(
+                $"当前还有以下未完成任务：\n\n{ActivityCenterService.DescribeActiveItems()}\n\n确定退出并终止这些任务吗？",
+                showCancelButton: true,
+                confirmText: "仍然退出");
+            if (result != MessageBoxResult.OK) return;
+        }
+
+        IsExiting = true;
+        Shutdown();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        globalHotkeyService?.Dispose();
+        trayIconService?.Dispose();
+        singleInstanceService?.Dispose();
+        base.OnExit(e);
+    }
+
+    private static void App_DispatcherUnhandledException(
+        object sender,
+        System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        e.Handled = true;
+    }
+
+    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+    {
+    }
+
+    private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) =>
+        e.SetObserved();
 }

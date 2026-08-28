@@ -15,6 +15,7 @@ internal static class ToolPackageContractMapper
         Category = package.Manifest.Category,
         LatestVersion = package.Manifest.Version,
         Tags = package.Manifest.Tags,
+        RequiresAdministrator = package.Manifest.RequiresAdministrator,
         UpdatedAtUtc = package.UploadedAtUtc
     };
 
@@ -26,6 +27,14 @@ internal static class ToolPackageContractMapper
         PackageSize = package.PackageSize,
         UploadedAtUtc = package.UploadedAtUtc,
         Published = package.Published,
+        ReviewStatus = package.ReviewStatus ?? (package.Published
+            ? ToolPackageReviewStatus.Approved
+            : ToolPackageReviewStatus.Pending),
+        SubmittedByUserId = package.SubmittedByUserId,
+        SubmittedByUserName = package.SubmittedByUserName,
+        ReviewedByUserName = package.ReviewedByUserName,
+        ReviewedAtUtc = package.ReviewedAtUtc,
+        ReviewMessage = package.ReviewMessage,
         DownloadUrl = "/api/v1/tools/download"
     };
 

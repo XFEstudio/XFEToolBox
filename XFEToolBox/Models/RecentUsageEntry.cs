@@ -4,7 +4,8 @@ public enum RecentUsageKind
 {
     Page,
     Tool,
-    Software
+    Software,
+    Project
 }
 
 /// <summary>

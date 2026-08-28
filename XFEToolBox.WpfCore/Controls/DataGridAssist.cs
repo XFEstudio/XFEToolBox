@@ -168,21 +168,26 @@ public static class DataGridAssist
 
     private static void ApplyStylesIfUnset(DataGridBoundColumn column, Style? elementStyle, Style? editingStyle)
     {
-        // 显式设置的列样式代表页面作者的主动选择，只替换 WPF 自动回退的系统默认样式。
-        if (column.ElementStyle is null && elementStyle is not null)
+        // DataGridCheckBoxColumn 等类型通过属性元数据提供非 null 的系统默认样式。
+        // ReadLocalValue 才能区分“页面作者显式设置”和“WPF 元数据回退”。
+        if (column.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty) == DependencyProperty.UnsetValue
+            && elementStyle is not null)
             column.ElementStyle = elementStyle;
 
-        if (column.EditingElementStyle is null && editingStyle is not null)
+        if (column.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty) == DependencyProperty.UnsetValue
+            && editingStyle is not null)
             column.EditingElementStyle = editingStyle;
     }
 
     private static void ApplyStylesIfUnset(DataGridComboBoxColumn column, Style? elementStyle, Style? editingStyle)
     {
-        // DataGridComboBoxColumn 不继承 DataGridBoundColumn，但拥有独立的同名样式属性。
-        if (column.ElementStyle is null && elementStyle is not null)
+        // DataGridComboBoxColumn 不继承 DataGridBoundColumn，但拥有独立的同名依赖属性。
+        if (column.ReadLocalValue(DataGridComboBoxColumn.ElementStyleProperty) == DependencyProperty.UnsetValue
+            && elementStyle is not null)
             column.ElementStyle = elementStyle;
 
-        if (column.EditingElementStyle is null && editingStyle is not null)
+        if (column.ReadLocalValue(DataGridComboBoxColumn.EditingElementStyleProperty) == DependencyProperty.UnsetValue
+            && editingStyle is not null)
             column.EditingElementStyle = editingStyle;
     }
 }

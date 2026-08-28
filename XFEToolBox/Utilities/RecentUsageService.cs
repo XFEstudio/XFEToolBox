@@ -48,6 +48,16 @@ public static class RecentUsageService
         IconReference = string.Empty
     });
 
+    internal static void RecordProject(ToolProjectHistoryItem project) => Record(new RecentUsageEntry
+    {
+        Kind = RecentUsageKind.Project,
+        TargetId = project.ProjectPath,
+        Name = project.Name,
+        Description = "Code Studio 工具项目",
+        Detail = project.ProjectPath,
+        IconReference = "/Resources/Image/wrench.png"
+    });
+
     public static void Remove(RecentUsageKind kind, string targetId)
     {
         EnsureLoaded();
@@ -105,26 +115,35 @@ public static class RecentUsageService
             if (isLoaded) return;
             isLoaded = true;
             if (string.IsNullOrWhiteSpace(SystemProfile.RecentUsageJson)) return;
+            Entries.AddRange(ParseEntries(SystemProfile.RecentUsageJson));
+        }
+    }
 
-            try
+    internal static IReadOnlyList<RecentUsageEntry> ParseEntries(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try
+        {
+            var result = new List<RecentUsageEntry>();
+            var loaded = JsonSerializer.Deserialize<RecentUsageEntry?[]>(json, JsonOptions) ?? [];
+            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in loaded
+                         .OfType<RecentUsageEntry>()
+                         .Where(entry => IsValid(entry) && entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software or RecentUsageKind.Project)
+                         .OrderByDescending(item => item.LastUsedAtUtc))
             {
-                var loaded = JsonSerializer.Deserialize<RecentUsageEntry[]>(SystemProfile.RecentUsageJson, JsonOptions) ?? [];
-                var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var entry in loaded
-                             .Where(entry => IsValid(entry) && entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software)
-                             .OrderByDescending(item => item.LastUsedAtUtc))
-                {
-                    var key = CreateKey(entry.Kind, entry.TargetId);
-                    if (!keys.Add(key)) continue;
-                    entry.IconReference = NormalizeIconReference(entry.IconReference);
-                    Entries.Add(entry);
-                    if (Entries.Count == MaximumSavedItems) break;
-                }
+                var key = CreateKey(entry.Kind, entry.TargetId);
+                if (!keys.Add(key)) continue;
+                entry.IconReference = NormalizeIconReference(entry.IconReference);
+                result.Add(Clone(entry));
+                if (result.Count == MaximumSavedItems) break;
             }
-            catch (JsonException)
-            {
-                Entries.Clear();
-            }
+
+            return result;
+        }
+        catch (JsonException)
+        {
+            return [];
         }
     }
 

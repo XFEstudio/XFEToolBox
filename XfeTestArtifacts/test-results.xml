@@ -1,4 +1,36 @@
-<testsuite name="XFEExtension.NetCore.XUnit" tests="2" failures="0" skipped="0" time="1.204110">
-  <testcase name="Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea" time="0.387969" />
-  <testcase name="Program.TabAndNavigationOutlinesStayInsideTheirLayoutBounds" time="0.804357" />
+<testsuite name="XFEExtension.NetCore.XUnit" tests="31" failures="0" skipped="0" time="7.797014">
+  <testcase name="ConsoleFoldBlockStyleTests.FoldBlockUsesCompactDedicatedButtonAndTogglesItsState" time="0.291734" />
+  <testcase name="InstallerTests.InstallerRejectsNestedAndTraversingPackages" time="0.017001" />
+  <testcase name="InstallerTests.InstallerRestoresExistingFilesWhenAnOverwriteFails" time="2.885851" />
+  <testcase name="InstallerTests.InstallerStagesAndAppliesAValidPackage" time="0.072596" />
+  <testcase name="Program.ActivityCenterTracksProgressAndCancellation" time="0.004048" />
+  <testcase name="Program.BufferedConsoleRendererKeepsUiTreeBoundedUnderLoad#0" time="0.576135">
+    <system-out>WPF 控制台端到端吞吐：115,705 条/秒；UI 最大调度延迟 20.5 ms；保留 7,968 行，仅 63 个文本块。
+</system-out>
+  </testcase>
+  <testcase name="Program.FramelessMaximizedWindowStaysInsideMonitorWorkArea" time="0.403977" />
+  <testcase name="Program.LauncherHotkeyParserNormalizesAndRejectsUnsafeGestures" time="0.001219" />
+  <testcase name="Program.LauncherRankingUsesStableMatchOrderAndPersonalizationBoosts" time="0.063048" />
+  <testcase name="Program.PinnedAndRecentConfigurationRecoverFromDuplicatesAndDamage" time="0.045944" />
+  <testcase name="Program.QuickAccessToolCardLoadsItsCatalogIcon" time="0.093413" />
+  <testcase name="Program.SingleInstanceForwardsCommandsThroughItsNamedPipe" time="0.010086" />
+  <testcase name="Program.TabAndNavigationOutlinesStayInsideTheirLayoutBounds" time="0.434390" />
+  <testcase name="Program.TimePickerIncrementOneKeepsTheWholeScrollTrackUsable" time="0.914212" />
+  <testcase name="Program.WorkshopProjectCardLoadsItsManifestPreviewIcon" time="0.029589" />
+  <testcase name="Program.XamlCodeViewerRendersDistinctSyntaxTokens" time="0.041598" />
+  <testcase name="RecentUsageIconCacheTests.RecentUsageIconsAreFrozenReusedAndBounded" time="0.005374" />
+  <testcase name="SettingsControlsTests.RemoteInputsAreOnlyVisibleWhileRemoteModeIsEnabled" time="0.480458" />
+  <testcase name="ToolNuGetPackageTests.ManifestRoundTripsProjectNuGetPackages" time="0.003016" />
+  <testcase name="ToolNuGetPackageTests.PackageRulesRequireSafeIdsAndPinnedVersions" time="0.001904" />
+  <testcase name="ToolNuGetPackageTests.RuntimeProjectIncludesEachToolPackageAndAllowsToolkitOverride" time="0.008404" />
+  <testcase name="ToolRuntimeProcessStartInfoFactoryTests.AdministratorLaunchUsesShellRunAsAndTheCompiledAppHost" time="0.000360" />
+  <testcase name="ToolRuntimeProcessStartInfoFactoryTests.AdministratorPreferenceSurvivesSerializationAndIsCaseInsensitive" time="0.005121" />
+  <testcase name="ToolRuntimeProcessStartInfoFactoryTests.StandardLaunchKeepsStartupDiagnosticsEnabled" time="0.000134" />
+  <testcase name="ToolRuntimeProcessStartInfoFactoryTests.UserAndManifestAdministratorModesAreBothEffective" time="0.000241" />
+  <testcase name="UnifiedControlDefaultsTests.DataGridGeneratedColumnsReceiveUnifiedStylesWithoutOverwritingExplicitStyles" time="0.006277" />
+  <testcase name="UnifiedControlDefaultsTests.ProgressRingDefaultsToZeroAndInactive" time="0.019159" />
+  <testcase name="WebImageSourceLoaderTests.BackgroundDecodedPngCanBeDisplayedByAnimatedImageBehavior" time="0.390570" />
+  <testcase name="WebImageSourceLoaderTests.LargeSvgLoadingStaysOffTheUiThreadAndSharesItsCachedResult" time="0.950478" />
+  <testcase name="WebImageSourceLoaderTests.WebImageLoaderDecodesSvgIcoAndSvgDataUris" time="0.030585" />
+  <testcase name="WebImageSourceLoaderTests.WebImageLoaderRejectsOversizedAndNonImageContent" time="0.000963" />
 </testsuite>

@@ -1,6 +1,4 @@
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using XFEToolBox.Client.Model;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Profiles.CacheProfiles;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Server;
@@ -18,7 +17,6 @@ namespace XFEToolBox.Client.Views.Pages;
 
 public partial class DownloadPage : Page
 {
-    private static readonly HttpClient IconClient = CreateIconClient();
     private static readonly SemaphoreSlim IconLoadGate = new(4);
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly List<SoftwareCardViewModel> _software = [];
@@ -279,6 +277,19 @@ public partial class DownloadPage : Page
         ShowSoftwareDetails(card);
     }
 
+    private void TogglePinnedSoftwareMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: SoftwareCardViewModel card }) return;
+        var wasPinned = PinnedItemService.IsPinned(LauncherItemKind.Software, card.Id);
+        var success = wasPinned
+            ? PinnedItemService.Unpin(LauncherItemKind.Software, card.Id)
+            : PinnedItemService.TryPin(LauncherItemKind.Software, card.Id);
+        StatusText.Text = !success
+            ? $"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项。"
+            : wasPinned ? $"已取消固定 {card.Name}。" : $"已将 {card.Name} 固定到主页。";
+    }
+
     private async void SoftwareCard_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: SoftwareCardViewModel card } && card.TryBeginIconLoad())
@@ -344,6 +355,7 @@ public partial class DownloadPage : Page
 
     private static void ShowSoftwareDetails(SoftwareCardViewModel card)
     {
+        RecentUsageIconCache.Remember(RecentUsageKind.Software, card.Id, card.IconSource);
         RecentUsageService.RecordSoftware(card.Software);
         PopupHelper.ShowDialog(new DownloadInfoPage(card.Software, card.IconSource), new PopupWindowOptions
         {
@@ -361,7 +373,7 @@ public partial class DownloadPage : Page
         await IconLoadGate.WaitAsync();
         try
         {
-            var icon = await ReadIconAsync(card.Software.IconUrl);
+            var icon = await WebImageSourceLoader.LoadAsync(card.Software.IconUrl);
             if (icon is not null) card.IconSource = icon;
         }
         catch
@@ -372,33 +384,6 @@ public partial class DownloadPage : Page
         {
             IconLoadGate.Release();
         }
-    }
-
-    private static async Task<ImageSource?> ReadIconAsync(string value)
-    {
-        byte[] bytes;
-        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-        {
-            var separator = value.IndexOf(',');
-            if (separator < 0) return null;
-            bytes = Convert.FromBase64String(value[(separator + 1)..]);
-        }
-        else
-        {
-            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)) return null;
-            bytes = await IconClient.GetByteArrayAsync(uri);
-        }
-
-        if (bytes.Length == 0 || bytes.Length > 1024 * 1024) return null;
-        using var stream = new MemoryStream(bytes);
-        var image = new BitmapImage();
-        image.BeginInit();
-        image.CacheOption = BitmapCacheOption.OnLoad;
-        image.StreamSource = stream;
-        image.EndInit();
-        image.Freeze();
-        return image;
     }
 
     private static ImageSource GetBundledIcon(string id)
@@ -416,10 +401,4 @@ public partial class DownloadPage : Page
         return image;
     }
 
-    private static HttpClient CreateIconClient()
-    {
-        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("XFEToolBox/0.2");
-        return client;
-    }
 }

@@ -120,6 +120,9 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具箱"/>
                     </Grid>
                 </controls:NavigationButton>
+                <controls:NavigationButton x:Name="workshopButton" Command="{Binding NavigateToPageCommand}" CommandParameter="workshop">
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Image Source="/Resources/Image/wrench.png" Margin="7"/><TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="工具工坊"/></Grid>
+                </controls:NavigationButton>
                 <controls:NavigationButton x:Name="consoleButton" Command="{Binding NavigateToPageCommand}" CommandParameter="console">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>

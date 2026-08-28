@@ -34,6 +34,10 @@ namespace XFEToolBox.Client.Views.Windows;
 
 public partial class ToolCodeEditorWindow : Window
 {
+    private const int EAccessDenied = unchecked((int)0x80070005);
+    private static readonly object WebViewEnvironmentSync = new();
+    private static Task<CoreWebView2Environment>? _sharedWebViewEnvironmentTask;
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNameCaseInsensitive = true
@@ -85,6 +89,7 @@ public partial class ToolCodeEditorWindow : Window
     private readonly ObservableCollection<EditorExplorerItem> _files = [];
     private readonly ObservableCollection<EditorExplorerItem> _explorerItems = [];
     private readonly ObservableCollection<string> _manifestTags = [];
+    private readonly ObservableCollection<ToolNuGetPackageReference> _manifestNuGetPackages = [];
     private List<string> _explorerOrder = [];
     private ICollectionView? _fileView;
     private string _workspaceRoot = string.Empty;
@@ -127,6 +132,7 @@ public partial class ToolCodeEditorWindow : Window
         _fileView.Filter = FileMatchesFilter;
         FileList.ItemsSource = _fileView;
         ManifestTagsItems.ItemsSource = _manifestTags;
+        ManifestNuGetPackagesItems.ItemsSource = _manifestNuGetPackages;
         SaveButton.IsEnabled = false;
         EditorThemeButton.IsEnabled = false;
         PreviewButton.IsEnabled = false;
@@ -167,7 +173,8 @@ public partial class ToolCodeEditorWindow : Window
             await ReloadFileListAsync();
 
             SetHostStatus("正在启动 Monaco Editor…");
-            await EditorWebView.EnsureCoreWebView2Async();
+            var webViewEnvironment = await GetSharedWebViewEnvironmentAsync();
+            await EditorWebView.EnsureCoreWebView2Async(webViewEnvironment);
             var editorAssets = Path.Combine(AppContext.BaseDirectory, "Resources", "Editor");
             if (!File.Exists(Path.Combine(editorAssets, "editor.html")))
                 throw new FileNotFoundException("找不到本地 Monaco 编辑器资源。", editorAssets);
@@ -190,10 +197,57 @@ public partial class ToolCodeEditorWindow : Window
         }
         catch (Exception exception)
         {
-            EditorLoadingDetail.Text = $"编辑器启动失败：{exception.Message}\n请确认已安装 Microsoft Edge WebView2 Runtime。";
+            EditorLoadingDetail.Text = FormatWebViewInitializationError(exception);
             SetHostStatus("启动失败");
         }
     }
+
+    private static Task<CoreWebView2Environment> GetSharedWebViewEnvironmentAsync()
+    {
+        lock (WebViewEnvironmentSync)
+        {
+            if (_sharedWebViewEnvironmentTask is null
+                || _sharedWebViewEnvironmentTask.IsCanceled
+                || _sharedWebViewEnvironmentTask.IsFaulted)
+                _sharedWebViewEnvironmentTask = CreateSharedWebViewEnvironmentAsync();
+            return _sharedWebViewEnvironmentTask;
+        }
+    }
+
+    private static async Task<CoreWebView2Environment> CreateSharedWebViewEnvironmentAsync()
+    {
+        var userDataFolder = GetWebViewUserDataFolder();
+        Directory.CreateDirectory(userDataFolder);
+
+        var writeProbePath = Path.Combine(userDataFolder, $".write-probe-{Guid.NewGuid():N}.tmp");
+        using (new FileStream(
+                   writeProbePath,
+                   FileMode.CreateNew,
+                   FileAccess.Write,
+                   FileShare.None,
+                   bufferSize: 1,
+                   FileOptions.DeleteOnClose))
+        {
+        }
+
+        return await CoreWebView2Environment.CreateAsync(
+            browserExecutableFolder: null,
+            userDataFolder: userDataFolder);
+    }
+
+    private static string FormatWebViewInitializationError(Exception exception)
+    {
+        if (exception is WebView2RuntimeNotFoundException)
+            return "编辑器启动失败：未检测到 Microsoft Edge WebView2 Runtime。\n请安装或修复 WebView2 Runtime 后重试。";
+
+        if (exception is UnauthorizedAccessException || exception.HResult == EAccessDenied)
+            return $"编辑器启动失败：WebView2 缓存目录拒绝访问。\n目录：{GetWebViewUserDataFolder()}\n请确认当前用户对该目录具有读写权限。";
+
+        return $"编辑器启动失败：{exception.Message}\nWebView2 缓存目录：{GetWebViewUserDataFolder()}";
+    }
+
+    private static string GetWebViewUserDataFolder() =>
+        Path.Combine(AppPath.AppLocalData, "WebView2", "CodeEditor");
 
     private async void CoreWebView2_WebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
@@ -684,35 +738,47 @@ public partial class ToolCodeEditorWindow : Window
 
     private async void PublishPackageButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!ClientSession.IsAdministrator)
+        if (!ClientSession.IsLoggedIn)
         {
-            await ShowAlertAsync("无法发布工具包", ClientSession.IsLoggedIn
-                ? "当前账户没有工具发布权限，请切换为管理员账户。"
-                : "请先在工具箱个人中心登录管理员账户。");
+            await ShowAlertAsync("请先登录", "发布工具需要登录工具箱账号。普通用户提交后将由管理员审核，通过后才会公开。");
             return;
         }
 
+        var directPublish = ClientSession.IsAdministrator;
+        using var activity = ActivityCenterService.Start(
+            directPublish ? "发布工具包" : "提交工具审核",
+            XFEToolBox.Client.Models.ActivityKind.Publish);
         PublishPackageMenuItem.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并验证工具包…");
+            activity.Report(null, "正在保存并验证工具包…");
             var package = await BuildToolPackageAsync();
             var response = await ShowEditorDialogAsync(
-                "发布工具包",
-                $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 发布到工具服务器。同一工具的版本号不可重复，发布后如需更新内容，请先修改 manifest.json 中的 version。",
-                "立即发布");
+                directPublish ? "发布工具包" : "提交工具审核",
+                directPublish
+                    ? $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 直接发布到工具服务器。同一工具的版本号不可重复。"
+                    : $"即将提交“{package.Manifest.Name}” {package.Manifest.Version}。管理员审核通过前不会出现在公共工具库中，同一工具的版本号不可重复。",
+                directPublish ? "立即发布" : "提交审核");
             if (response.Choice != EditorDialogChoice.Primary)
             {
-                SetHostStatus("已取消发布");
+                SetHostStatus(directPublish ? "已取消发布" : "已取消提交");
+                activity.Cancel(directPublish ? "用户取消发布" : "用户取消提交");
                 return;
             }
 
-            SetHostStatus($"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
-            var upload = await ClientSession.Requester.Request<ToolPackageUploadResult>(
-                "adminUploadTool", Convert.ToBase64String(package.Bytes), true, false);
+            SetHostStatus($"正在{(directPublish ? "发布" : "提交")} {package.Manifest.Name} {package.Manifest.Version}…");
+            activity.Report(null, $"正在{(directPublish ? "发布" : "提交")} {package.Manifest.Name} {package.Manifest.Version}…");
+            var packageBase64 = Convert.ToBase64String(package.Bytes);
+            var upload = directPublish
+                ? await ClientSession.Requester.Request<ToolPackageUploadResult>(
+                    "adminUploadTool", packageBase64, true, false)
+                : await ClientSession.Requester.Request<ToolPackageUploadResult>(
+                    "submitTool", packageBase64);
             if (upload.StatusCode == HttpStatusCode.Conflict)
             {
                 SetHostStatus("版本已存在");
+                activity.Fail("相同版本已经存在");
                 await ShowAlertAsync(
                     "版本已存在",
                     string.IsNullOrWhiteSpace(upload.Message)
@@ -728,15 +794,20 @@ public partial class ToolCodeEditorWindow : Window
                     : upload.Message);
             }
 
-            SetHostStatus($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            var successVerb = directPublish ? "已发布" : "已提交审核";
+            SetHostStatus($"{successVerb} {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            activity.Succeed($"{successVerb} {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
             await ShowAlertAsync(
-                "工具包发布成功",
-                $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。");
+                directPublish ? "工具包发布成功" : "工具已提交审核",
+                directPublish
+                    ? $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。"
+                    : $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已进入待审核队列，管理员通过后将自动公开。");
         }
         catch (Exception exception)
         {
-            SetHostStatus("发布失败");
-            await ShowAlertAsync("发布工具包失败", exception.Message);
+            SetHostStatus(directPublish ? "发布失败" : "提交失败");
+            activity.Fail(exception.Message);
+            await ShowAlertAsync(directPublish ? "发布工具包失败" : "提交工具审核失败", exception.Message);
         }
         finally
         {
@@ -863,7 +934,8 @@ public partial class ToolCodeEditorWindow : Window
     {
         if (!_markdownPreviewInitialized)
         {
-            await MarkdownPreviewWebView.EnsureCoreWebView2Async();
+            var webViewEnvironment = await GetSharedWebViewEnvironmentAsync();
+            await MarkdownPreviewWebView.EnsureCoreWebView2Async(webViewEnvironment);
             MarkdownPreviewWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             MarkdownPreviewWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
             MarkdownPreviewWebView.CoreWebView2.NewWindowRequested += (_, args) =>
@@ -1069,15 +1141,19 @@ public partial class ToolCodeEditorWindow : Window
             return;
         }
 
+        using var activity = ActivityCenterService.Start(
+            "运行 Code Studio 工具", XFEToolBox.Client.Models.ActivityKind.Build, canCancel: true);
         RunButton.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并编译工具…");
+            activity.Report(null, "正在保存并编译工具…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest);
+            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest, activity.CancellationToken);
             if (!result.Success)
             {
                 SetHostStatus("工具编译失败");
+                activity.Fail(result.Message);
                 await ShowAlertAsync("工具运行失败", result.Message);
                 return;
             }
@@ -1085,9 +1161,16 @@ public partial class ToolCodeEditorWindow : Window
             SetHostStatus(result.ProcessId is null
                 ? result.Message
                 : $"工具正在运行 · 进程 {result.ProcessId}");
+            activity.Succeed(result.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            SetHostStatus("已取消运行");
+            activity.Cancel();
         }
         catch (Exception exception)
         {
+            activity.Fail(exception.Message);
             await ReportOperationFailureAsync("运行工具失败", exception);
         }
         finally
@@ -1104,23 +1187,34 @@ public partial class ToolCodeEditorWindow : Window
             return;
         }
 
+        using var activity = ActivityCenterService.Start(
+            "生成 Code Studio 工具", XFEToolBox.Client.Models.ActivityKind.Build, canCancel: true);
         RunButton.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并生成工具工程…");
+            activity.Report(null, "正在保存并生成工具工程…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest);
+            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest, activity.CancellationToken);
             if (!result.Success)
             {
                 SetHostStatus("工具生成失败");
+                activity.Fail(result.Message);
                 await ShowAlertAsync("生成工具失败", result.Message);
                 return;
             }
 
             SetHostStatus("工具工程生成成功 · 0 个错误");
+            activity.Succeed("工具工程生成成功 · 0 个错误");
+        }
+        catch (OperationCanceledException)
+        {
+            SetHostStatus("已取消生成");
+            activity.Cancel();
         }
         catch (Exception exception)
         {
+            activity.Fail(exception.Message);
             await ReportOperationFailureAsync("生成工具失败", exception);
         }
         finally
@@ -1396,8 +1490,12 @@ public partial class ToolCodeEditorWindow : Window
             ManifestIconBox.Text = manifest.Icon ?? string.Empty;
             ManifestCategoryBox.Text = manifest.Category;
             ReplaceManifestTags(manifest.Tags ?? []);
+            ReplaceManifestNuGetPackages(manifest.NuGetPackages ?? []);
+            ManifestNuGetPackageIdBox.Text = string.Empty;
+            ManifestNuGetPackageVersionBox.Text = string.Empty;
             ManifestMinimumHostVersionBox.Text = manifest.MinimumHostVersion ?? string.Empty;
             ManifestReleaseNotesBox.Text = manifest.ReleaseNotes ?? string.Empty;
+            ManifestRequiresAdministratorCheckBox.IsChecked = manifest.RequiresAdministrator;
             ManifestViewXamlBox.Text = entry.ViewXaml;
             ManifestViewClassBox.Text = entry.ViewClass;
             ManifestViewCodeBehindBox.Text = entry.ViewCodeBehind;
@@ -1478,8 +1576,10 @@ public partial class ToolCodeEditorWindow : Window
             Icon = NullIfWhiteSpace(ManifestIconBox.Text),
             Category = ManifestCategoryBox.Text.Trim(),
             Tags = _manifestTags.ToArray(),
+            NuGetPackages = _manifestNuGetPackages.ToArray(),
             MinimumHostVersion = NullIfWhiteSpace(ManifestMinimumHostVersionBox.Text),
             ReleaseNotes = NullIfWhiteSpace(ManifestReleaseNotesBox.Text),
+            RequiresAdministrator = ManifestRequiresAdministratorCheckBox.IsChecked == true,
             Entry = new ToolEntryManifest
             {
                 ViewXaml = ManifestViewXamlBox.Text.Trim().Replace('\\', '/'),
@@ -1655,6 +1755,74 @@ public partial class ToolCodeEditorWindow : Window
         if (_manifestTags.Any(existing => existing.Equals(tag, StringComparison.OrdinalIgnoreCase)))
             return "这个标签已经存在。";
         return null;
+    }
+
+    private void ReplaceManifestNuGetPackages(IEnumerable<ToolNuGetPackageReference> packages)
+    {
+        _manifestNuGetPackages.Clear();
+        foreach (var package in packages.Where(package => package is not null))
+        {
+            _manifestNuGetPackages.Add(new ToolNuGetPackageReference
+            {
+                Id = package.Id?.Trim() ?? string.Empty,
+                Version = package.Version?.Trim() ?? string.Empty
+            });
+        }
+    }
+
+    private void AddManifestNuGetPackageButton_Click(object sender, RoutedEventArgs e)
+    {
+        var packageId = ManifestNuGetPackageIdBox.Text.Trim();
+        var packageVersion = ManifestNuGetPackageVersionBox.Text.Trim();
+        if (!ToolNuGetPackageRules.IsValidPackageId(packageId))
+        {
+            ManifestNuGetPackageValidationText.Text = $"包 ID 只能包含字母、数字、点、短横线和下划线，且不超过 {ToolNuGetPackageRules.MaximumPackageIdLength} 个字符。";
+            return;
+        }
+        if (!ToolNuGetPackageRules.IsValidExactVersion(packageVersion))
+        {
+            ManifestNuGetPackageValidationText.Text = "请输入精确版本，例如 2.6.0 或 2.6.0-beta.1；不支持 * 和版本范围。";
+            return;
+        }
+
+        var existingIndex = -1;
+        for (var index = 0; index < _manifestNuGetPackages.Count; index++)
+        {
+            if (!_manifestNuGetPackages[index].Id.Equals(packageId, StringComparison.OrdinalIgnoreCase))
+                continue;
+            existingIndex = index;
+            break;
+        }
+
+        var package = new ToolNuGetPackageReference { Id = packageId, Version = packageVersion };
+        if (existingIndex >= 0)
+        {
+            _manifestNuGetPackages[existingIndex] = package;
+            ManifestNuGetPackageValidationText.Text = $"已更新 {packageId} 的版本。";
+        }
+        else
+        {
+            if (_manifestNuGetPackages.Count >= ToolNuGetPackageRules.MaximumPackageCount)
+            {
+                ManifestNuGetPackageValidationText.Text = $"每个工具最多添加 {ToolNuGetPackageRules.MaximumPackageCount} 个 NuGet 包。";
+                return;
+            }
+            _manifestNuGetPackages.Add(package);
+            ManifestNuGetPackageValidationText.Text = $"已添加 {packageId}。";
+        }
+
+        ManifestNuGetPackageIdBox.Text = string.Empty;
+        ManifestNuGetPackageVersionBox.Text = string.Empty;
+        MarkManifestDesignerChanged();
+    }
+
+    private void RemoveManifestNuGetPackageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: ToolNuGetPackageReference package })
+            return;
+        _manifestNuGetPackages.Remove(package);
+        ManifestNuGetPackageValidationText.Text = $"已移除 {package.Id}。";
+        MarkManifestDesignerChanged();
     }
 
     private void LoadManifestPermissions(IEnumerable<string> permissions)

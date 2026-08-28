@@ -15,8 +15,17 @@ using XFEToolBox.Client.Views.Pages;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
-public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObject
+public partial class SettingPageViewModel : ObservableObject
 {
+    public SettingPageViewModel(SettingPage viewPage)
+    {
+        ViewPage = viewPage;
+        launcherHotkeyText = SystemProfile.LauncherHotkey;
+        globalHotkeyStatus = (Application.Current as App)?.GlobalHotkeyStatus ?? "快捷键服务尚未初始化";
+        if (Application.Current is App app)
+            app.GlobalHotkeyStatusChanged += (_, _) => RefreshHotkeyStatus();
+    }
+
     [ObservableProperty]
     string cacheProfileSize = "计算中...";
     [ObservableProperty]
@@ -34,10 +43,14 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     [ObservableProperty]
     string ignoredUpgradeVersionDisplay = GetIgnoredUpgradeVersionDisplay();
     [ObservableProperty]
+    string launcherHotkeyText;
+    [ObservableProperty]
+    string globalHotkeyStatus;
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CheckUpgradeCommand))]
     bool isCheckingForUpdates;
     bool ignoreNextScroll = false;
-    public SettingPage ViewPage { get; set; } = viewPage;
+    public SettingPage ViewPage { get; }
     public string CurrentApplicationVersion => $"当前版本 {UpgradeHelper.DisplayVersion}";
 
     public static void LoadSettingProfile(DependencyObject parent)
@@ -231,8 +244,12 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
             var commandPath = value.Tag as string;
             switch (commandPath)
             {
-                case "SystemProfile.AutoSelfLaunch":
-
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.AutoSelfLaunch":
+                    StartupRegistrationService.SetEnabled(value.IsChecked.Value);
+                    break;
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.LauncherHotkeyEnabled":
+                    if (Application.Current is App app)
+                        app.ConfigureGlobalHotkeyEnabled(value.IsChecked.Value);
                     break;
                 default:
                     break;
@@ -279,6 +296,23 @@ public partial class SettingPageViewModel(SettingPage viewPage) : ObservableObje
     }
 
     private bool CanCheckUpgrade() => !IsCheckingForUpdates;
+
+    public void RefreshHotkeyStatus() => GlobalHotkeyStatus =
+        (Application.Current as App)?.GlobalHotkeyStatus ?? "快捷键服务尚未初始化";
+
+    [RelayCommand]
+    private void ApplyLauncherHotkey()
+    {
+        if (!GlobalHotkeyService.TryNormalize(LauncherHotkeyText, out var normalized, out var error))
+        {
+            GlobalHotkeyStatus = error;
+            return;
+        }
+
+        LauncherHotkeyText = normalized;
+        if (Application.Current is App app) app.ConfigureGlobalHotkey(normalized);
+        RefreshHotkeyStatus();
+    }
 
     [RelayCommand(CanExecute = nameof(CanCheckUpgrade))]
     async Task CheckUpgrade()

@@ -20,5 +20,11 @@ public partial class AppCacheProfile : XFEProfile
     [ProfileProperty]
     private string softwareCatalogJson = "";
 
+    /// <summary>
+    /// 各工具的宿主启动配置，例如是否在首次启动时请求管理员权限。
+    /// </summary>
+    [ProfileProperty]
+    private string toolLaunchPreferencesJson = "";
+
     public AppCacheProfile() => ProfilePath = @$"{AppPath.CacheProfile}\{typeof(AppCacheProfile)}.xprofile";
 }
