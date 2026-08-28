@@ -1,6 +1,7 @@
 using System.Net;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using XFEToolBox.Core.Tools;
 using XFEToolBox.Core.Models.Users;
 using XFEToolBox.Server.Core.Exceptions;
 using XFEToolBox.Server.Core.Services;
@@ -241,7 +242,42 @@ public partial class AdminManagementService : ServerCoreUserServiceBase
 
         try
         {
-            var package = await ToolPackageRepository!.SetPublishedAsync(toolId, version, published.Value);
+            var package = await ToolPackageRepository!.SetReviewStatusAsync(
+                toolId,
+                version,
+                published.Value ? ToolPackageReviewStatus.Approved : ToolPackageReviewStatus.Rejected,
+                User.Id,
+                User.UserName);
+            await Close(ToolPackageContractMapper.ToUploadResult(package));
+        }
+        catch (ToolPackageNotFoundException exception)
+        {
+            await CloseWithError(exception.Message, HttpStatusCode.NotFound);
+        }
+    }
+
+    [EntryPoint("v1/manage/tools/review")]
+    public async Task ReviewToolEntryPoint()
+    {
+        if (!await VerifyAdministrator() || !await VerifyRepository()) return;
+        var toolId = GetString("toolId");
+        var version = GetString("version");
+        var approved = GetNullableBoolean("approved");
+        if (toolId is null || version is null || !approved.HasValue)
+        {
+            await CloseWithError("toolId、version 和 approved 均为必填项。", HttpStatusCode.BadRequest);
+            return;
+        }
+
+        try
+        {
+            var package = await ToolPackageRepository!.SetReviewStatusAsync(
+                toolId,
+                version,
+                approved.Value ? ToolPackageReviewStatus.Approved : ToolPackageReviewStatus.Rejected,
+                User.Id,
+                User.UserName,
+                GetString("reviewMessage"));
             await Close(ToolPackageContractMapper.ToUploadResult(package));
         }
         catch (ToolPackageNotFoundException exception)

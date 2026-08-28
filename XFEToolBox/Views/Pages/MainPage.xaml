@@ -47,7 +47,7 @@
                             <TextBlock Text="搜索并启动工具、软件、项目或页面" Foreground="#D8FFFFFF" FontSize="10" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="9,4" Background="#22FFFFFF" CornerRadius="8">
-                            <TextBlock Text="Ctrl + Alt + Space" Foreground="#EAFFFFFF" FontSize="9"/>
+                            <TextBlock Text="{Binding LauncherHotkeyHint}" Foreground="#EAFFFFFF" FontSize="9"/>
                         </Border>
                     </Grid>
                     <Grid Grid.Row="1" Margin="0,15,0,0">
@@ -90,6 +90,12 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Margin="3,17,3,0">
+                <Grid Margin="4,0,4,7"><StackPanel><TextBlock Text="教程与动态" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="网络内容延迟加载，不影响工作台使用" Style="{StaticResource SectionHintStyle}"/></StackPanel></Grid>
+                <controls:Carousel x:Name="mainCarousel" Height="220" HorizontalAlignment="Stretch" IsLoading="True"
+                                   StatusMessage="正在获取教程内容…" Interval="0:0:8" RetryRequested="MainCarousel_RetryRequested"/>
             </StackPanel>
 
             <StackPanel Margin="3,17,3,0" Visibility="{Binding ActivitySectionVisibility}">
@@ -187,11 +193,6 @@
                 </Grid>
             </Border>
 
-            <StackPanel Margin="3,17,3,0">
-                <Grid Margin="4,0,4,7"><StackPanel><TextBlock Text="教程与动态" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="网络内容延迟加载，不影响工作台使用" Style="{StaticResource SectionHintStyle}"/></StackPanel></Grid>
-                <controls:Carousel x:Name="mainCarousel" Height="150" HorizontalAlignment="Stretch" IsLoading="True"
-                                   StatusMessage="正在获取教程内容…" Interval="0:0:8" RetryRequested="MainCarousel_RetryRequested"/>
-            </StackPanel>
         </StackPanel>
     </controls:SmoothScrollViewer>
 </Page>

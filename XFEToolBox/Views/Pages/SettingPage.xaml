@@ -83,6 +83,11 @@
                                 </controls:SettingsCard>
                                 <controls:SettingsCard Header="命令面板快捷键" Description="{Binding GlobalHotkeyStatus}">
                                     <StackPanel Orientation="Horizontal">
+                                        <controls:SwitchButton Margin="0,0,12,0"
+                                                               VerticalAlignment="Center"
+                                                               Command="{Binding SwitchedCommand}"
+                                                               CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
+                                                               Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.LauncherHotkeyEnabled"/>
                                         <controls:TextEditor Width="150" Height="34" Margin="0,0,8,0"
                                                              Text="{Binding LauncherHotkeyText, UpdateSourceTrigger=PropertyChanged}"
                                                              HintText="Ctrl+Alt+Space"/>

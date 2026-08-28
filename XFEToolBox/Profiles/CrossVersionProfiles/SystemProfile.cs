@@ -71,6 +71,11 @@ public partial class SystemProfile : XFEProfile
     [ProfileProperty]
     private string launcherHotkey = "Ctrl+Alt+Space";
     /// <summary>
+    /// 是否注册系统级命令面板快捷键。
+    /// </summary>
+    [ProfileProperty]
+    private bool launcherHotkeyEnabled = true;
+    /// <summary>
     /// 关闭主窗口时是否继续在托盘运行。
     /// </summary>
     [ProfileProperty]

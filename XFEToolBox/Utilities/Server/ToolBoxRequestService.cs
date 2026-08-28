@@ -154,6 +154,18 @@ public partial class ToolBoxRequestService : StandardRequestServiceBase
     [Response("v1/manage/tools/upload", Name = "adminUploadTool")]
     public object ParseAdminUploadToolResponse() => Deserialize<ToolPackageUploadResult>();
 
+    [Request("v1/user/tools/submit", Name = "submitTool")]
+    public object BuildSubmitToolRequest() => new
+    {
+        execute = "v1/user/tools/submit",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        packageBase64 = Parameters[0]
+    };
+
+    [Response("v1/user/tools/submit", Name = "submitTool")]
+    public object ParseSubmitToolResponse() => Deserialize<ToolPackageUploadResult>();
+
     [Request("v1/manage/tools/publication", Name = "adminSetPublication")]
     public object BuildAdminSetPublicationRequest() => new
     {
@@ -167,6 +179,21 @@ public partial class ToolBoxRequestService : StandardRequestServiceBase
 
     [Response("v1/manage/tools/publication", Name = "adminSetPublication")]
     public object ParseAdminSetPublicationResponse() => Deserialize<ToolPackageUploadResult>();
+
+    [Request("v1/manage/tools/review", Name = "adminReviewTool")]
+    public object BuildAdminReviewToolRequest() => new
+    {
+        execute = "v1/manage/tools/review",
+        session = Session,
+        deviceInfo = DeviceInfo,
+        toolId = Parameters[0],
+        version = Parameters[1],
+        approved = Parameters[2],
+        reviewMessage = Parameters.Length > 3 ? Parameters[3] : null
+    };
+
+    [Response("v1/manage/tools/review", Name = "adminReviewTool")]
+    public object ParseAdminReviewToolResponse() => Deserialize<ToolPackageUploadResult>();
 
     [Request("v1/manage/software/list", Name = "adminSoftware")]
     public object BuildAdminSoftwareRequest() => AuthenticatedBody("v1/manage/software/list");

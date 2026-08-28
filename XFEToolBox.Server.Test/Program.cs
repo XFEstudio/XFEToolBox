@@ -14,6 +14,7 @@ var tests = new (string Name, Action Run)[]
     ("路径穿越会被拒绝", PathTraversalIsRejected),
     ("语义化版本按预期排序", SemanticVersionsAreOrdered),
     ("文件仓库可保存、查询和下架工具包", RepositoryRoundTripsPackage),
+    ("用户投稿需经管理员审核后才会公开", RepositorySubmissionRequiresReview),
     ("文件仓库拒绝覆盖已存在的工具版本", RepositoryRejectsDuplicateVersion),
     ("Socket 传输可安全配置工具下载响应", SocketDownloadResponseIsConfigured),
     ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad)
@@ -129,6 +130,57 @@ static void RepositoryRejectsDuplicateVersion()
 
         var stored = repository.ListAsync(publishedOnly: false).GetAwaiter().GetResult();
         Assert(stored.Count == 1, "拒绝重复版本后，仓库中的版本数量发生了变化。");
+    }
+    finally
+    {
+        Directory.Delete(root, recursive: true);
+    }
+}
+
+static void RepositorySubmissionRequiresReview()
+{
+    var root = Path.Combine(Path.GetTempPath(), "XFEToolBox.Server.Test", Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(root);
+    try
+    {
+        var validationOptions = new ToolPackageValidationOptions();
+        var repository = new FileSystemToolPackageRepository(
+            new ToolPackageValidator(validationOptions),
+            validationOptions,
+            new ToolPackageStorageOptions { StorageRoot = root });
+
+        using var packageStream = CreatePackage();
+        var submitted = repository.SaveSubmissionAsync(packageStream, "user-1", "creator")
+            .GetAwaiter().GetResult();
+        Assert(!submitted.Published, "用户投稿被直接公开。");
+        Assert(submitted.ReviewStatus == ToolPackageReviewStatus.Pending, "用户投稿没有进入待审核状态。");
+        Assert(submitted.SubmittedByUserName == "creator", "投稿账号没有写入元数据。");
+        Assert(repository.ListAsync(publishedOnly: true).GetAwaiter().GetResult().Count == 0,
+            "待审核投稿出现在公开目录中。");
+
+        var approved = repository.SetReviewStatusAsync(
+            submitted.Manifest.Id,
+            submitted.Manifest.Version,
+            ToolPackageReviewStatus.Approved,
+            "admin-1",
+            "administrator").GetAwaiter().GetResult();
+        Assert(approved.Published && approved.ReviewStatus == ToolPackageReviewStatus.Approved,
+            "管理员通过后工具没有公开。");
+        Assert(approved.ReviewedByUserName == "administrator" && approved.ReviewedAtUtc.HasValue,
+            "审核人或审核时间没有写入元数据。");
+        Assert(repository.ListAsync(publishedOnly: true).GetAwaiter().GetResult().Count == 1,
+            "审核通过的工具没有出现在公开目录中。");
+
+        var rejected = repository.SetReviewStatusAsync(
+            submitted.Manifest.Id,
+            submitted.Manifest.Version,
+            ToolPackageReviewStatus.Rejected,
+            "admin-1",
+            "administrator",
+            "需要修改说明").GetAwaiter().GetResult();
+        Assert(!rejected.Published && rejected.ReviewStatus == ToolPackageReviewStatus.Rejected,
+            "管理员拒绝后工具仍处于公开状态。");
+        Assert(rejected.ReviewMessage == "需要修改说明", "审核说明没有保存。");
     }
     finally
     {

@@ -42,7 +42,10 @@ public partial class App : Application
         MainWindow = mainWindow;
         globalHotkeyService = new GlobalHotkeyService(mainWindow, () => ShowCommandPalette());
         globalHotkeyService.StatusChanged += (_, _) => GlobalHotkeyStatusChanged?.Invoke(this, EventArgs.Empty);
-        globalHotkeyService.Register(SystemProfile.LauncherHotkey);
+        if (SystemProfile.LauncherHotkeyEnabled)
+            globalHotkeyService.Register(SystemProfile.LauncherHotkey);
+        else
+            globalHotkeyService.Disable();
         trayIconService = new TrayIconService(
             () => ShowMainWindow("home"),
             () => ShowCommandPalette(),
@@ -81,7 +84,22 @@ public partial class App : Application
         if (!GlobalHotkeyService.TryNormalize(gestureText, out var normalized, out _)) return false;
         SystemProfile.LauncherHotkey = normalized;
         SystemProfile.SaveProfile();
+        if (!SystemProfile.LauncherHotkeyEnabled)
+        {
+            globalHotkeyService?.Disable();
+            return true;
+        }
         return globalHotkeyService?.Register(normalized) == true;
+    }
+
+    public void ConfigureGlobalHotkeyEnabled(bool enabled)
+    {
+        SystemProfile.LauncherHotkeyEnabled = enabled;
+        SystemProfile.SaveProfile();
+        if (enabled)
+            globalHotkeyService?.Register(SystemProfile.LauncherHotkey);
+        else
+            globalHotkeyService?.Disable();
     }
 
     public void HideMainWindowToTray()

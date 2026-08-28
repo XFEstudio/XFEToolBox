@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Windows;
+using XFEToolBox.Client.Views.Windows;
 using Forms = System.Windows.Forms;
 
 namespace XFEToolBox.Client.Utilities;
@@ -7,14 +8,11 @@ namespace XFEToolBox.Client.Utilities;
 internal sealed class TrayIconService : IDisposable
 {
     private readonly Forms.NotifyIcon notifyIcon;
+    private readonly TrayMenuWindow menuWindow;
 
     public TrayIconService(Action showHome, Action showPalette, Action exit)
     {
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("打开主页", null, (_, _) => Dispatch(showHome));
-        menu.Items.Add("打开命令面板", null, (_, _) => Dispatch(showPalette));
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("退出", null, (_, _) => Dispatch(exit));
+        menuWindow = new TrayMenuWindow(showHome, showPalette, exit);
 
         var icon = Environment.ProcessPath is { } processPath
             ? Icon.ExtractAssociatedIcon(processPath)
@@ -23,10 +21,15 @@ internal sealed class TrayIconService : IDisposable
         {
             Text = "XFEToolBox",
             Icon = icon ?? SystemIcons.Application,
-            ContextMenuStrip = menu,
             Visible = true
         };
-        notifyIcon.DoubleClick += (_, _) => Dispatch(showHome);
+        notifyIcon.MouseClick += (_, e) =>
+        {
+            if (e.Button == Forms.MouseButtons.Left)
+                Dispatch(showHome);
+            else if (e.Button == Forms.MouseButtons.Right)
+                Dispatch(menuWindow.ShowAtCursor);
+        };
     }
 
     public void ShowCloseHint() => notifyIcon.ShowBalloonTip(
@@ -38,8 +41,8 @@ internal sealed class TrayIconService : IDisposable
     public void Dispose()
     {
         notifyIcon.Visible = false;
-        notifyIcon.ContextMenuStrip?.Dispose();
         notifyIcon.Dispose();
+        menuWindow.Close();
     }
 
     private static void Dispatch(Action action) =>

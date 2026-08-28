@@ -736,16 +736,16 @@ public partial class ToolCodeEditorWindow : Window
 
     private async void PublishPackageButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!ClientSession.IsAdministrator)
+        if (!ClientSession.IsLoggedIn)
         {
-            await ShowAlertAsync("无法发布工具包", ClientSession.IsLoggedIn
-                ? "当前账户没有工具发布权限，请切换为管理员账户。"
-                : "请先在工具箱个人中心登录管理员账户。");
+            await ShowAlertAsync("请先登录", "发布工具需要登录工具箱账号。普通用户提交后将由管理员审核，通过后才会公开。");
             return;
         }
 
+        var directPublish = ClientSession.IsAdministrator;
         using var activity = ActivityCenterService.Start(
-            "发布工具包", XFEToolBox.Client.Models.ActivityKind.Publish);
+            directPublish ? "发布工具包" : "提交工具审核",
+            XFEToolBox.Client.Models.ActivityKind.Publish);
         PublishPackageMenuItem.IsEnabled = false;
         try
         {
@@ -753,20 +753,26 @@ public partial class ToolCodeEditorWindow : Window
             activity.Report(null, "正在保存并验证工具包…");
             var package = await BuildToolPackageAsync();
             var response = await ShowEditorDialogAsync(
-                "发布工具包",
-                $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 发布到工具服务器。同一工具的版本号不可重复，发布后如需更新内容，请先修改 manifest.json 中的 version。",
-                "立即发布");
+                directPublish ? "发布工具包" : "提交工具审核",
+                directPublish
+                    ? $"即将把“{package.Manifest.Name}” {package.Manifest.Version} 直接发布到工具服务器。同一工具的版本号不可重复。"
+                    : $"即将提交“{package.Manifest.Name}” {package.Manifest.Version}。管理员审核通过前不会出现在公共工具库中，同一工具的版本号不可重复。",
+                directPublish ? "立即发布" : "提交审核");
             if (response.Choice != EditorDialogChoice.Primary)
             {
-                SetHostStatus("已取消发布");
-                activity.Cancel("用户取消发布");
+                SetHostStatus(directPublish ? "已取消发布" : "已取消提交");
+                activity.Cancel(directPublish ? "用户取消发布" : "用户取消提交");
                 return;
             }
 
-            SetHostStatus($"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
-            activity.Report(null, $"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
-            var upload = await ClientSession.Requester.Request<ToolPackageUploadResult>(
-                "adminUploadTool", Convert.ToBase64String(package.Bytes), true, false);
+            SetHostStatus($"正在{(directPublish ? "发布" : "提交")} {package.Manifest.Name} {package.Manifest.Version}…");
+            activity.Report(null, $"正在{(directPublish ? "发布" : "提交")} {package.Manifest.Name} {package.Manifest.Version}…");
+            var packageBase64 = Convert.ToBase64String(package.Bytes);
+            var upload = directPublish
+                ? await ClientSession.Requester.Request<ToolPackageUploadResult>(
+                    "adminUploadTool", packageBase64, true, false)
+                : await ClientSession.Requester.Request<ToolPackageUploadResult>(
+                    "submitTool", packageBase64);
             if (upload.StatusCode == HttpStatusCode.Conflict)
             {
                 SetHostStatus("版本已存在");
@@ -786,17 +792,20 @@ public partial class ToolCodeEditorWindow : Window
                     : upload.Message);
             }
 
-            SetHostStatus($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
-            activity.Succeed($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            var successVerb = directPublish ? "已发布" : "已提交审核";
+            SetHostStatus($"{successVerb} {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            activity.Succeed($"{successVerb} {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
             await ShowAlertAsync(
-                "工具包发布成功",
-                $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。");
+                directPublish ? "工具包发布成功" : "工具已提交审核",
+                directPublish
+                    ? $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。"
+                    : $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已进入待审核队列，管理员通过后将自动公开。");
         }
         catch (Exception exception)
         {
-            SetHostStatus("发布失败");
+            SetHostStatus(directPublish ? "发布失败" : "提交失败");
             activity.Fail(exception.Message);
-            await ShowAlertAsync("发布工具包失败", exception.Message);
+            await ShowAlertAsync(directPublish ? "发布工具包失败" : "提交工具审核失败", exception.Message);
         }
         finally
         {

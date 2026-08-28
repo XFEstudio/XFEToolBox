@@ -41,6 +41,13 @@ internal sealed class GlobalHotkeyService : IDisposable
         return registered;
     }
 
+    public void Disable()
+    {
+        Unregister();
+        Status = "已禁用";
+        StatusChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void Dispose()
     {
         Unregister();

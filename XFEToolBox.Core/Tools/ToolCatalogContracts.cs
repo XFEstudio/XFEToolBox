@@ -1,5 +1,12 @@
 namespace XFEToolBox.Core.Tools;
 
+public enum ToolPackageReviewStatus
+{
+    Pending,
+    Approved,
+    Rejected
+}
+
 public sealed class ToolPackageSummary
 {
     public required string Id { get; init; }
@@ -43,6 +50,18 @@ public sealed class ToolPackageVersionInfo
     public DateTimeOffset UploadedAtUtc { get; init; }
 
     public bool Published { get; init; }
+
+    public ToolPackageReviewStatus ReviewStatus { get; init; }
+
+    public string? SubmittedByUserId { get; init; }
+
+    public string? SubmittedByUserName { get; init; }
+
+    public string? ReviewedByUserName { get; init; }
+
+    public DateTimeOffset? ReviewedAtUtc { get; init; }
+
+    public string? ReviewMessage { get; init; }
 
     public required string DownloadUrl { get; init; }
 }

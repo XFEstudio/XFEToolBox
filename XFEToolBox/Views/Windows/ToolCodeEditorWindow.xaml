@@ -317,7 +317,7 @@
                     <MenuItem Header="工具包" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">
                         <MenuItem Header="导出工具包…" InputGestureText="Ctrl+Shift+E" Click="PackageButton_Click"/>
-                        <MenuItem x:Name="PublishPackageMenuItem" Header="发布工具包" Click="PublishPackageButton_Click"/>
+                        <MenuItem x:Name="PublishPackageMenuItem" Header="发布 / 提交审核" Click="PublishPackageButton_Click"/>
                     </MenuItem>
                     <MenuItem Header="开发" Style="{StaticResource EditorTopMenuItem}"
                               ItemContainerStyle="{StaticResource EditorTopMenuSubItem}">

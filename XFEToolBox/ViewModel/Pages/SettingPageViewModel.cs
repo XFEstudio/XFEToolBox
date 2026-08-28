@@ -247,6 +247,10 @@ public partial class SettingPageViewModel : ObservableObject
                 case "XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.AutoSelfLaunch":
                     StartupRegistrationService.SetEnabled(value.IsChecked.Value);
                     break;
+                case "XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.LauncherHotkeyEnabled":
+                    if (Application.Current is App app)
+                        app.ConfigureGlobalHotkeyEnabled(value.IsChecked.Value);
+                    break;
                 default:
                     break;
             }

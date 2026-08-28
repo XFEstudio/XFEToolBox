@@ -1,26 +1,26 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client.Views.Pages;
 
 public partial class ToolWorkshopPage : Page
 {
-    private readonly ObservableCollection<ToolProjectHistoryItem> projects = [];
+    private readonly ObservableCollection<ToolProjectCardViewModel> projects = [];
 
     public static ToolWorkshopPage Current { get; } = new();
 
     public ToolWorkshopPage()
     {
         InitializeComponent();
-        ProjectList.ItemsSource = projects;
+        ProjectList.DataContext = projects;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await ReloadAsync();
-
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await ReloadAsync();
 
     private void NewProjectButton_Click(object sender, RoutedEventArgs e) =>
@@ -32,30 +32,40 @@ public partial class ToolWorkshopPage : Page
     private void OpenGalleryButton_Click(object sender, RoutedEventArgs e) =>
         ControlGalleryWindow.ShowGallery(Window.GetWindow(this));
 
-    private void ProjectList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ProjectCard_Click(object sender, RoutedEventArgs e)
     {
-        var selected = ProjectList.SelectedItem is ToolProjectHistoryItem;
-        OpenButton.IsEnabled = selected;
-        RemoveButton.IsEnabled = selected;
+        if (sender is Button { CommandParameter: ToolProjectCardViewModel project })
+            await OpenProjectAsync(project);
     }
 
-    private async void ProjectList_MouseDoubleClick(object sender, MouseButtonEventArgs e) => await OpenSelectedAsync();
-
-    private async void OpenButton_Click(object sender, RoutedEventArgs e) => await OpenSelectedAsync();
-
-    private async void RemoveButton_Click(object sender, RoutedEventArgs e)
+    private void TogglePinnedProjectMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (ProjectList.SelectedItem is not ToolProjectHistoryItem project) return;
+        if (sender is not MenuItem { DataContext: ToolProjectCardViewModel project }) return;
+        if (!project.TogglePinned())
+            StatusText.Text = $"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项";
+        else
+            StatusText.Text = project.IsPinned ? $"已固定 {project.Name}" : $"已取消固定 {project.Name}";
+    }
+
+    private async void RemoveProjectMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { DataContext: ToolProjectCardViewModel project }) return;
         await ToolProjectWorkspaceService.RemoveProjectFromHistoryAsync(project.ProjectPath);
         await ReloadAsync();
     }
 
-    private async Task OpenSelectedAsync()
+    private void CopyProjectPathMenuItem_Click(object sender, RoutedEventArgs e)
     {
-        if (ProjectList.SelectedItem is not ToolProjectHistoryItem project) return;
+        if (sender is not MenuItem { DataContext: ToolProjectCardViewModel project }) return;
+        Clipboard.SetText(project.ProjectPath);
+        StatusText.Text = $"已复制 {project.Name} 的路径";
+    }
+
+    private async Task OpenProjectAsync(ToolProjectCardViewModel project)
+    {
         if (!await ToolWorkshopService.OpenProjectAsync(project.ProjectPath))
         {
-            StatusText.Text = "项目位置不存在，请移除记录或重新浏览。";
+            StatusText.Text = "项目位置不存在，可通过右键菜单移除记录。";
             return;
         }
         StatusText.Text = $"已打开 {project.Name}";
@@ -65,8 +75,12 @@ public partial class ToolWorkshopPage : Page
     private async Task ReloadAsync()
     {
         projects.Clear();
-        foreach (var project in await ToolProjectWorkspaceService.LoadHistoryAsync()) projects.Add(project);
+        var cards = (await ToolProjectWorkspaceService.LoadHistoryAsync())
+            .Select(project => new ToolProjectCardViewModel(project))
+            .ToArray();
+        foreach (var card in cards) projects.Add(card);
         EmptyState.Visibility = projects.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         StatusText.Text = projects.Count == 0 ? string.Empty : $"共 {projects.Count} 个最近项目";
+        await Task.WhenAll(cards.Select(card => card.IconLoadingTask));
     }
 }

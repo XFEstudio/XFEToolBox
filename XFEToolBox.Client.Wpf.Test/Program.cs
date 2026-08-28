@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
@@ -115,6 +116,57 @@ public class Program
         Ensure(thread.Join(TimeSpan.FromSeconds(10)), "快速访问工具图标加载测试超时。");
         if (failure is not null)
             throw new InvalidOperationException($"快速访问工具图标加载失败：{failure.Message}", failure);
+    }
+
+    [Test]
+    public static void WorkshopProjectCardLoadsItsManifestPreviewIcon()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var root = Path.Combine(Path.GetTempPath(), "XFEToolBox.WorkshopIconTest", Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "Assets"));
+                File.WriteAllText(Path.Combine(root, "Assets", "preview.svg"),
+                    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><circle cx='4' cy='4' r='4' fill='#796fd6'/></svg>");
+                File.WriteAllText(Path.Combine(root, "manifest.json"), """
+                    {
+                      "packageFormatVersion": 1,
+                      "id": "local.preview-test",
+                      "name": "预览图标测试",
+                      "version": "1.0.0",
+                      "description": "test",
+                      "author": "tester",
+                      "icon": "Assets/preview.svg",
+                      "entry": {
+                        "viewXaml": "Code/Main.xaml",
+                        "viewClass": "Test.Main",
+                        "viewCodeBehind": "Code/Main.xaml.cs"
+                      }
+                    }
+                    """);
+
+                var viewModel = new ToolProjectCardViewModel(
+                    new ToolProjectHistoryItem("预览图标测试", root, DateTime.UtcNow));
+                viewModel.IconLoadingTask.GetAwaiter().GetResult();
+                Ensure(viewModel.IconSource is DrawingImage,
+                    $"工具工坊项目卡没有使用清单预览图标，而是显示 {viewModel.IconSource.GetType().Name}。");
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+            finally
+            {
+                if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+            }
+        }) { IsBackground = true };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(10)), "工具工坊项目预览图标加载测试超时。");
+        if (failure is not null)
+            throw new InvalidOperationException($"工具工坊项目预览图标加载失败：{failure.Message}", failure);
     }
 
     [Test]

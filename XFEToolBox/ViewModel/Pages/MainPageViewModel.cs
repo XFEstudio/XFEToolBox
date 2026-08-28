@@ -15,6 +15,7 @@ using XFEToolBox.Client.Utilities;
 using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.Client.Views.Pages;
 using XFEToolBox.Client.Views.Windows;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 
 namespace XFEToolBox.Client.ViewModel.Pages;
 
@@ -44,6 +45,9 @@ public partial class MainPageViewModel : ObservableObject
         RecentUsageService.Changed += RecentUsageService_Changed;
         PinnedItemService.Changed += DashboardData_Changed;
         ActivityCenterService.Changed += DashboardData_Changed;
+        if (Application.Current is App app)
+            app.GlobalHotkeyStatusChanged += (_, _) => MainPage.Dispatcher.InvokeAsync(
+                () => OnPropertyChanged(nameof(LauncherHotkeyHint)));
         adminRefreshTimer = new DispatcherTimer(DispatcherPriority.Background, MainPage.Dispatcher)
         {
             Interval = TimeSpan.FromSeconds(2)
@@ -77,6 +81,9 @@ public partial class MainPageViewModel : ObservableObject
     public ObservableCollection<LauncherItemViewModel> QuickAccessItems { get; } = [];
     public ObservableCollection<LauncherItemViewModel> RecentlyUpdatedTools { get; } = [];
     public ObservableCollection<ActivityItem> ActivityItems { get; } = [];
+    public string LauncherHotkeyHint => SystemProfile.LauncherHotkeyEnabled
+        ? SystemProfile.LauncherHotkey.Replace("+", " + ", StringComparison.Ordinal)
+        : "快捷键已禁用";
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {

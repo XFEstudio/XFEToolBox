@@ -52,6 +52,7 @@ var server = XFEServerBuilder.CreateBuilder()
         .AddService<ToolAdminService>()
         .AddService<RegistrationService>()
         .AddService<UserProfileService>()
+        .AddService<ToolSubmissionService>()
         .AddService<AdminManagementService>()
         .UseXFEStandardServerCore<ToolBoxUserFaceInfo>(options =>
         {
