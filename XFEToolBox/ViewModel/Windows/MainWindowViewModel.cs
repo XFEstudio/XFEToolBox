@@ -54,12 +54,15 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ViewPage_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        if (TaskManager.TaskDictionary.Count > 0)
+        if (Application.Current is not App app || app.IsExiting) return;
+        e.Cancel = true;
+        if (SystemProfile.CloseToTray)
         {
-            e.Cancel = true;
-            if (PopupHelper.ShowConfirmDialog($"当前还有以下未完成的任务：\n\n{string.Join(",\n", TaskManager.TaskDictionary.Select(d => $"ID：{d.Value.Task.Id}\t 名称：{d.Value.Name}\t 状态：{d.Value.Task.Status}"))}\n\n是否仍要关闭？", true) == MessageBoxResult.OK)
-                AppCenter.ExitApp(true);
+            app.HideMainWindowToTray();
+            return;
         }
+
+        app.RequestExit();
     }
 
     /// <summary>
@@ -69,10 +72,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>
     /// 关闭窗体
     /// </summary>
-    public static void CloseWindow()
-    {
-        AppCenter.ExitApp(false);
-    }
+    public static void CloseWindow() => MainWindow.Current?.Close();
     /// <summary>
     /// 获取窗体DPI缩放
     /// </summary>
@@ -118,6 +118,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             "home" => MainPage.Current,
             "tool" => ToolBoxPage.Current,
+            "workshop" => ToolWorkshopPage.Current,
             "download" => DownloadPage.Current,
             "console" => ConsolePage.Current,
             "setting" => SettingPage.Current,

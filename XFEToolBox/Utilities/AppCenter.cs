@@ -13,15 +13,13 @@ public static class AppCenter
     /// <returns>是否成功退出</returns>
     public static bool ExitApp(bool forceExit)
     {
-        if (forceExit || SystemProfile.CanClosed)
+        if (Application.Current is App app)
         {
-            Application.Current.Shutdown();
-            return true;
+            if (forceExit) app.RequestExit();
+            else MainWindow.Current?.Close();
+            return app.IsExiting;
         }
-        else
-        {
-            MainWindow.Current?.Close();
-            return false;
-        }
+
+        return false;
     }
 }

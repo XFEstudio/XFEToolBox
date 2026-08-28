@@ -83,6 +83,11 @@ internal static class ToolProjectRunService
                 runAsAdministrator,
                 cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            TryDeleteDirectory(packageWorkspaceRoot);
+            throw;
+        }
         catch (Exception exception)
         {
             TryDeleteDirectory(packageWorkspaceRoot);
@@ -230,6 +235,13 @@ internal static class ToolProjectRunService
             if (temporaryWorkspaceRoot is not null)
                 TryDeleteDirectory(temporaryWorkspaceRoot);
             return new ToolRunResult(false, "已取消管理员权限请求，工具没有启动。", null);
+        }
+        catch (OperationCanceledException)
+        {
+            TryDeleteDirectory(runtimeRoot);
+            if (temporaryWorkspaceRoot is not null)
+                TryDeleteDirectory(temporaryWorkspaceRoot);
+            throw;
         }
         catch (Exception exception)
         {

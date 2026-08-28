@@ -744,10 +744,13 @@ public partial class ToolCodeEditorWindow : Window
             return;
         }
 
+        using var activity = ActivityCenterService.Start(
+            "发布工具包", XFEToolBox.Client.Models.ActivityKind.Publish);
         PublishPackageMenuItem.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并验证工具包…");
+            activity.Report(null, "正在保存并验证工具包…");
             var package = await BuildToolPackageAsync();
             var response = await ShowEditorDialogAsync(
                 "发布工具包",
@@ -756,15 +759,18 @@ public partial class ToolCodeEditorWindow : Window
             if (response.Choice != EditorDialogChoice.Primary)
             {
                 SetHostStatus("已取消发布");
+                activity.Cancel("用户取消发布");
                 return;
             }
 
             SetHostStatus($"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
+            activity.Report(null, $"正在发布 {package.Manifest.Name} {package.Manifest.Version}…");
             var upload = await ClientSession.Requester.Request<ToolPackageUploadResult>(
                 "adminUploadTool", Convert.ToBase64String(package.Bytes), true, false);
             if (upload.StatusCode == HttpStatusCode.Conflict)
             {
                 SetHostStatus("版本已存在");
+                activity.Fail("相同版本已经存在");
                 await ShowAlertAsync(
                     "版本已存在",
                     string.IsNullOrWhiteSpace(upload.Message)
@@ -781,6 +787,7 @@ public partial class ToolCodeEditorWindow : Window
             }
 
             SetHostStatus($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
+            activity.Succeed($"已发布 {upload.Result.Manifest.Name} {upload.Result.Manifest.Version}");
             await ShowAlertAsync(
                 "工具包发布成功",
                 $"“{upload.Result.Manifest.Name}” {upload.Result.Manifest.Version} 已发布，工具箱用户现在可以在工具库中获取该版本。");
@@ -788,6 +795,7 @@ public partial class ToolCodeEditorWindow : Window
         catch (Exception exception)
         {
             SetHostStatus("发布失败");
+            activity.Fail(exception.Message);
             await ShowAlertAsync("发布工具包失败", exception.Message);
         }
         finally
@@ -1122,15 +1130,19 @@ public partial class ToolCodeEditorWindow : Window
             return;
         }
 
+        using var activity = ActivityCenterService.Start(
+            "运行 Code Studio 工具", XFEToolBox.Client.Models.ActivityKind.Build, canCancel: true);
         RunButton.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并编译工具…");
+            activity.Report(null, "正在保存并编译工具…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest);
+            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest, activity.CancellationToken);
             if (!result.Success)
             {
                 SetHostStatus("工具编译失败");
+                activity.Fail(result.Message);
                 await ShowAlertAsync("工具运行失败", result.Message);
                 return;
             }
@@ -1138,9 +1150,16 @@ public partial class ToolCodeEditorWindow : Window
             SetHostStatus(result.ProcessId is null
                 ? result.Message
                 : $"工具正在运行 · 进程 {result.ProcessId}");
+            activity.Succeed(result.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            SetHostStatus("已取消运行");
+            activity.Cancel();
         }
         catch (Exception exception)
         {
+            activity.Fail(exception.Message);
             await ReportOperationFailureAsync("运行工具失败", exception);
         }
         finally
@@ -1157,23 +1176,34 @@ public partial class ToolCodeEditorWindow : Window
             return;
         }
 
+        using var activity = ActivityCenterService.Start(
+            "生成 Code Studio 工具", XFEToolBox.Client.Models.ActivityKind.Build, canCancel: true);
         RunButton.IsEnabled = false;
         try
         {
             SetHostStatus("正在保存并生成工具工程…");
+            activity.Report(null, "正在保存并生成工具工程…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest);
+            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest, activity.CancellationToken);
             if (!result.Success)
             {
                 SetHostStatus("工具生成失败");
+                activity.Fail(result.Message);
                 await ShowAlertAsync("生成工具失败", result.Message);
                 return;
             }
 
             SetHostStatus("工具工程生成成功 · 0 个错误");
+            activity.Succeed("工具工程生成成功 · 0 个错误");
+        }
+        catch (OperationCanceledException)
+        {
+            SetHostStatus("已取消生成");
+            activity.Cancel();
         }
         catch (Exception exception)
         {
+            activity.Fail(exception.Message);
             await ReportOperationFailureAsync("生成工具失败", exception);
         }
         finally

@@ -373,6 +373,19 @@ public partial class ToolBoxPage : Page
             : $"{card.Name} 已配置为以普通权限打开。";
     }
 
+    private void TogglePinnedToolMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: ToolCardViewModel card }) return;
+        var wasPinned = PinnedItemService.IsPinned(LauncherItemKind.Tool, card.Id);
+        var success = wasPinned
+            ? PinnedItemService.Unpin(LauncherItemKind.Tool, card.Id)
+            : PinnedItemService.TryPin(LauncherItemKind.Tool, card.Id);
+        StatusText.Text = !success
+            ? $"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项。"
+            : wasPinned ? $"已取消固定 {card.Name}。" : $"已将 {card.Name} 固定到主页。";
+    }
+
     private void ClearToolDataMenuItem_Click(object sender, RoutedEventArgs e)
     {
         e.Handled = true;
@@ -405,11 +418,15 @@ public partial class ToolBoxPage : Page
 
     private async Task<bool> OpenToolAsync(ToolCardViewModel card)
     {
+        using var activity = ActivityCenterService.Start(
+            $"准备工具 {card.Name}", XFEToolBox.Client.Models.ActivityKind.ToolPackage, canCancel: true);
+        var cancellationToken = activity.CancellationToken;
         string? temporaryPath = null;
         string? cachePath = null;
         card.IsEnabled = false;
         card.CacheState = "正在校验…";
         StatusText.Text = $"正在准备 {card.Name}…";
+        activity.Report(null, StatusText.Text);
 
         try
         {
@@ -451,13 +468,14 @@ public partial class ToolBoxPage : Page
                         ? $"下载 {percentage:0}%"
                         : "正在下载…";
                     StatusText.Text = $"正在下载 {card.Name} · {card.DownloadProgressText}";
+                    activity.Report(item.Percentage, StatusText.Text);
                 });
                 await using (var output = new FileStream(
                                  temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920,
                                  FileOptions.Asynchronous | FileOptions.SequentialScan))
                 {
-                    await catalogClient.DownloadPackageAsync(package, output, downloadProgress);
-                    await output.FlushAsync();
+                    await catalogClient.DownloadPackageAsync(package, output, downloadProgress, cancellationToken);
+                    await output.FlushAsync(cancellationToken);
                 }
                 card.CacheState = "正在校验…";
                 card.DownloadProgress = 100;
@@ -477,7 +495,8 @@ public partial class ToolBoxPage : Page
                 card.Id,
                 package.Version,
                 package.Sha256,
-                runAsAdministrator);
+                runAsAdministrator,
+                cancellationToken);
             if (!runResult.Success)
                 throw new InvalidOperationException(runResult.Message);
 
@@ -487,12 +506,21 @@ public partial class ToolBoxPage : Page
                 : $"{card.Name} {card.LatestVersion} 已在独立窗口中打开。";
             RecentUsageIconCache.Remember(RecentUsageKind.Tool, card.Id, card.IconSource);
             RecentUsageService.RecordTool(card.Package);
+            activity.Succeed(StatusText.Text);
             return true;
+        }
+        catch (OperationCanceledException)
+        {
+            card.CacheState = "已取消";
+            StatusText.Text = $"已取消打开 {card.Name}。";
+            activity.Cancel(StatusText.Text);
+            return false;
         }
         catch (Exception exception)
         {
             card.CacheState = cachePath is not null && File.Exists(cachePath) ? "重试打开" : "重试获取";
             StatusText.Text = $"打开失败：{exception.Message}";
+            activity.Fail(StatusText.Text);
             return false;
         }
         finally

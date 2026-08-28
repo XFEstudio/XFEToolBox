@@ -22,11 +22,11 @@ public partial class MainPageViewModel : ObservableObject
 {
     private const int MaximumAttempts = 3;
     private const int CoverDownloadAttempts = 2;
-    private const int PopularVideoCount = 3;
-    private const int LatestVideoCount = 2;
-    private const int TutorialVideoCount = 2;
+    private const int PopularVideoCount = 1;
+    private const int LatestVideoCount = 1;
+    private const int TutorialVideoCount = 1;
     private const int ExpectedCarouselItemCount = PopularVideoCount + LatestVideoCount + TutorialVideoCount;
-    private const int MaximumVisibleRecentItems = 8;
+    private const int MaximumVisibleRecentItems = 4;
     private Task? loadingTask;
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
@@ -42,6 +42,8 @@ public partial class MainPageViewModel : ObservableObject
         MainPage.Unloaded += MainPage_Unloaded;
         ClientSession.SessionChanged += ClientSession_SessionChanged;
         RecentUsageService.Changed += RecentUsageService_Changed;
+        PinnedItemService.Changed += DashboardData_Changed;
+        ActivityCenterService.Changed += DashboardData_Changed;
         adminRefreshTimer = new DispatcherTimer(DispatcherPriority.Background, MainPage.Dispatcher)
         {
             Interval = TimeSpan.FromSeconds(2)
@@ -67,15 +69,25 @@ public partial class MainPageViewModel : ObservableObject
     [ObservableProperty] private Visibility recentItemsVisibility = Visibility.Collapsed;
     [ObservableProperty] private Visibility recentEmptyVisibility = Visibility.Visible;
     [ObservableProperty] private string recentUsageCountText = "0 项";
+    [ObservableProperty] private Visibility quickAccessVisibility = Visibility.Collapsed;
+    [ObservableProperty] private Visibility activitySectionVisibility = Visibility.Collapsed;
+    [ObservableProperty] private Visibility latestToolsVisibility = Visibility.Collapsed;
+    [ObservableProperty] private string activityCountText = "暂无活动";
     public ObservableCollection<RecentUsageCardViewModel> RecentItems { get; } = [];
+    public ObservableCollection<LauncherItemViewModel> QuickAccessItems { get; } = [];
+    public ObservableCollection<LauncherItemViewModel> RecentlyUpdatedTools { get; } = [];
+    public ObservableCollection<ActivityItem> ActivityItems { get; } = [];
 
     private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
         if (!hasRecentUsageSnapshot)
             RefreshRecentUsage();
-        var tasks = new List<Task> { LoadAdminOverviewAsync() };
-        if (!MainPage.mainCarousel.HasItems) tasks.Add(ReloadAsync());
-        await Task.WhenAll(tasks);
+        await RefreshDashboardAsync();
+        if (!MainPage.mainCarousel.HasItems)
+            _ = MainPage.Dispatcher.InvokeAsync(
+                async () => await ReloadAsync(),
+                DispatcherPriority.ContextIdle);
+        await LoadAdminOverviewAsync();
         if (ClientSession.IsAdministrator) adminRefreshTimer.Start();
     }
 
@@ -91,7 +103,14 @@ public partial class MainPageViewModel : ObservableObject
     });
 
     private void RecentUsageService_Changed(object? sender, EventArgs e) =>
-        MainPage.Dispatcher.InvokeAsync(RefreshRecentUsage);
+        MainPage.Dispatcher.InvokeAsync(async () =>
+        {
+            RefreshRecentUsage();
+            await RefreshDashboardAsync();
+        });
+
+    private void DashboardData_Changed(object? sender, EventArgs e) =>
+        MainPage.Dispatcher.InvokeAsync(RefreshDashboardAsync);
 
     public async Task OpenRecentItemAsync(RecentUsageCardViewModel card)
     {
@@ -110,6 +129,10 @@ public partial class MainPageViewModel : ObservableObject
                     MainWindow.Current.ViewModel.NavigateToPageCommand.Execute("download");
                     await DownloadPage.Current.OpenSoftwareByIdAsync(card.Entry.TargetId);
                     break;
+
+                case RecentUsageKind.Project:
+                    await ToolWorkshopService.OpenProjectAsync(card.Entry.TargetId);
+                    break;
             }
         }
         finally
@@ -125,10 +148,17 @@ public partial class MainPageViewModel : ObservableObject
 
     public void OpenToolBox() => MainWindow.Current?.ViewModel.NavigateToPageCommand.Execute("tool");
 
+    public void OpenCommandPalette(string? initialQuery = null) =>
+        (Application.Current as App)?.ShowCommandPalette(initialQuery);
+
+    public async Task ExecuteLauncherItemAsync(LauncherItemViewModel item) => await item.ExecuteAsync();
+
+    public bool TogglePinned(LauncherItemViewModel item) => item.TogglePinned();
+
     private void RefreshRecentUsage()
     {
         var entries = RecentUsageService.GetRecent()
-            .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software)
+            .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software or RecentUsageKind.Project)
             .Take(MaximumVisibleRecentItems)
             .ToArray();
         var existing = RecentItems.ToDictionary(
@@ -156,6 +186,33 @@ public partial class MainPageViewModel : ObservableObject
         RecentItemsVisibility = recent.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentEmptyVisibility = recent.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentUsageCountText = $"{recent.Length} 项";
+    }
+
+    private async Task RefreshDashboardAsync()
+    {
+        var quickAccess = (await LauncherService.GetQuickAccessAsync())
+            .Select(item => new LauncherItemViewModel(item))
+            .ToArray();
+        var latestTools = (await LauncherService.GetRecentlyUpdatedToolsAsync())
+            .Select(item => new LauncherItemViewModel(item))
+            .ToArray();
+        var activities = ActivityCenterService.GetSnapshot(4);
+
+        ReplaceItems(QuickAccessItems, quickAccess);
+        ReplaceItems(RecentlyUpdatedTools, latestTools);
+        ReplaceItems(ActivityItems, activities);
+        QuickAccessVisibility = QuickAccessItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        LatestToolsVisibility = RecentlyUpdatedTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivitySectionVisibility = ActivityItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivityCountText = ActivityCenterService.ActiveCount > 0
+            ? $"{ActivityCenterService.ActiveCount} 项进行中"
+            : ActivityItems.Count > 0 ? "最近活动" : "暂无活动";
+    }
+
+    private static void ReplaceItems<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
+    {
+        target.Clear();
+        foreach (var item in source) target.Add(item);
     }
 
     private static string CreateRecentUsageKey(RecentUsageEntry entry) =>

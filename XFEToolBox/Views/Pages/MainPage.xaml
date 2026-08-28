@@ -1,181 +1,197 @@
 <Page x:Class="XFEToolBox.Client.Views.Pages.MainPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:gif="http://wpfanimatedgif.codeplex.com"
       xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
-      mc:Ignorable="d"
-       d:DesignHeight="450" d:DesignWidth="800"
-       Title="MainPage">
+      Title="MainPage">
     <Page.Resources>
-        <Style x:Key="RecentCardStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
-            <Setter Property="Height" Value="92"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="DashboardCardStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="Height" Value="80"/>
             <Setter Property="Margin" Value="4"/>
-            <Setter Property="Padding" Value="13"/>
-            <Setter Property="Background" Value="#FCFCFF"/>
-            <Setter Property="BorderBrush" Value="#E1E1EF"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Background" Value="#FAFAFE"/>
+            <Setter Property="BorderBrush" Value="#E2E2EF"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="controls:ButtonAssist.CornerRadius" Value="14"/>
-            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#F7F7FE"/>
-            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#BEBEEC"/>
-            <Setter Property="controls:ButtonAssist.PressedBackground" Value="#EEEEFA"/>
+            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#F2F2FC"/>
+            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#BEBEEB"/>
         </Style>
-        <Style x:Key="RecentRemoveButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
-            <Setter Property="Width" Value="24"/><Setter Property="Height" Value="24"/><Setter Property="MinWidth" Value="24"/>
-            <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0,9,9,0"/>
-            <Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="VerticalAlignment" Value="Top"/>
-            <Setter Property="Background" Value="#EEEEF9"/><Setter Property="Foreground" Value="#8B8B9E"/>
-            <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="FontSize" Value="12"/>
-            <Setter Property="controls:ButtonAssist.CornerRadius" Value="8"/>
-            <Setter Property="controls:ButtonAssist.HoverBackground" Value="#E4E4F5"/>
-            <Setter Property="controls:ButtonAssist.HoverForeground" Value="#6666B9"/>
-            <Setter Property="controls:ButtonAssist.HoverBorderBrush" Value="#C9C9EC"/>
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="SectionHintStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#C9FFFFFF"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
         </Style>
     </Page.Resources>
-    <Grid>
-        <controls:SmoothScrollViewer Padding="14,5,12,12">
-            <StackPanel Orientation="Vertical">
-                <controls:Carousel x:Name="mainCarousel"
-                                   Height="326"
-                                   HorizontalAlignment="Stretch"
-                                   VerticalAlignment="Center"
-                                   IsLoading="True"
-                                   StatusMessage="正在获取 B 站内容…"
-                                   Interval="0:0:6"
-                                   RetryRequested="MainCarousel_RetryRequested"/>
 
-                <Grid Margin="3,9,3,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Width="30" Height="30" CornerRadius="10" Background="#26FFFFFF">
-                        <Path Width="15" Height="15" Stretch="Uniform" Stroke="White" StrokeThickness="1.8"
-                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                              Data="M 8,3 L 8,8 L 12,10 M 8,1.5 C 11.6,1.5 14.5,4.4 14.5,8 C 14.5,11.6 11.6,14.5 8,14.5 C 4.4,14.5 1.5,11.6 1.5,8 C 1.5,4.4 4.4,1.5 8,1.5 Z"/>
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="最近使用" Foreground="White" FontSize="15" FontWeight="SemiBold"/>
-                        <TextBlock Text="快速回到最近打开的功能" Foreground="#C9FFFFFF" FontSize="9.5" Margin="0,1,0,0"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="清空" Height="24" MinWidth="48" Margin="0,0,7,0" Padding="10,0"
-                                Visibility="{Binding RecentItemsVisibility}" Click="ClearRecentUsage_Click"
-                                Background="#16FFFFFF" Foreground="#E8FFFFFF" BorderBrush="#38FFFFFF"
-                                controls:ButtonAssist.CornerRadius="12"
-                                controls:ButtonAssist.HoverBackground="#30FFFFFF" controls:ButtonAssist.HoverForeground="White" controls:ButtonAssist.HoverBorderBrush="#78FFFFFF"/>
-                        <Border Height="24" Padding="10,0" Background="#22FFFFFF" CornerRadius="12">
-                            <TextBlock Text="{Binding RecentUsageCountText}" Foreground="#E8FFFFFF" FontSize="10.5" VerticalAlignment="Center"/>
+    <controls:SmoothScrollViewer Padding="14,8,12,14">
+        <StackPanel>
+            <Border Margin="3,0,3,8" Padding="18" CornerRadius="18" BorderBrush="#65FFFFFF" BorderThickness="1">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#785C5ED6"/>
+                        <GradientStop Color="#4C7354CF" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="今天想做什么？" Foreground="White" FontSize="20" FontWeight="Bold"/>
+                            <TextBlock Text="搜索并启动工具、软件、项目或页面" Foreground="#D8FFFFFF" FontSize="10" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="9,4" Background="#22FFFFFF" CornerRadius="8">
+                            <TextBlock Text="Ctrl + Alt + Space" Foreground="#EAFFFFFF" FontSize="9"/>
                         </Border>
+                    </Grid>
+                    <Grid Grid.Row="1" Margin="0,15,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <controls:TextEditor x:Name="HomeSearchBox" Height="42" Padding="13,0" FontSize="12"
+                                             HintText="输入名称、作者、分类或标签…" KeyDown="HomeSearchBox_KeyDown"/>
+                        <Button Grid.Column="1" Content="打开命令面板" Height="42" Margin="8,0,0,0"
+                                controls:ButtonAssist.IsPrimary="True" Click="OpenCommandPalette_Click"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <StackPanel Margin="3,10,3,0" Visibility="{Binding QuickAccessVisibility}">
+                <Grid Margin="4,0,4,7">
+                    <StackPanel><TextBlock Text="快速访问" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="固定项优先，其次是最近使用和常用入口" Style="{StaticResource SectionHintStyle}"/></StackPanel>
+                    <Button Content="管理" HorizontalAlignment="Right" VerticalAlignment="Center" Height="28" Click="ManagePinnedItems_Click"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding QuickAccessItems}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Button Style="{StaticResource DashboardCardStyle}" CommandParameter="{Binding}" Click="LauncherItem_Click" IsEnabled="{Binding IsEnabled}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/><ColumnDefinition Width="30"/></Grid.ColumnDefinitions>
+                                        <Border Width="38" Height="38" CornerRadius="12" Background="#EEEEFB" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                            <Image gif:ImageBehavior.AnimatedSource="{Binding IconSource}" gif:ImageBehavior.RepeatBehavior="Forever" Width="24" Height="24" Stretch="Uniform"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" Foreground="#414156" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Subtitle}" Foreground="#8C8C9D" FontSize="9" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding KindText}" Foreground="#7777C8" FontSize="8.5" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                </Button>
+                                <Button Content="{Binding PinGlyph}" Width="24" Height="24" MinWidth="24" Padding="0" Margin="0,9,9,0"
+                                        HorizontalAlignment="Right" VerticalAlignment="Top" ToolTip="固定或取消固定"
+                                        CommandParameter="{Binding}" Click="TogglePin_Click"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Margin="3,17,3,0" Visibility="{Binding ActivitySectionVisibility}">
+                <Grid Margin="4,0,4,7">
+                    <StackPanel><TextBlock Text="活动中心" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="下载、构建和发布状态会集中显示在这里" Style="{StaticResource SectionHintStyle}"/></StackPanel>
+                    <TextBlock Text="{Binding ActivityCountText}" Foreground="#E3FFFFFF" FontSize="9.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding ActivityItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="4,3" Padding="13,10" Background="#F9F9FD" BorderBrush="#E2E2ED" BorderThickness="1" CornerRadius="13">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" Foreground="#45455A" FontSize="11" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Message}" Foreground="#8B8B9D" FontSize="9" Margin="0,4,0,5" TextTrimming="CharacterEllipsis"/>
+                                        <ProgressBar Height="4" Minimum="0" Maximum="100" Value="{Binding Progress}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding ProgressText}" Foreground="#7373C7" FontSize="9.5" HorizontalAlignment="Right"/>
+                                        <Button Content="取消" Margin="0,5,0,0" Padding="8,2" Command="{Binding CancelCommand}"
+                                                Visibility="{Binding CanCancel, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Margin="3,17,3,0">
+                <Grid Margin="4,0,4,7">
+                    <StackPanel><TextBlock Text="继续工作" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="工具、软件和 Code Studio 项目" Style="{StaticResource SectionHintStyle}"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="清空" Visibility="{Binding RecentItemsVisibility}" Margin="0,0,7,0" Click="ClearRecentUsage_Click"/>
+                        <TextBlock Text="{Binding RecentUsageCountText}" Foreground="#E2FFFFFF" FontSize="9.5" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
-
-                <Border Margin="3,10,3,4" MinHeight="112" Padding="7"
-                        Background="#F8F8FD" BorderBrush="#5CFFFFFF" BorderThickness="1" CornerRadius="17">
+                <Border Background="#F8F8FD" BorderBrush="#65FFFFFF" BorderThickness="1" CornerRadius="17" Padding="7" MinHeight="92">
                     <Grid>
-                        <ItemsControl ItemsSource="{Binding RecentItems}" Visibility="{Binding RecentItemsVisibility}"
-                                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><UniformGrid Columns="2" VerticalAlignment="Top"/></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
+                        <ItemsControl ItemsSource="{Binding RecentItems}" Visibility="{Binding RecentItemsVisibility}">
+                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid>
-                                        <Button Style="{StaticResource RecentCardStyle}" CommandParameter="{Binding}"
-                                                IsEnabled="{Binding IsEnabled}" Click="RecentItem_Click">
+                                        <Button Style="{StaticResource DashboardCardStyle}" CommandParameter="{Binding}" Click="RecentItem_Click" IsEnabled="{Binding IsEnabled}">
                                             <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="49"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <Border Width="40" Height="40" CornerRadius="13" Background="#EEEEFB"
-                                                        HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                    <Image gif:ImageBehavior.AnimatedSource="{Binding IconSource}"
-                                                           gif:ImageBehavior.RepeatBehavior="Forever"
-                                                           Width="25" Height="25" Stretch="Uniform"/>
-                                                </Border>
-                                                <Grid Grid.Column="1">
-                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                                    <Grid Margin="0,0,27,0">
-                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Name}" Foreground="#414156" FontSize="12.5" FontWeight="SemiBold"
-                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                                        <Border Grid.Column="1" Padding="6,2" Margin="7,0,0,0" Background="#EEEEFB" CornerRadius="7">
-                                                            <TextBlock Text="{Binding KindText}" Foreground="#7171C5" FontSize="8.5"/>
-                                                        </Border>
-                                                    </Grid>
-                                                    <TextBlock Grid.Row="1" Text="{Binding Description}" Foreground="#878799" FontSize="9.5"
-                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,4,3,3"/>
-                                                    <Grid Grid.Row="2">
-                                                        <TextBlock Text="{Binding Detail}" Foreground="#A0A0B0" FontSize="8.5" TextTrimming="CharacterEllipsis" Margin="0,0,68,0"/>
-                                                        <TextBlock Text="{Binding LastUsedText}" Foreground="#8585CF" FontSize="8.5" HorizontalAlignment="Right"/>
-                                                    </Grid>
-                                                </Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <Border Width="38" Height="38" CornerRadius="12" Background="#EEEEFB"><Image gif:ImageBehavior.AnimatedSource="{Binding IconSource}" gif:ImageBehavior.RepeatBehavior="Forever" Width="24" Height="24"/></Border>
+                                                <StackPanel Grid.Column="1" Margin="9,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" Foreground="#414156" FontSize="11.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Detail}" Foreground="#9292A3" FontSize="8.8" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding LastUsedText}" Foreground="#7D7DCA" FontSize="8.5" VerticalAlignment="Bottom"/>
                                             </Grid>
                                         </Button>
-                                        <Button Content="×" ToolTip="从最近使用中移除" Style="{StaticResource RecentRemoveButtonStyle}"
-                                                CommandParameter="{Binding}" Click="RemoveRecentItem_Click"/>
+                                        <Button Content="×" Width="22" Height="22" MinWidth="22" Padding="0" Margin="0,8,8,0" HorizontalAlignment="Right" VerticalAlignment="Top" CommandParameter="{Binding}" Click="RemoveRecentItem_Click"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-
-                        <Grid Visibility="{Binding RecentEmptyVisibility}" Margin="11">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <Border Width="48" Height="48" CornerRadius="15" Background="#EDEDFB" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                <Path Width="22" Height="22" Stretch="Uniform" Stroke="{DynamicResource MainColor}" StrokeThickness="1.7"
-                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                      Data="M 11,2 C 16,2 20,6 20,11 C 20,16 16,20 11,20 C 6,20 2,16 2,11 C 2,6 6,2 11,2 Z M 11,6 L 11,11 L 15,13"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="还没有最近使用记录" Foreground="#4D4D64" FontSize="13" FontWeight="SemiBold"/>
-                                <TextBlock Text="打开工具、软件或常用页面后会出现在这里" Foreground="#9696A8" FontSize="10.5" Margin="0,5,0,0"/>
+                        <Grid Visibility="{Binding RecentEmptyVisibility}" Margin="10">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="还没有最近使用记录" Foreground="#55556A" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="打开工具、软件或工具项目后会显示在这里" Foreground="#9999AA" FontSize="9.5" Margin="0,4,0,8"/>
+                                <Button Content="前往工具箱" Click="OpenToolBox_Click"/>
                             </StackPanel>
-                            <Button Grid.Column="2" Content="前往工具箱" MinWidth="92" Margin="12,0,0,0"
-                                    VerticalAlignment="Center" Click="OpenToolBox_Click"/>
                         </Grid>
                     </Grid>
                 </Border>
-
-                <StackPanel Visibility="{Binding AdminServerPanelVisibility}" Margin="3,18,3,6">
-                    <Grid Margin="4,0,4,9">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="8" Height="8" Fill="#75F0A6" Margin="0,0,8,0" VerticalAlignment="Center"><Ellipse.Effect><DropShadowEffect Color="#58D98B" BlurRadius="7" ShadowDepth="0" Opacity="0.9"/></Ellipse.Effect></Ellipse>
-                                <TextBlock Text="{Binding AdminServerStatus}" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
-                            </StackPanel>
-                            <TextBlock Text="服务器运行信息仅对管理员显示" Foreground="#C8FFFFFF" FontSize="9.5" Margin="16,3,0,0"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding AdminUpdatedText}" Foreground="#D8FFFFFF" FontSize="9.5" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                    <UniformGrid Columns="3">
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80A7C0FF" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5A4B7BFF"/><GradientStop Color="#30595DCC" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#A9CAFF" Margin="0,0,7,0"/><TextBlock Text="CPU 使用率" Foreground="#ECF4FF" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminCpuText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminCpuDetail}" Foreground="#D6E6FF" FontSize="9" Margin="0,5,0,0"/></StackPanel>
-                        </Border>
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#8096F0EE" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5535C6CF"/><GradientStop Color="#305DA8D6" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#8FF1E7" Margin="0,0,7,0"/><TextBlock Text="服务器内存" Foreground="#EAFFFD" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminMemoryText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminMemoryDetail}" Foreground="#D2FAF6" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
-                        </Border>
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#8098F0BE" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#5545C98A"/><GradientStop Color="#306EAE97" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#A7F2C5" Margin="0,0,7,0"/><TextBlock Text="用户与会话" Foreground="#ECFFF3" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminUsersText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminUsersDetail}" Foreground="#D5F9E3" FontSize="9" Margin="0,5,0,0"/></StackPanel>
-                        </Border>
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80F2A9D0" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#55E36FAE"/><GradientStop Color="#308E74D8" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#FFC0DE" Margin="0,0,7,0"/><TextBlock Text="已发布内容" Foreground="#FFF0F7" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminContentText}" Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminContentDetail}" Foreground="#FFDAEC" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
-                        </Border>
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80FFD09A" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#55F0A85B"/><GradientStop Color="#30D97B7B" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#FFD394" Margin="0,0,7,0"/><TextBlock Text="存储占用" Foreground="#FFF7EA" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminStorageText}" Foreground="White" FontSize="18" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminStorageDetail}" Foreground="#FFE7C9" FontSize="9" Margin="0,5,0,0"/></StackPanel>
-                        </Border>
-                        <Border MinHeight="104" Margin="4" Padding="15,12" BorderBrush="#80D3B2FF" BorderThickness="1" CornerRadius="14">
-                            <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#557F6BE8"/><GradientStop Color="#30B05DD8" Offset="1"/></LinearGradientBrush></Border.Background>
-                            <StackPanel><StackPanel Orientation="Horizontal"><Ellipse Width="7" Height="7" Fill="#DCC0FF" Margin="0,0,7,0"/><TextBlock Text="持续运行" Foreground="#F7EEFF" FontSize="9.5"/></StackPanel><TextBlock Text="{Binding AdminUptimeText}" Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,7,0,0"/><TextBlock Text="{Binding AdminUptimeDetail}" Foreground="#EBD9FF" FontSize="9" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
-                        </Border>
-                    </UniformGrid>
-                </StackPanel>
             </StackPanel>
-        </controls:SmoothScrollViewer>
-    </Grid>
+
+            <StackPanel Margin="3,17,3,0" Visibility="{Binding LatestToolsVisibility}">
+                <Grid Margin="4,0,4,7"><StackPanel><TextBlock Text="最近更新的工具" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="根据本地工具目录缓存展示" Style="{StaticResource SectionHintStyle}"/></StackPanel></Grid>
+                <ItemsControl ItemsSource="{Binding RecentlyUpdatedTools}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource DashboardCardStyle}" CommandParameter="{Binding}" Click="LauncherItem_Click">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="45"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Border Width="37" Height="37" CornerRadius="11" Background="#EEEEFB"><Image Source="{Binding IconSource}" Width="23" Height="23"/></Border>
+                                    <StackPanel Grid.Column="1" Margin="9,0" VerticalAlignment="Center"><TextBlock Text="{Binding Title}" Foreground="#414156" FontSize="11.5" FontWeight="SemiBold"/><TextBlock Text="{Binding Subtitle}" Foreground="#9292A3" FontSize="8.8" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/></StackPanel>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <Border Margin="7,17,7,5" Padding="13,10" Background="#25FFFFFF" BorderBrush="#45FFFFFF" BorderThickness="1" CornerRadius="13" Visibility="{Binding AdminServerPanelVisibility}" MouseLeftButtonUp="AdminServerPanel_MouseLeftButtonUp">
+                <Grid>
+                    <StackPanel Orientation="Horizontal"><Ellipse Width="8" Height="8" Fill="#75F0A6" Margin="0,0,8,0"/><TextBlock Text="{Binding AdminServerStatus}" Foreground="White" FontSize="11" FontWeight="SemiBold"/></StackPanel>
+                    <TextBlock Text="{Binding AdminUpdatedText}" Foreground="#D3FFFFFF" FontSize="9" HorizontalAlignment="Right"/>
+                </Grid>
+            </Border>
+
+            <StackPanel Margin="3,17,3,0">
+                <Grid Margin="4,0,4,7"><StackPanel><TextBlock Text="教程与动态" Style="{StaticResource SectionTitleStyle}"/><TextBlock Text="网络内容延迟加载，不影响工作台使用" Style="{StaticResource SectionHintStyle}"/></StackPanel></Grid>
+                <controls:Carousel x:Name="mainCarousel" Height="150" HorizontalAlignment="Stretch" IsLoading="True"
+                                   StatusMessage="正在获取教程内容…" Interval="0:0:8" RetryRequested="MainCarousel_RetryRequested"/>
+            </StackPanel>
+        </StackPanel>
+    </controls:SmoothScrollViewer>
 </Page>

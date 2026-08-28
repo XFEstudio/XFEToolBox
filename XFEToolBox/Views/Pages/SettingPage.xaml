@@ -75,6 +75,20 @@
                                                            CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
                                                            Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.StartWithMaximize"/>
                                 </controls:SettingsCard>
+                                <controls:SettingsCard Header="关闭到托盘" Description="关闭主窗口后继续响应全局快捷键和后台任务">
+                                    <controls:SwitchButton Margin="0"
+                                                           Command="{Binding SwitchedCommand}"
+                                                           CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
+                                                           Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.CloseToTray"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard Header="命令面板快捷键" Description="{Binding GlobalHotkeyStatus}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:TextEditor Width="150" Height="34" Margin="0,0,8,0"
+                                                             Text="{Binding LauncherHotkeyText, UpdateSourceTrigger=PropertyChanged}"
+                                                             HintText="Ctrl+Alt+Space"/>
+                                        <Button Content="应用" MinWidth="62" Command="{Binding ApplyLauncherHotkeyCommand}"/>
+                                    </StackPanel>
+                                </controls:SettingsCard>
                                 <controls:SettingsExpander Header="软件更新" Description="{Binding UpgradeStatus}" IsExpanded="True">
                                     <controls:SettingsExpander.Content>
                                         <Button Content="检查更新" MinWidth="96"

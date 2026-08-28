@@ -98,7 +98,7 @@ public partial class MainWindow : Window
             {
                 Key = "home",
                 Title = "首页",
-                Description = "查看精选教程轮播、最近使用记录和常用入口，快速回到正在处理的内容。",
+                Description = "通过统一搜索、快速访问、继续工作和活动中心，快速回到正在处理的内容。",
                 Target = mainButton,
                 Placement = TutorialPlacement.Right,
                 SpotlightPadding = new Thickness(6),
@@ -120,6 +120,16 @@ public partial class MainWindow : Window
                 Title = "C# 控制台",
                 Description = "快速编写和运行 C# 代码片段，适合验证想法、调试表达式与处理临时代码。",
                 Target = consoleButton,
+                Placement = TutorialPlacement.Right,
+                SpotlightPadding = new Thickness(6),
+                SpotlightCornerRadius = 17
+            },
+            new()
+            {
+                Key = "workshop",
+                Title = "工具工坊",
+                Description = "所有用户都可以创建、预览、运行和导出本地 WPF 工具；服务器发布仍由管理员控制。",
+                Target = workshopButton,
                 Placement = TutorialPlacement.Right,
                 SpotlightPadding = new Thickness(6),
                 SpotlightCornerRadius = 17
@@ -212,5 +222,17 @@ public partial class MainWindow : Window
     {
         e.Handled = true;
         ViewModel.NavigateToPageCommand.Execute("profile");
+    }
+
+    public void NavigateAndSelect(string pageTag)
+    {
+        ViewModel.NavigateToPageCommand.Execute(pageTag);
+        mainButton.IsChecked = pageTag == "home";
+        toolBoxButton.IsChecked = pageTag == "tool";
+        workshopButton.IsChecked = pageTag == "workshop";
+        consoleButton.IsChecked = pageTag == "console";
+        downloadButton.IsChecked = pageTag == "download";
+        settingButton.IsChecked = pageTag == "setting";
+        serverManagementButton.IsChecked = pageTag is "serverManagement" or "serverOverview" or "userManagement" or "toolManagement" or "softwareManagement";
     }
 }

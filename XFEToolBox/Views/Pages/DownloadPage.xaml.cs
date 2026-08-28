@@ -277,6 +277,19 @@ public partial class DownloadPage : Page
         ShowSoftwareDetails(card);
     }
 
+    private void TogglePinnedSoftwareMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not MenuItem { CommandParameter: SoftwareCardViewModel card }) return;
+        var wasPinned = PinnedItemService.IsPinned(LauncherItemKind.Software, card.Id);
+        var success = wasPinned
+            ? PinnedItemService.Unpin(LauncherItemKind.Software, card.Id)
+            : PinnedItemService.TryPin(LauncherItemKind.Software, card.Id);
+        StatusText.Text = !success
+            ? $"最多只能固定 {PinnedItemService.MaximumPinnedItems} 项。"
+            : wasPinned ? $"已取消固定 {card.Name}。" : $"已将 {card.Name} 固定到主页。";
+    }
+
     private async void SoftwareCard_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: SoftwareCardViewModel card } && card.TryBeginIconLoad())

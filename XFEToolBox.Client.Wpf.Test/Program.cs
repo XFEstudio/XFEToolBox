@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -9,7 +10,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
+using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.WpfCore.Windowing;
 
@@ -17,6 +20,172 @@ namespace XFEToolBox.Client.Wpf.Test;
 
 public class Program
 {
+    [Test]
+    public static void PinnedAndRecentConfigurationRecoverFromDuplicatesAndDamage()
+    {
+        var pinnedSource = Enumerable.Range(0, 10)
+            .Select(index => new PinnedItemEntry
+            {
+                Kind = LauncherItemKind.Tool,
+                TargetId = $" tool-{index} ",
+                AddedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-index)
+            })
+            .Concat([
+                new PinnedItemEntry { Kind = LauncherItemKind.Tool, TargetId = "TOOL-0" },
+                new PinnedItemEntry { Kind = (LauncherItemKind)999, TargetId = "unknown" },
+                new PinnedItemEntry { Kind = LauncherItemKind.Page, TargetId = " " }
+            ])
+            .ToArray();
+        var pinned = PinnedItemService.ParseEntries(JsonSerializer.Serialize(pinnedSource));
+        Ensure(pinned.Count == PinnedItemService.MaximumPinnedItems, "固定项没有执行容量限制或去重。");
+        Ensure(pinned[0].TargetId == "tool-0", "固定项目标 ID 没有完成规范化。");
+        Ensure(PinnedItemService.ParseEntries("{损坏的 JSON").Count == 0, "损坏的固定项配置没有安全恢复。");
+        Ensure(PinnedItemService.ParseEntries("[null]").Count == 0, "空固定项没有被忽略。");
+
+        var now = DateTimeOffset.UtcNow;
+        var recentSource = new[]
+        {
+            new RecentUsageEntry { Kind = RecentUsageKind.Tool, TargetId = "tool", Name = "旧版工具", LastUsedAtUtc = now.AddMinutes(-2) },
+            new RecentUsageEntry { Kind = RecentUsageKind.Software, TargetId = "software", Name = "旧版软件", LastUsedAtUtc = now.AddMinutes(-1) },
+            new RecentUsageEntry { Kind = RecentUsageKind.Project, TargetId = "project", Name = "新项目", LastUsedAtUtc = now },
+            new RecentUsageEntry { Kind = RecentUsageKind.Tool, TargetId = "TOOL", Name = "重复工具", LastUsedAtUtc = now.AddMinutes(-3) },
+            new RecentUsageEntry { Kind = (RecentUsageKind)999, TargetId = "unknown", Name = "未知", LastUsedAtUtc = now }
+        };
+        var recent = RecentUsageService.ParseEntries(JsonSerializer.Serialize(recentSource));
+        Ensure(recent.Select(item => item.Kind).SequenceEqual([
+            RecentUsageKind.Project,
+            RecentUsageKind.Software,
+            RecentUsageKind.Tool
+        ]), "最近使用配置没有兼容旧类型、项目类型、排序或去重。");
+        Ensure(RecentUsageService.ParseEntries("not-json").Count == 0, "损坏的最近使用配置没有安全恢复。");
+        Ensure(RecentUsageService.ParseEntries("[null]").Count == 0, "空最近使用条目没有被忽略。");
+    }
+
+    [Test]
+    public static void LauncherRankingUsesStableMatchOrderAndPersonalizationBoosts()
+    {
+        var exact = CreateLauncherItem("JSON", isPinned: false, lastUsedAtUtc: null);
+        var prefix = CreateLauncherItem("JSON 格式化", isPinned: false, lastUsedAtUtc: null);
+        var contains = CreateLauncherItem("转换 JSON 文档", isPinned: false, lastUsedAtUtc: null);
+        var keyword = CreateLauncherItem("文本转换", isPinned: false, lastUsedAtUtc: null, "JSON");
+
+        var exactScore = LauncherService.GetMatchScore(exact, "JSON");
+        var prefixScore = LauncherService.GetMatchScore(prefix, "JSON");
+        var containsScore = LauncherService.GetMatchScore(contains, "JSON");
+        var keywordScore = LauncherService.GetMatchScore(keyword, "JSON");
+
+        Ensure(exactScore < prefixScore && prefixScore < containsScore && containsScore < keywordScore,
+            $"启动器匹配顺序不正确：{exactScore}, {prefixScore}, {containsScore}, {keywordScore}。");
+
+        var pinned = CreateLauncherItem("JSON 格式化", isPinned: true, lastUsedAtUtc: null);
+        var recent = CreateLauncherItem("JSON 格式化", isPinned: false, lastUsedAtUtc: DateTime.UtcNow);
+        Ensure(LauncherService.GetMatchScore(pinned, "JSON") < prefixScore, "固定项没有获得同级搜索加权。");
+        Ensure(LauncherService.GetMatchScore(recent, "JSON") < prefixScore, "最近使用项没有获得同级搜索加权。");
+    }
+
+    [Test]
+    public static void QuickAccessToolCardLoadsItsCatalogIcon()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                const string svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><rect width='8' height='8' fill='#7b72db'/></svg>";
+                var item = new LauncherItem
+                {
+                    Kind = LauncherItemKind.Tool,
+                    TargetId = "icon-test",
+                    Title = "图标测试工具",
+                    IconReference = "data:image/svg+xml," + Uri.EscapeDataString(svg),
+                    ExecuteAsync = static () => Task.CompletedTask
+                };
+                var viewModel = new LauncherItemViewModel(item);
+                viewModel.IconLoadingTask.GetAwaiter().GetResult();
+                Ensure(viewModel.IconSource is DrawingImage,
+                    $"快速访问工具卡没有使用目录图标，而是保留了 {viewModel.IconSource.GetType().Name} 默认图标。");
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        }) { IsBackground = true };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        Ensure(thread.Join(TimeSpan.FromSeconds(10)), "快速访问工具图标加载测试超时。");
+        if (failure is not null)
+            throw new InvalidOperationException($"快速访问工具图标加载失败：{failure.Message}", failure);
+    }
+
+    [Test]
+    public static void LauncherHotkeyParserNormalizesAndRejectsUnsafeGestures()
+    {
+        Ensure(GlobalHotkeyService.TryNormalize("control + alt + space", out var normalized, out _),
+            "有效的全局热键没有通过解析。");
+        Ensure(normalized == "Ctrl+Alt+Space", $"全局热键没有规范化：{normalized}。");
+        Ensure(!GlobalHotkeyService.TryNormalize("Space", out _, out _), "缺少修饰键的热键不应被注册。");
+        Ensure(!GlobalHotkeyService.TryNormalize("Ctrl+Alt", out _, out _), "缺少主键的热键不应被注册。");
+    }
+
+    [Test]
+    public static void SingleInstanceForwardsCommandsThroughItsNamedPipe()
+    {
+        var scope = Guid.NewGuid().ToString("N");
+        using var first = new SingleInstanceService(scope);
+        using var second = new SingleInstanceService(scope);
+        Ensure(first.IsFirstInstance, "第一个实例没有取得命名互斥量。");
+        Ensure(!second.IsFirstInstance, "第二个实例没有被命名互斥量识别。");
+
+        using var received = new ManualResetEventSlim();
+        var message = string.Empty;
+        first.StartListening(value =>
+        {
+            message = value;
+            received.Set();
+        });
+        Ensure(SingleInstanceService.SendAsync("show-palette", scope).GetAwaiter().GetResult(),
+            "第二实例请求没有写入命名管道。");
+        Ensure(received.Wait(TimeSpan.FromSeconds(3)), "第一实例没有收到命名管道请求。");
+        Ensure(message == "show-palette", $"命名管道请求内容不正确：{message}。");
+    }
+
+    [Test]
+    public static void ActivityCenterTracksProgressAndCancellation()
+    {
+        ActivityCenterService.ClearCompleted();
+        using var activity = ActivityCenterService.Start(
+            "测试下载",
+            XFEToolBox.Client.Models.ActivityKind.SoftwareDownload,
+            canCancel: true);
+
+        activity.Report(42, "正在下载");
+        Ensure(activity.Item.State == ActivityState.Running, "活动没有保持运行状态。");
+        Ensure(activity.Item.Progress == 42, $"活动进度没有同步：{activity.Item.Progress}。");
+        Ensure(activity.Item.CanCancel, "安全支持取消的活动没有显示取消能力。");
+
+        activity.Item.CancelCommand.Execute(null);
+        Ensure(activity.CancellationToken.IsCancellationRequested, "取消命令没有传递到底层 CancellationToken。");
+        activity.Cancel("测试已取消");
+        Ensure(activity.Item.State == ActivityState.Cancelled, "活动没有进入已取消状态。");
+        ActivityCenterService.ClearCompleted();
+    }
+
+    private static LauncherItem CreateLauncherItem(
+        string title,
+        bool isPinned,
+        DateTime? lastUsedAtUtc,
+        params string[] keywords)
+        => new()
+        {
+            Kind = LauncherItemKind.Tool,
+            TargetId = Guid.NewGuid().ToString("N"),
+            Title = title,
+            Keywords = keywords,
+            IsPinned = isPinned,
+            LastUsedAtUtc = lastUsedAtUtc.HasValue ? new DateTimeOffset(lastUsedAtUtc.Value) : null,
+            ExecuteAsync = static () => Task.CompletedTask
+        };
+
     [Test]
     public static void TimePickerIncrementOneKeepsTheWholeScrollTrackUsable()
     {

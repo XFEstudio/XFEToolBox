@@ -176,6 +176,11 @@
         <DataTemplate x:Key="SoftwareCardContentTemplate">
             <Button Style="{StaticResource SoftwareCardStyle}" CommandParameter="{Binding}"
                     Loaded="SoftwareCard_Loaded" Click="SoftwareCard_Click">
+                <Button.ContextMenu>
+                    <ContextMenu DataContext="{Binding PlacementTarget.CommandParameter, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="固定/取消固定到主页" CommandParameter="{Binding}" Click="TogglePinnedSoftwareMenuItem_Click"/>
+                    </ContextMenu>
+                </Button.ContextMenu>
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="60"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <Border Width="48" Height="48" CornerRadius="14" Background="#EEEEFB" VerticalAlignment="Top" HorizontalAlignment="Left">

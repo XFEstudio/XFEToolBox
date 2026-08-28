@@ -60,6 +60,26 @@ public partial class SystemProfile : XFEProfile
     /// </summary>
     [ProfileProperty]
     private string recentUsageJson = string.Empty;
+    /// <summary>
+    /// 固定到主页和命令面板的入口。
+    /// </summary>
+    [ProfileProperty]
+    private string pinnedItemsJson = string.Empty;
+    /// <summary>
+    /// 系统级命令面板快捷键。
+    /// </summary>
+    [ProfileProperty]
+    private string launcherHotkey = "Ctrl+Alt+Space";
+    /// <summary>
+    /// 关闭主窗口时是否继续在托盘运行。
+    /// </summary>
+    [ProfileProperty]
+    private bool closeToTray = true;
+    /// <summary>
+    /// 是否已经显示过首次最小化到托盘的说明。
+    /// </summary>
+    [ProfileProperty]
+    private bool trayCloseHintShown = false;
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

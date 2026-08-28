@@ -40,6 +40,7 @@ public partial class RecentUsageCardViewModel : ObservableObject
     {
         RecentUsageKind.Tool => "工具",
         RecentUsageKind.Software => "软件",
+        RecentUsageKind.Project => "项目",
         _ => "功能"
     };
 
@@ -82,6 +83,7 @@ public partial class RecentUsageCardViewModel : ObservableObject
         {
             RecentUsageKind.Tool => "/Resources/Image/default_tool_icon.png",
             RecentUsageKind.Software => GetBundledSoftwareIcon(entry.TargetId),
+            RecentUsageKind.Project => "/Resources/Image/wrench.png",
             _ => "/Resources/Image/grid.png"
         });
     }
