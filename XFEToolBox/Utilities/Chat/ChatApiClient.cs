@@ -16,6 +16,7 @@ public sealed class ChatApiException(string message, HttpStatusCode? statusCode 
 public sealed class ChatApiClient
 {
     public const int TransferChunkSize = 192 * 1024;
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(20);
 
     public Task<ChatUserSummary[]> SearchUsersAsync(string query, int limit = 30) =>
         RequestAsync<ChatUserSummary[]>("chatUsersSearch", query.Trim(), Math.Clamp(limit, 1, 100));
@@ -222,13 +223,18 @@ public sealed class ChatApiClient
         try
         {
             var requestParameters = parameters.Select(static value => value!).ToArray();
-            var response = await ClientSession.Requester.Request<T>(name, requestParameters);
+            using var timeout = new CancellationTokenSource(RequestTimeout);
+            var response = await ClientSession.Requester.RequestAsync<T>(name, timeout.Token, requestParameters);
             if ((int)response.StatusCode is < 200 or >= 300 || response.Result is null)
             {
                 var message = string.IsNullOrWhiteSpace(response.Message) ? "聊天服务器请求失败。" : response.Message;
                 throw new ChatApiException(message, response.StatusCode);
             }
             return response.Result;
+        }
+        catch (OperationCanceledException exception)
+        {
+            throw new ChatApiException("聊天服务器响应超时，请稍后重试。", null, exception);
         }
         catch (ChatApiException)
         {

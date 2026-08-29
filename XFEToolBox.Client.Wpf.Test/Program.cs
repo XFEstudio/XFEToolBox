@@ -12,7 +12,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using XFEToolBox.Client.Models;
+using XFEToolBox.Client.Models.Chat;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.ViewModel.Chat;
 using XFEToolBox.Client.ViewModel.Pages;
 using XFEToolBox.WpfCore.Controls;
 using XFEToolBox.WpfCore.Windowing;
@@ -21,6 +23,25 @@ namespace XFEToolBox.Client.Wpf.Test;
 
 public class Program
 {
+    [Test]
+    public static void ChatLobbySectionSwitchDoesNotBlockUiThread()
+    {
+        var viewModel = new ChatPageViewModel();
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var index = 0; index < 1_000; index++)
+        {
+            viewModel.SelectSectionCommand.Execute(ChatSection.Lobby);
+            Ensure(viewModel.IsLobbySection && viewModel.SelectedSection == ChatSection.Lobby,
+                "大厅选项卡没有切换到大厅状态。");
+            viewModel.SelectSectionCommand.Execute(ChatSection.Conversations);
+        }
+
+        stopwatch.Stop();
+        Ensure(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
+            $"大厅选项卡切换耗时异常：{stopwatch.Elapsed.TotalMilliseconds:N1} ms。");
+    }
+
     [Test]
     public static void PinnedAndRecentConfigurationRecoverFromDuplicatesAndDamage()
     {

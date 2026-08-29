@@ -320,7 +320,7 @@
                                 <StackPanel><TextBlock Text="最近会话" Style="{StaticResource HeadingStyle}"/><TextBlock Text="好友与群聊消息" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel>
                                 <Button Content="↻" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" Command="{Binding RefreshAllCommand}" ToolTip="刷新会话"/>
                             </Grid>
-                            <ListBox Grid.Row="1" ItemsSource="{Binding Conversations}" SelectedItem="{Binding SelectedConversation, Mode=TwoWay}"
+                            <ListBox Grid.Row="1" ItemsSource="{Binding Conversations}" SelectedItem="{Binding SelectedConversation, Mode=OneWay}"
                                      ItemTemplate="{StaticResource ConversationTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"
                                      SelectionChanged="ConversationList_SelectionChanged"/>
                         </Grid>

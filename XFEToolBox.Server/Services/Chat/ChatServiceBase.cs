@@ -5,6 +5,7 @@ using XFEToolBox.Server.Core.Chat;
 using XFEToolBox.Server.Realtime;
 using XFEExtension.NetCore.ServerInteractive.Interfaces;
 using XFEExtension.NetCore.ServerInteractive.Utilities.Server.Services.CoreService;
+using XFEExtension.NetCore.XFETransform.Json;
 
 namespace XFEToolBox.Server.Services.Chat;
 
@@ -200,35 +201,19 @@ public abstract class ChatServiceBase : ServerCoreUserServiceBase
 
     protected string? GetString(string propertyName, bool trim = true, bool allowEmpty = false)
     {
-        try
-        {
-            var value = Json?[propertyName]?.GetValue<string>();
-            if (value is null || (!allowEmpty && string.IsNullOrWhiteSpace(value))) return null;
-            return trim ? value.Trim() : value;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or FormatException)
-        {
-            return null;
-        }
+        var value = ChatRequestValueReader.GetString(Json?[propertyName]);
+        if (value is null || (!allowEmpty && string.IsNullOrWhiteSpace(value))) return null;
+        return trim ? value.Trim() : value;
     }
 
-    protected bool? GetBoolean(string propertyName)
-    {
-        try { return Json?[propertyName]?.GetValue<bool>(); }
-        catch (Exception exception) when (exception is InvalidOperationException or FormatException) { return null; }
-    }
+    protected bool? GetBoolean(string propertyName) =>
+        ChatRequestValueReader.GetBoolean(Json?[propertyName]);
 
-    protected int? GetInt32(string propertyName)
-    {
-        try { return Json?[propertyName]?.GetValue<int>(); }
-        catch (Exception exception) when (exception is InvalidOperationException or FormatException) { return null; }
-    }
+    protected int? GetInt32(string propertyName) =>
+        ChatRequestValueReader.GetInt32(Json?[propertyName]);
 
-    protected long? GetInt64(string propertyName)
-    {
-        try { return Json?[propertyName]?.GetValue<long>(); }
-        catch (Exception exception) when (exception is InvalidOperationException or FormatException) { return null; }
-    }
+    protected long? GetInt64(string propertyName) =>
+        ChatRequestValueReader.GetInt64(Json?[propertyName]);
 
     protected TEnum? GetEnum<TEnum>(string propertyName) where TEnum : struct, Enum
     {
@@ -330,4 +315,30 @@ public abstract class ChatServiceBase : ServerCoreUserServiceBase
         ChatRepositoryError.NotReady => HttpStatusCode.Conflict,
         _ => HttpStatusCode.InternalServerError
     };
+}
+
+internal static class ChatRequestValueReader
+{
+    public static string? GetString(XFEJsonNode? node) =>
+        TryGetValue(node, out string? value) ? value : null;
+
+    public static bool? GetBoolean(XFEJsonNode? node) =>
+        TryGetValue(node, out bool value) ? value : null;
+
+    public static int? GetInt32(XFEJsonNode? node) =>
+        TryGetValue(node, out int value) ? value : null;
+
+    public static long? GetInt64(XFEJsonNode? node) =>
+        TryGetValue(node, out long value) ? value : null;
+
+    private static bool TryGetValue<T>(XFEJsonNode? node, out T? value)
+    {
+        if (node is null || node.IsNull)
+        {
+            value = default;
+            return false;
+        }
+
+        return node.TryGetValue(out value);
+    }
 }

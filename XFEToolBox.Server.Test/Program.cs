@@ -10,7 +10,9 @@ using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
 using XFEToolBox.Server.Core.Utilities;
 using XFEToolBox.Server.Realtime;
+using XFEToolBox.Server.Services.Chat;
 using XFEExtension.NetCore.CyberComm;
+using XFEExtension.NetCore.XFETransform.Json;
 
 var tests = new (string Name, Action Run)[]
 {
@@ -24,6 +26,7 @@ var tests = new (string Name, Action Run)[]
     ("系统 CPU 使用率可在负载下被采样", SystemCpuUsageIsMeasuredUnderLoad),
     ("好友私聊具备权限和消息幂等保证", ChatFriendshipAndMessageAreConsistent),
     ("公开与私密群聊及邀请卡片按规则工作", ChatGroupsAndInvitationsFollowVisibilityRules),
+    ("聊天请求允许可空分页参数", ChatRequestAllowsNullablePagingValues),
     ("私密群号具备足够长度并限制账户枚举", ChatGroupNumbersAreStrongAndRateLimited),
     ("聊天附件分块传输校验完整性和访问权限", ChatAttachmentTransferIsAuthorizedAndVerified),
     ("实时票据绑定用途且只能消费一次", ChatRealtimeTicketIsAudienceBoundAndSingleUse),
@@ -297,9 +300,16 @@ static void ChatGroupsAndInvitationsFollowVisibilityRules() => WithChatRepositor
         "alice", "私密讨论组", "private", ChatGroupVisibility.Private).GetAwaiter().GetResult();
     Assert(privateGroup.GroupNumber.Length == ChatRepository.GroupNumberLength &&
            privateGroup.GroupNumber.All(char.IsAsciiDigit), "群号不是 12 位安全随机数字。");
-    var recommended = repository.GetRecommendedGroupsAsync("bob", null).GetAwaiter().GetResult();
+    var recommended = repository.GetRecommendedGroupsAsync("bob", null)
+        .WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
     Assert(recommended.Any(group => group.Id == publicGroup.Id), "公开群没有出现在大厅推荐中。");
     Assert(recommended.All(group => group.Id != privateGroup.Id), "私密群泄露到了大厅推荐中。");
+
+    var newGroupHistory = repository.GetMessageHistoryAsync(
+            publicGroup.ConversationId, "alice", beforeSequence: null, limit: 50)
+        .WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult();
+    Assert(newGroupHistory.Items.Count == 0 && !newGroupHistory.HasMore && newGroupHistory.NextBeforeSequence is null,
+        "新建群聊的首屏空历史没有正常返回。");
 
     var exactLookup = repository.FindGroupByNumberAsync(privateGroup.GroupNumber, "bob").GetAwaiter().GetResult();
     Assert(exactLookup?.Id == privateGroup.Id, "输入准确群号无法找到私密群。");
@@ -318,6 +328,32 @@ static void ChatGroupsAndInvitationsFollowVisibilityRules() => WithChatRepositor
     Assert(groupMessage.Sequence > 0, "群成员无法发送群消息。");
     GC.KeepAlive(attachmentRoot);
 });
+
+static void ChatRequestAllowsNullablePagingValues()
+{
+    var json = XFEJson.Parse("""
+                             {
+                               "beforeSequence": null,
+                               "limit": 50,
+                               "offset": null,
+                               "enabled": true,
+                               "invalidNumber": "not-a-number"
+                             }
+                             """);
+
+    Assert(ChatRequestValueReader.GetInt64(json["beforeSequence"]) is null,
+        "显式 JSON null 被错误解析为非空 Int64。");
+    Assert(ChatRequestValueReader.GetInt32(json["offset"]) is null,
+        "显式 JSON null 被错误解析为非空 Int32。");
+    Assert(ChatRequestValueReader.GetInt32(json["limit"]) == 50,
+        "有效分页数量没有被正确解析。");
+    Assert(ChatRequestValueReader.GetBoolean(json["enabled"]) == true,
+        "有效布尔参数没有被正确解析。");
+    Assert(ChatRequestValueReader.GetInt64(json["invalidNumber"]) is null,
+        "类型错误的分页参数没有安全地返回空值。");
+    Assert(ChatRequestValueReader.GetInt64(json["missing"]) is null,
+        "缺失的分页参数没有安全地返回空值。");
+}
 
 static void ChatGroupNumbersAreStrongAndRateLimited() => WithChatRepository((repository, attachmentRoot) =>
 {

@@ -110,8 +110,11 @@ public partial class ChatPage : Page
 
     private async void ConversationList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListBox { SelectedItem: ChatConversationItem item })
-            await ViewModel.OpenConversationCommand.ExecuteAsync(item);
+        if (sender is not ListBox { SelectedItem: ChatConversationItem item } ||
+            ReferenceEquals(item, ViewModel.SelectedConversation))
+            return;
+
+        await ViewModel.OpenConversationCommand.ExecuteAsync(item);
     }
 
     private async void GroupSearchBox_KeyDown(object sender, KeyEventArgs e)
