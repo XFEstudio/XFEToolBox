@@ -116,9 +116,17 @@
                 <controls:NavigationButton x:Name="chatButton" Command="{Binding NavigateToPageCommand}" CommandParameter="chat">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <Border Width="25" Height="25" Margin="7" CornerRadius="8" Background="#ECECFA">
-                            <TextBlock Text="聊" Foreground="#7777CF" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <Viewbox Width="25" Height="25" Margin="7">
+                            <Grid Width="24" Height="24">
+                                <Path Fill="#9898E7"
+                                      Data="M4,3 H20 C21.1,3 22,3.9 22,5 V14.5 C22,15.6 21.1,16.5 20,16.5 H10 L5,21 V16.5 H4 C2.9,16.5 2,15.6 2,14.5 V5 C2,3.9 2.9,3 4,3 Z"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,3">
+                                    <Ellipse Width="2.6" Height="2.6" Fill="White" Margin="1.2,0"/>
+                                    <Ellipse Width="2.6" Height="2.6" Fill="White" Margin="1.2,0"/>
+                                    <Ellipse Width="2.6" Height="2.6" Fill="White" Margin="1.2,0"/>
+                                </StackPanel>
+                            </Grid>
+                        </Viewbox>
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="聊天"/>
                     </Grid>
                 </controls:NavigationButton>
