@@ -3,6 +3,7 @@ using XFEToolBox.Core.Models.Users;
 using XFEToolBox.Server.Core.Chat;
 using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
+using XFEToolBox.Server.Core.Utilities;
 using XFEToolBox.Server.Profiles;
 using XFEToolBox.Server.Profiles.Data;
 using XFEToolBox.Server.Realtime;
@@ -125,8 +126,11 @@ var server = XFEServerBuilder.CreateBuilder()
             options.AcceptGet = true;
             options.AcceptPost = true;
             options.AcceptNonStandardJson = true;
-            // 只有在可信反向代理层完成源地址校验时才应采用 X-Forwarded-For。
-            options.GetIPFunction = static args => args.ClientIP;
+            // 源站必须只允许可信 EdgeOne 节点回源，防止客户端绕过代理伪造请求头。
+            options.GetIPFunction = static args => ForwardedClientIpResolver.Resolve(
+                args.ClientIP,
+                args.RequestHeaders["EO-Connecting-IP"],
+                args.RequestHeaders["X-Forwarded-For"]);
             options.BindIP(ServerProfile.HttpAddress);
             options.MainEntryPoint = "api";
             options.ServerCoreName = "XFEToolBoxServer";

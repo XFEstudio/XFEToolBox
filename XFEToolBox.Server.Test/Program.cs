@@ -27,7 +27,8 @@ var tests = new (string Name, Action Run)[]
     ("私密群号具备足够长度并限制账户枚举", ChatGroupNumbersAreStrongAndRateLimited),
     ("聊天附件分块传输校验完整性和访问权限", ChatAttachmentTransferIsAuthorizedAndVerified),
     ("实时票据绑定用途且只能消费一次", ChatRealtimeTicketIsAudienceBoundAndSingleUse),
-    ("实时票据限制每用户和全局待使用数量", ChatRealtimeTicketLimitsAreEnforced)
+    ("实时票据限制每用户和全局待使用数量", ChatRealtimeTicketLimitsAreEnforced),
+    ("EdgeOne 回源请求可解析真实客户端 IP", ForwardedClientIpIsResolved)
 };
 
 var failed = 0;
@@ -448,6 +449,37 @@ static void ChatRealtimeTicketLimitsAreEnforced()
         out _), "配额中的有效票据无法消费。");
     _ = store.Issue("mallory", "mallory", "Mallory", "device-1");
     Assert(store.OutstandingTicketCount == 3, "消费票据后没有释放全局配额。");
+}
+
+static void ForwardedClientIpIsResolved()
+{
+    Assert(
+        ForwardedClientIpResolver.Resolve(
+            "10.0.0.8",
+            "203.0.113.21",
+            "198.51.100.7, 203.0.113.20") == "203.0.113.21",
+        "没有优先使用 EdgeOne 提供的 EO-Connecting-IP。");
+
+    Assert(
+        ForwardedClientIpResolver.Resolve(
+            "10.0.0.8",
+            null,
+            "198.51.100.7, 203.0.113.20") == "203.0.113.20",
+        "没有使用 X-Forwarded-For 中 EdgeOne 追加的最右侧地址。");
+
+    Assert(
+        ForwardedClientIpResolver.Resolve(
+            "::ffff:192.0.2.10",
+            "not-an-ip",
+            "also-invalid") == "192.0.2.10",
+        "非法转发请求头没有回退到连接 IP。");
+
+    Assert(
+        ForwardedClientIpResolver.Resolve(
+            "192.0.2.10",
+            null,
+            "198.51.100.7, not-an-ip") == "192.0.2.10",
+        "X-Forwarded-For 最右侧值无效时不应信任左侧可伪造地址。");
 }
 
 static void WithChatRepository(Action<ChatRepository, string> test)
