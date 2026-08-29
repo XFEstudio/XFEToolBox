@@ -113,6 +113,15 @@
                         <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="首页"/>
                     </Grid>
                 </controls:NavigationButton>
+                <controls:NavigationButton x:Name="chatButton" Command="{Binding NavigateToPageCommand}" CommandParameter="chat">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Border Width="25" Height="25" Margin="7" CornerRadius="8" Background="#ECECFA">
+                            <TextBlock Text="聊" Foreground="#7777CF" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Grid.Column="1" Style="{StaticResource NavigationButtonText}" Text="聊天"/>
+                    </Grid>
+                </controls:NavigationButton>
                 <controls:NavigationButton x:Name="toolBoxButton" Command="{Binding NavigateToPageCommand}" CommandParameter="tool">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>

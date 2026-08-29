@@ -1,6 +1,8 @@
 using System.Windows;
 using XFEToolBox.Client.Profiles.CrossVersionProfiles;
 using XFEToolBox.Client.Utilities;
+using XFEToolBox.Client.Utilities.Chat;
+using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Client.Views.Windows;
 
 namespace XFEToolBox.Client;
@@ -12,6 +14,10 @@ public partial class App : Application
     private GlobalHotkeyService? globalHotkeyService;
     private CommandPaletteWindow? commandPaletteWindow;
     private MainWindow? mainWindow;
+    private bool chatRuntimeInitialized;
+    private bool chatRuntimeEventsDetached;
+    private Task? chatRuntimeShutdownTask;
+    private readonly SemaphoreSlim chatSessionGate = new(1, 1);
 
     public App() => InitializeComponent();
 
@@ -38,6 +44,7 @@ public partial class App : Application
         }
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        InitializeChatRuntime();
         mainWindow = new MainWindow();
         MainWindow = mainWindow;
         globalHotkeyService = new GlobalHotkeyService(mainWindow, () => ShowCommandPalette());
@@ -111,7 +118,7 @@ public partial class App : Application
         trayIconService?.ShowCloseHint();
     }
 
-    public void RequestExit()
+    public async void RequestExit()
     {
         if (IsExiting) return;
         if (ActivityCenterService.ActiveCount > 0)
@@ -124,15 +131,141 @@ public partial class App : Application
         }
 
         IsExiting = true;
-        Shutdown();
+        try
+        {
+            await ShutdownChatRuntimeAsync();
+        }
+        finally
+        {
+            Shutdown();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        if (chatRuntimeInitialized)
+        {
+            DetachChatRuntimeEvents();
+            ChatRealtimeClient.Shared.RequestStop();
+        }
         globalHotkeyService?.Dispose();
         trayIconService?.Dispose();
         singleInstanceService?.Dispose();
         base.OnExit(e);
+    }
+
+    private void InitializeChatRuntime()
+    {
+        if (chatRuntimeInitialized) return;
+        chatRuntimeInitialized = true;
+        ClientSession.SessionChanged += ClientSession_SessionChanged;
+        VoiceCallService.Current.IncomingCallReceived += VoiceCallService_IncomingCallReceived;
+        VoiceCallService.Current.Error += VoiceCallService_Error;
+    }
+
+    private Task ShutdownChatRuntimeAsync()
+    {
+        if (!chatRuntimeInitialized) return Task.CompletedTask;
+        return chatRuntimeShutdownTask ??= ShutdownChatRuntimeCoreAsync();
+    }
+
+    private async Task ShutdownChatRuntimeCoreAsync()
+    {
+        DetachChatRuntimeEvents();
+        await chatSessionGate.WaitAsync();
+        try
+        {
+            try
+            {
+                await VoiceCallService.Current.DisposeAsync();
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                await ChatRealtimeClient.Shared.StopAsync().WaitAsync(TimeSpan.FromSeconds(3));
+            }
+            catch
+            {
+                ChatRealtimeClient.Shared.RequestStop();
+            }
+        }
+        finally
+        {
+            chatSessionGate.Release();
+        }
+    }
+
+    private void DetachChatRuntimeEvents()
+    {
+        if (chatRuntimeEventsDetached) return;
+        chatRuntimeEventsDetached = true;
+        ClientSession.SessionChanged -= ClientSession_SessionChanged;
+        VoiceCallService.Current.IncomingCallReceived -= VoiceCallService_IncomingCallReceived;
+        VoiceCallService.Current.Error -= VoiceCallService_Error;
+    }
+
+    private async void ClientSession_SessionChanged(object? sender, EventArgs e)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            var operation = Dispatcher.InvokeAsync(UpdateChatRealtimeSessionAsync);
+            await await operation;
+            return;
+        }
+        await UpdateChatRealtimeSessionAsync();
+    }
+
+    private async Task UpdateChatRealtimeSessionAsync()
+    {
+        await chatSessionGate.WaitAsync();
+        try
+        {
+            if (IsExiting) return;
+            if (ClientSession.IsLoggedIn)
+            {
+                await VoiceCallService.Current.StartAsync();
+                return;
+            }
+
+            try { await VoiceCallService.Current.LeaveAsync(); }
+            catch { }
+            await ChatRealtimeClient.Shared.StopAsync();
+        }
+        finally
+        {
+            chatSessionGate.Release();
+        }
+    }
+
+    private async void VoiceCallService_IncomingCallReceived(object? sender, IncomingVoiceCallEventArgs e)
+    {
+        if (!ClientSession.IsLoggedIn) return;
+        var invitation = e.Invitation;
+        var result = PopupHelper.ShowYesOrNoDialog(
+            $"{invitation.FromDisplayName} 邀请你加入语音通话。",
+            showCancelButton: false,
+            yesText: "接听",
+            noText: "拒绝");
+        try
+        {
+            if (result == MessageBoxResult.Yes)
+                await VoiceCallService.Current.AcceptAsync(invitation.CallId);
+            else
+                await VoiceCallService.Current.RejectAsync(invitation.CallId);
+        }
+        catch (Exception exception)
+        {
+            PopupHelper.ShowConfirmDialog($"无法处理通话邀请：{exception.Message}", confirmText: "知道了");
+        }
+    }
+
+    private void VoiceCallService_Error(object? sender, VoiceCallErrorEventArgs e)
+    {
+        if (!IsExiting)
+            PopupHelper.ShowConfirmDialog(e.Message, confirmText: "知道了");
     }
 
     private static void App_DispatcherUnhandledException(

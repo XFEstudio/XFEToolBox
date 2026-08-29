@@ -89,9 +89,9 @@ public partial class PersonalCenterPage : Page
             SetStatus(LoggedOutStatusText, "密码已修改，请使用新密码重新登录。", true);
     }
 
-    private void LogoutButton_Click(object sender, RoutedEventArgs e)
+    private async void LogoutButton_Click(object sender, RoutedEventArgs e)
     {
-        ClientSession.Logout();
+        await ClientSession.LogoutAsync();
         SetStatus(LoggedOutStatusText, "已退出登录。", true);
     }
 
