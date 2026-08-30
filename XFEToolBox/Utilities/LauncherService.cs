@@ -131,6 +131,7 @@ public static class LauncherService
         var definitions = new[]
         {
             (Id: "home", Title: "首页", Subtitle: "个人工作台", Icon: "/Resources/Image/grid.png", Keywords: new[] { "主页", "工作台" }),
+            (Id: "chat", Title: "聊天", Subtitle: "好友、群聊与消息", Icon: "/Resources/Image/grid.png", Keywords: new[] { "好友", "群聊", "消息", "通话" }),
             (Id: "tool", Title: "工具箱", Subtitle: "浏览和运行工具", Icon: "/Resources/Image/toolbox.png", Keywords: new[] { "工具", "扩展" }),
             (Id: "workshop", Title: "工具工坊", Subtitle: "创建和编辑 WPF 工具", Icon: "/Resources/Image/wrench.png", Keywords: new[] { "Code Studio", "创作", "项目" }),
             (Id: "console", Title: "C# 控制台", Subtitle: "运行代码片段", Icon: "/Resources/Image/console.png", Keywords: new[] { "代码", "调试" }),

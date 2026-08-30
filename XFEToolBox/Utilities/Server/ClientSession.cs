@@ -10,7 +10,9 @@ namespace XFEToolBox.Client.Utilities.Server;
 
 public static class ClientSession
 {
-    public const string ApiAddress = "http://toolbox.api.xfe.studio/api";
+    private const string DefaultApiAddress = "https://toolbox.api.xfe.studio/api";
+
+    public static string ApiAddress { get; } = ResolveApiAddress();
 
     private static ClientRequester _requester = CreateRequester();
 
@@ -64,7 +66,7 @@ public static class ClientSession
             var response = await _requester.Request<ToolBoxUserFaceInfo>("relogin");
             if (response.StatusCode != HttpStatusCode.OK || response.Result is null)
             {
-                Logout();
+                ClearLocalSession();
                 return false;
             }
 
@@ -124,7 +126,7 @@ public static class ClientSession
             if (response.StatusCode != HttpStatusCode.OK)
                 return (false, string.IsNullOrWhiteSpace(response.Message) ? "修改密码失败。" : response.Message);
 
-            Logout();
+            await LogoutAsync();
             return (true, "密码已修改，请使用新密码重新登录。");
         }
         catch (Exception exception)
@@ -133,7 +135,26 @@ public static class ClientSession
         }
     }
 
-    public static void Logout()
+    public static async Task LogoutAsync()
+    {
+        var session = _requester.Session;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(session))
+                await _requester.Request<System.Text.Json.JsonElement>("logout")
+                    .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch
+        {
+            // 本地退出必须始终完成；网络恢复后服务端会按会话有效期清理无法撤销的令牌。
+        }
+        finally
+        {
+            ClearLocalSession();
+        }
+    }
+
+    private static void ClearLocalSession()
     {
         _requester.Session = string.Empty;
         CurrentUser = null;
@@ -146,4 +167,14 @@ public static class ClientSession
         .UseXFEStandardRequest<ToolBoxUserFaceInfo>()
         .AddRequest<ToolBoxRequestService>()
         .Build(options => options.RequestAddress = ApiAddress);
+
+    private static string ResolveApiAddress()
+    {
+        var configured = Environment.GetEnvironmentVariable("XFETOOLBOX_API_ADDRESS")?.Trim().TrimEnd('/');
+        if (Uri.TryCreate(configured, UriKind.Absolute, out var uri) &&
+            (string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+             (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) && uri.IsLoopback)))
+            return uri.AbsoluteUri.TrimEnd('/');
+        return DefaultApiAddress;
+    }
 }

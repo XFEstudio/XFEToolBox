@@ -117,6 +117,7 @@ public partial class MainWindowViewModel : ObservableObject
         Page? destination = pageTag switch
         {
             "home" => MainPage.Current,
+            "chat" => ChatPage.Current,
             "tool" => ToolBoxPage.Current,
             "workshop" => ToolWorkshopPage.Current,
             "download" => DownloadPage.Current,
@@ -136,6 +137,6 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Logout() => ClientSession.Logout();
+    private async Task Logout() => await ClientSession.LogoutAsync();
     #endregion
 }

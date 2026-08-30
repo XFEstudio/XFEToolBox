@@ -85,6 +85,16 @@ public partial class SystemProfile : XFEProfile
     /// </summary>
     [ProfileProperty]
     private bool trayCloseHintShown = false;
+    /// <summary>
+    /// 聊天页是否使用单栏会话布局。默认保留列表和消息并列的双栏布局。
+    /// </summary>
+    [ProfileProperty]
+    private bool chatSinglePaneMode = false;
+    /// <summary>
+    /// 已开启消息免打扰的群聊 ID（JSON 数组）。
+    /// </summary>
+    [ProfileProperty]
+    private string chatMutedGroupIdsJson = "[]";
     public SystemProfile() => ProfilePath = @$"{AppPath.LocalProfile}\{typeof(SystemProfile)}.xprofile";
     /// <summary>
     /// 工具箱现在是否可以被关闭

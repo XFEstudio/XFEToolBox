@@ -1,0 +1,637 @@
+<Page x:Class="XFEToolBox.Client.Views.Pages.ChatPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls;assembly=XFEToolBox.WpfCore"
+      xmlns:chat="clr-namespace:XFEToolBox.Client.Models.Chat"
+      Background="Transparent" Title="聊天" Loaded="Page_Loaded" SizeChanged="Page_SizeChanged">
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style x:Key="ChatPaneStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ToolSurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ToolControlBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="15"/>
+        </Style>
+        <Style x:Key="SectionButtonStyle" TargetType="RadioButton">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Padding" Value="11,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="11">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolControlHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource MainColor}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CompactSectionButtonStyle" TargetType="RadioButton" BasedOn="{StaticResource SectionButtonStyle}">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="50"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ChatListItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource ToolBoxListBoxItemStyle}">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="MinHeight" Value="54"/>
+            <Setter Property="Margin" Value="1,1,1,4"/>
+        </Style>
+        <Style x:Key="MessageListItemStyle" TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,3"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <ContentPresenter HorizontalAlignment="Stretch"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HeadingStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ToolTextPrimaryBrush}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style x:Key="HintStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource ToolTextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+        <Style x:Key="InlineButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="MinWidth" Value="50"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="controls:ButtonAssist.CornerRadius" Value="9"/>
+        </Style>
+        <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource ToolBoxButtonStyle}">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="34"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="controls:ButtonAssist.CornerRadius" Value="10"/>
+        </Style>
+
+        <DataTemplate x:Key="ConversationTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <controls:PersonPicture Width="32" Height="32" FontSize="11" DisplayName="{Binding Initials}"/>
+                <StackPanel Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding TimeText}" Foreground="{DynamicResource ToolTextDisabledBrush}" FontSize="8" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding MutedText}" Foreground="{DynamicResource ToolTextDisabledBrush}" FontSize="8" HorizontalAlignment="Right" Margin="0,3,0,0"
+                               Visibility="{Binding IsMuted, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <Border Margin="0,4,0,0" Padding="5,1" CornerRadius="7" Background="{DynamicResource MainColor}"
+                            Visibility="{Binding HasUnread, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding UnreadText}" Foreground="White" FontSize="8"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="GroupTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <Border Width="32" Height="32" CornerRadius="10" Background="{DynamicResource ToolAccentSoftBrush}">
+                    <TextBlock Text="#" Foreground="{DynamicResource MainColor}" FontWeight="Bold" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="8,0,5,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Style="{StaticResource HintStyle}" Margin="0,3,0,0">
+                        <Run Text="{Binding GroupNumberText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding MemberText, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+                <Button Grid.Column="2" Content="{Binding JoinActionText}" Style="{StaticResource InlineButtonStyle}"
+                        Command="{Binding DataContext.JoinOrOpenGroupCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FriendTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <controls:PersonPicture Width="32" Height="32" FontSize="11" DisplayName="{Binding Name}"/>
+                <StackPanel Grid.Column="1" Margin="8,0,5,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding AccountText}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="2" Content="聊天" Style="{StaticResource InlineButtonStyle}"
+                        Command="{Binding DataContext.OpenFriendConversationCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="UserSearchTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <controls:PersonPicture Width="32" Height="32" FontSize="11" DisplayName="{Binding Name}"/>
+                <StackPanel Grid.Column="1" Margin="8,0,5,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding AccountText}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="2" Content="添加" Style="{StaticResource InlineButtonStyle}" controls:ButtonAssist.IsPrimary="True"
+                        Command="{Binding DataContext.SendFriendRequestCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FriendRequestTemplate">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <controls:PersonPicture Width="32" Height="32" FontSize="11" DisplayName="{Binding Name}"/>
+                    <StackPanel Grid.Column="1" Margin="8,0,5,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Text="{Binding Message}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding StatusText}" Foreground="{DynamicResource MainColor}" FontSize="8.5" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,7,0,0"
+                            Visibility="{Binding CanRespond, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Content="拒绝" Style="{StaticResource InlineButtonStyle}" Margin="0,0,6,0"
+                            Command="{Binding DataContext.RejectFriendRequestCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+                    <Button Content="同意" Style="{StaticResource InlineButtonStyle}" controls:ButtonAssist.IsPrimary="True"
+                            Command="{Binding DataContext.AcceptFriendRequestCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="InvitationTemplate">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <Border Width="32" Height="32" CornerRadius="10" Background="{DynamicResource ToolAccentSoftBrush}"><TextBlock Text="#" Foreground="{DynamicResource MainColor}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                    <StackPanel Grid.Column="1" Margin="8,0,5,0">
+                        <TextBlock Text="{Binding GroupName}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Text="{Binding InviterText}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding StatusText}" Foreground="{DynamicResource MainColor}" FontSize="8.5" VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock Text="{Binding Message}" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" Margin="40,6,0,0" TextWrapping="Wrap"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,7,0,0"
+                            Visibility="{Binding CanRespond, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Content="拒绝" Style="{StaticResource InlineButtonStyle}" Margin="0,0,6,0"
+                            Command="{Binding DataContext.RejectGroupInvitationCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+                    <Button Content="加入" Style="{StaticResource InlineButtonStyle}" controls:ButtonAssist.IsPrimary="True"
+                            Command="{Binding DataContext.AcceptGroupInvitationCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="MessageTemplate">
+            <StackPanel x:Name="MessageFlow" HorizontalAlignment="Left" MaxWidth="470">
+                <TextBlock x:Name="SenderText" Text="{Binding SenderName}" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9" Margin="5,0,5,3"/>
+                <Border x:Name="Bubble" Padding="11,8" Background="{DynamicResource ToolControlBackgroundBrush}"
+                        BorderBrush="{DynamicResource ToolControlBorderBrush}" BorderThickness="1" CornerRadius="12">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Text}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="11" TextWrapping="Wrap"
+                                   Visibility="{Binding HasText, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Border Margin="0,3,0,0" Padding="10" CornerRadius="10" Background="{DynamicResource ToolSurfaceBrush}"
+                                BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="1"
+                                Visibility="{Binding HasAttachment, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="35"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <Border Width="30" Height="30" CornerRadius="9" Background="{DynamicResource ToolAccentSoftBrush}">
+                                    <TextBlock Text="↧" Foreground="{DynamicResource MainColor}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" Margin="7,0,7,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding AttachmentTitle}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="10" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Style="{StaticResource HintStyle}" Margin="0,2,0,0"><Run Text="{Binding AttachmentKindText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding AttachmentSizeText, Mode=OneWay}"/></TextBlock>
+                                </StackPanel>
+                                <Button Grid.Column="2" Content="下载" Style="{StaticResource InlineButtonStyle}" Tag="{Binding Attachment}" Click="DownloadAttachment_Click"/>
+                            </Grid>
+                        </Border>
+                        <Border Margin="0,3,0,0" Padding="12" CornerRadius="11" Background="{DynamicResource ToolAccentSoftBrush}"
+                                BorderBrush="{DynamicResource MainColor}" BorderThickness="1"
+                                Visibility="{Binding IsGroupInvitation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="群邀请" Foreground="{DynamicResource MainColor}" FontSize="9" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding InvitationTitle}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                                <TextBlock Text="{Binding InvitationSubtitle}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                <Grid Margin="0,9,0,0">
+                                    <TextBlock Text="{Binding InvitationStatusText}" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9" VerticalAlignment="Center"/>
+                                    <Button Content="接受邀请" HorizontalAlignment="Right" Style="{StaticResource InlineButtonStyle}" controls:ButtonAssist.IsPrimary="True"
+                                            Visibility="{Binding CanRespondToInvitation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Command="{Binding DataContext.AcceptMessageInvitationCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Text="{Binding TimeText}" Foreground="{DynamicResource ToolTextDisabledBrush}" FontSize="8" Margin="5,3,5,0" HorizontalAlignment="Left"/>
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsMine}" Value="True">
+                    <Setter TargetName="MessageFlow" Property="HorizontalAlignment" Value="Right"/>
+                    <Setter TargetName="SenderText" Property="Text" Value="我"/>
+                    <Setter TargetName="SenderText" Property="HorizontalAlignment" Value="Right"/>
+                    <Setter TargetName="Bubble" Property="Background" Value="{DynamicResource ToolAccentSelectedBrush}"/>
+                    <Setter TargetName="Bubble" Property="BorderBrush" Value="{DynamicResource MainColor}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid Margin="10,7,10,10">
+        <!-- 登录门禁。 -->
+        <Border Style="{StaticResource ChatPaneStyle}" Padding="28" Visibility="{Binding IsLoggedOut, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="390">
+                <Border Width="70" Height="70" CornerRadius="23" Background="{DynamicResource ToolAccentSoftBrush}">
+                    <TextBlock Text="聊" Foreground="{DynamicResource MainColor}" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="登录后开始聊天" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+                <TextBlock Text="与好友发送消息、加入公开或私密群聊，并在通话中保持联系。聊天数据仅向登录用户开放。"
+                           Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="10.5" TextAlignment="Center" TextWrapping="Wrap" Margin="0,9,0,0"/>
+                <Button Content="登录 / 注册" controls:ButtonAssist.IsPrimary="True" Width="150" Height="38" Margin="0,20,0,0" Click="OpenLoginButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <Grid Visibility="{Binding IsLoggedIn, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+            <Grid x:Name="WorkspaceGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="SectionColumn" Width="0"/>
+                    <ColumnDefinition Width="0"/>
+                    <ColumnDefinition x:Name="ListColumn" Width="272"/>
+                    <ColumnDefinition x:Name="DetailGapColumn" Width="8"/>
+                    <ColumnDefinition x:Name="DetailColumn" Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 大屏功能栏。 -->
+                <Border x:Name="SectionPane" Style="{StaticResource ChatPaneStyle}" Padding="10" Visibility="Collapsed">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <StackPanel Margin="5,4,5,14">
+                            <TextBlock Text="聊天" Style="{StaticResource HeadingStyle}" FontSize="17"/>
+                            <TextBlock Text="消息与联系人" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1">
+                            <RadioButton Style="{StaticResource SectionButtonStyle}" IsChecked="{Binding IsConversationSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Conversations}"><TextBlock><Run Text="◉  "/><Run Text="会话"/></TextBlock></RadioButton>
+                            <RadioButton Style="{StaticResource SectionButtonStyle}" IsChecked="{Binding IsLobbySection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Lobby}"><TextBlock><Run Text="⌂  "/><Run Text="大厅"/></TextBlock></RadioButton>
+                            <RadioButton Style="{StaticResource SectionButtonStyle}" IsChecked="{Binding IsFriendsSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Friends}"><TextBlock><Run Text="♡  "/><Run Text="好友"/></TextBlock></RadioButton>
+                            <RadioButton Style="{StaticResource SectionButtonStyle}" IsChecked="{Binding IsGroupsSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Groups}"><TextBlock><Run Text="#  "/><Run Text="群聊"/></TextBlock></RadioButton>
+                        </StackPanel>
+                        <Button Grid.Row="2" Content="全部刷新" Height="32" Command="{Binding RefreshAllCommand}"/>
+                    </Grid>
+                </Border>
+
+                <!-- 中间列表栏。 -->
+                <Border x:Name="ListPane" Grid.Column="2" Style="{StaticResource ChatPaneStyle}" Padding="8"
+                        Visibility="{Binding ShowListPane, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition x:Name="CompactTabsRow" Height="0"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                        <StackPanel x:Name="CompactTabs" Orientation="Horizontal" Visibility="Collapsed" Margin="0,0,0,7">
+                            <RadioButton Content="会话" Style="{StaticResource CompactSectionButtonStyle}" IsChecked="{Binding IsConversationSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Conversations}"/>
+                            <RadioButton Content="大厅" Style="{StaticResource CompactSectionButtonStyle}" IsChecked="{Binding IsLobbySection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Lobby}"/>
+                            <RadioButton Content="好友" Style="{StaticResource CompactSectionButtonStyle}" IsChecked="{Binding IsFriendsSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Friends}"/>
+                            <RadioButton Content="群聊" Style="{StaticResource CompactSectionButtonStyle}" IsChecked="{Binding IsGroupsSection, Mode=OneWay}" Command="{Binding SelectSectionCommand}" CommandParameter="{x:Static chat:ChatSection.Groups}"/>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <Grid Margin="4,3,4,8">
+                                <StackPanel><TextBlock Text="聊天" Style="{StaticResource HeadingStyle}"/><TextBlock Text="好友与群聊统一按最新消息排序" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="人" Style="{StaticResource IconButtonStyle}" Command="{Binding OpenContactManagementDialogCommand}" ToolTip="好友申请与群邀请"/>
+                                    <Button Content="＋" Style="{StaticResource IconButtonStyle}" Margin="5,0,0,0" Command="{Binding OpenCreateGroupDialogCommand}" ToolTip="创建群聊"/>
+                                    <Button Content="↻" Style="{StaticResource IconButtonStyle}" Margin="5,0,0,0" Command="{Binding RefreshAllCommand}" ToolTip="刷新"/>
+                                </StackPanel>
+                            </Grid>
+                            <Button Grid.Row="1" Height="54" Margin="1,0,1,7" Padding="10,0" HorizontalContentAlignment="Stretch"
+                                    Style="{StaticResource ToolBoxButtonStyle}" controls:ButtonAssist.CornerRadius="11"
+                                    Command="{Binding OpenLobbyCommand}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <Border Width="32" Height="32" CornerRadius="10" Background="{DynamicResource ToolAccentSoftBrush}">
+                                        <TextBlock Text="⌂" Foreground="{DynamicResource MainColor}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="8,0,4,0" VerticalAlignment="Center">
+                                        <TextBlock Text="群聊大厅" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontWeight="SemiBold" FontSize="11"/>
+                                        <TextBlock Text="公开群推荐与群号查找" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="›" Foreground="{DynamicResource MainColor}" FontSize="18" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Button>
+                            <ListBox Grid.Row="2" ItemsSource="{Binding NavigationItems}" SelectedItem="{Binding SelectedNavigationItem, Mode=OneWay}"
+                                     ItemTemplate="{StaticResource ConversationTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"
+                                     SelectionChanged="ConversationList_SelectionChanged"/>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Visibility="Collapsed">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <StackPanel Margin="4,3,4,8">
+                                <TextBlock Text="公开群大厅" Style="{StaticResource HeadingStyle}"/>
+                                <TextBlock Text="发现可直接加入的公开群聊" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <Grid Grid.Row="1" Margin="0,0,0,7">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <controls:TextEditor Text="{Binding GroupSearchQuery, UpdateSourceTrigger=PropertyChanged}" Height="35" Padding="9,0" HintText="搜索公开群…" KeyDown="GroupSearchBox_KeyDown"/>
+                                <Button Grid.Column="1" Content="搜索" Style="{StaticResource InlineButtonStyle}" Height="35" Margin="6,0,0,0" Command="{Binding RefreshRecommendedGroupsCommand}"/>
+                            </Grid>
+                            <Grid Grid.Row="2">
+                                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                <ListBox ItemsSource="{Binding RecommendedGroups}" ItemTemplate="{StaticResource GroupTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                                <Border Grid.Row="1" Margin="0,7,0,0" Padding="9" Background="{DynamicResource ToolControlBackgroundBrush}" CornerRadius="11" BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="通过群号加入" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="10" FontWeight="SemiBold"/>
+                                        <Grid Margin="0,6,0,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <controls:TextEditor Text="{Binding GroupNumberQuery, UpdateSourceTrigger=PropertyChanged}" Height="32" Padding="8,0" HintText="输入私密群号" KeyDown="GroupNumberBox_KeyDown"/>
+                                            <Button Grid.Column="1" Content="查找" Style="{StaticResource InlineButtonStyle}" Height="32" Margin="5,0,0,0" Command="{Binding LookupGroupCommand}"/>
+                                        </Grid>
+                                        <ContentControl Margin="0,6,0,0" Content="{Binding LookupGroupResult}" ContentTemplate="{StaticResource GroupTemplate}"
+                                                        Visibility="{Binding HasLookupGroupResult, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Visibility="Collapsed">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <StackPanel Margin="4,3,4,8"><TextBlock Text="好友" Style="{StaticResource HeadingStyle}"/><TextBlock Text="查找用户、处理申请与管理好友" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel>
+                            <TabControl Grid.Row="1">
+                                <TabItem Header="好友">
+                                    <ListBox ItemsSource="{Binding Friends}" ItemTemplate="{StaticResource FriendTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}" ContextMenuOpening="FriendList_ContextMenuOpening">
+                                        <ListBox.ContextMenu><ContextMenu><MenuItem Header="删除好友" Click="DeleteFriendMenuItem_Click"/></ContextMenu></ListBox.ContextMenu>
+                                    </ListBox>
+                                </TabItem>
+                                <TabItem Header="申请">
+                                    <ListBox ItemsSource="{Binding FriendRequests}" ItemTemplate="{StaticResource FriendRequestTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                                </TabItem>
+                                <TabItem Header="添加">
+                                    <Grid Margin="2,7,2,2">
+                                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <controls:TextEditor Text="{Binding UserSearchQuery, UpdateSourceTrigger=PropertyChanged}" Height="34" Padding="8,0" HintText="账号或昵称" KeyDown="UserSearchBox_KeyDown"/>
+                                            <Button Grid.Column="1" Content="搜索" Style="{StaticResource InlineButtonStyle}" Height="34" Margin="5,0,0,0" Command="{Binding SearchUsersCommand}"/>
+                                        </Grid>
+                                        <controls:TextEditor Grid.Row="1" Text="{Binding FriendRequestMessage}" Height="34" Padding="8,0" HintText="申请留言" Margin="0,6,0,6"/>
+                                        <ListBox Grid.Row="2" ItemsSource="{Binding UserSearchResults}" ItemTemplate="{StaticResource UserSearchTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                                    </Grid>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Visibility="Collapsed">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <Grid Margin="4,3,4,8">
+                                <StackPanel><TextBlock Text="我的群聊" Style="{StaticResource HeadingStyle}"/><TextBlock Text="管理已加入的群和邀请" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel>
+                                <Button Content="创建群聊" Style="{StaticResource InlineButtonStyle}" Height="32" HorizontalAlignment="Right" controls:ButtonAssist.IsPrimary="True" Command="{Binding OpenCreateGroupDialogCommand}"/>
+                            </Grid>
+                            <TabControl Grid.Row="1">
+                                <TabItem Header="群聊">
+                                    <ListBox ItemsSource="{Binding MyGroups}" ItemTemplate="{StaticResource GroupTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                                </TabItem>
+                                <TabItem Header="邀请">
+                                    <ListBox ItemsSource="{Binding GroupInvitations}" ItemTemplate="{StaticResource InvitationTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 消息区。 -->
+                <Border x:Name="MessagePane" Grid.Column="4" Style="{StaticResource ChatPaneStyle}" Padding="0"
+                        Visibility="{Binding ShowDetailPane, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid Visibility="{Binding IsLobbyOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Border Padding="14,0" BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Button Content="‹" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Left" Command="{Binding CloseDetailCommand}"
+                                            Visibility="{Binding ShowBackButton, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="返回会话列表"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="42,0,0,0">
+                                        <TextBlock Text="群聊大厅" Style="{StaticResource HeadingStyle}"/>
+                                        <TextBlock Text="发现公开群聊，或通过群号加入私密群" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Content="↻" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" Command="{Binding RefreshRecommendedGroupsCommand}" ToolTip="刷新大厅"/>
+                                </Grid>
+                            </Border>
+                            <Grid Grid.Row="1" Margin="12,10,12,8">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <controls:TextEditor Text="{Binding GroupSearchQuery, UpdateSourceTrigger=PropertyChanged}" Height="35" Padding="9,0" HintText="搜索公开群…" KeyDown="GroupSearchBox_KeyDown"/>
+                                <Button Grid.Column="1" Content="搜索" Style="{StaticResource InlineButtonStyle}" Height="35" Margin="6,0,0,0" Command="{Binding RefreshRecommendedGroupsCommand}"/>
+                            </Grid>
+                            <ListBox Grid.Row="2" Margin="10,0" ItemsSource="{Binding RecommendedGroups}" ItemTemplate="{StaticResource GroupTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                            <Border Grid.Row="3" Margin="12,8,12,12" Padding="10" Background="{DynamicResource ToolControlBackgroundBrush}" CornerRadius="11" BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="通过群号加入" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <controls:TextEditor Grid.Column="1" Text="{Binding GroupNumberQuery, UpdateSourceTrigger=PropertyChanged}" Height="32" Padding="8,0" HintText="输入私密群号" KeyDown="GroupNumberBox_KeyDown"/>
+                                    <Button Grid.Column="2" Content="查找" Style="{StaticResource InlineButtonStyle}" Height="32" Margin="6,0,0,0" Command="{Binding LookupGroupCommand}"/>
+                                    <ContentControl Grid.ColumnSpan="3" Margin="0,42,0,0" Content="{Binding LookupGroupResult}" ContentTemplate="{StaticResource GroupTemplate}"
+                                                    Visibility="{Binding HasLookupGroupResult, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
+
+                        <Grid Visibility="{Binding IsMessageAreaOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Border Padding="14,0" BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Button Content="‹" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Left" Command="{Binding CloseDetailCommand}"
+                                        Visibility="{Binding ShowBackButton, Converter={StaticResource BooleanToVisibilityConverter}}" ToolTip="返回会话列表"/>
+                                <StackPanel VerticalAlignment="Center" Margin="42,0,0,0">
+                                    <TextBlock Text="{Binding ConversationTitle}" Style="{StaticResource HeadingStyle}"/>
+                                    <TextBlock Text="{Binding ConversationSubtitle}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button Content="↻" Style="{StaticResource IconButtonStyle}" ToolTip="刷新消息" Command="{Binding RefreshConversationCommand}" IsEnabled="{Binding HasSelectedConversation}"/>
+                                    <Button Content="设置" Style="{StaticResource InlineButtonStyle}" Height="34" Margin="6,0,0,0" ToolTip="群聊管理"
+                                            Command="{Binding OpenGroupManagementCommand}" Visibility="{Binding IsSelectedConversationGroup, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <Button Style="{StaticResource IconButtonStyle}" Margin="6,0,0,0" ToolTip="发起语音通话" Command="{Binding StartCallCommand}" IsEnabled="{Binding HasSelectedConversation}">
+                                        <Viewbox Width="16" Height="16">
+                                            <Path Fill="{DynamicResource MainColor}" Data="M6.62,10.79 C8.06,13.62 10.38,15.94 13.21,17.38 L15.41,15.18 C15.69,14.9 16.08,14.81 16.43,14.93 C17.55,15.3 18.75,15.5 20,15.5 C20.55,15.5 21,15.95 21,16.5 L21,20 C21,20.55 20.55,21 20,21 C10.61,21 3,13.39 3,4 C3,3.45 3.45,3 4,3 L7.5,3 C8.05,3 8.5,3.45 8.5,4 C8.5,5.25 8.7,6.45 9.07,7.57 C9.18,7.92 9.1,8.31 8.82,8.59 Z"/>
+                                        </Viewbox>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="1">
+                            <ListBox x:Name="MessageList" ItemsSource="{Binding Messages}" ItemTemplate="{StaticResource MessageTemplate}"
+                                     ItemContainerStyle="{StaticResource MessageListItemStyle}" Background="#F8F8FC" BorderThickness="0" Padding="12,7"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.CanContentScroll="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                                <ListBox.Template>
+                                    <ControlTemplate TargetType="ListBox"><ScrollViewer Focusable="False"><ItemsPresenter/></ScrollViewer></ControlTemplate>
+                                </ListBox.Template>
+                            </ListBox>
+                            <Button Content="加载更早消息" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,7,0,0" Height="27"
+                                    Command="{Binding LoadEarlierMessagesCommand}" Visibility="{Binding HasEarlierMessages, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="260"
+                                        Visibility="{Binding HasNoSelectedConversation, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="💬" FontSize="28" HorizontalAlignment="Center"/>
+                                <TextBlock Text="选择一个会话" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                <TextBlock Text="可从最近会话、好友或群聊列表开始聊天" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" TextAlignment="Center" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="2" Padding="10" BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="0,1,0,0" Background="{DynamicResource ToolSurfaceBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <Button Content="＋" Style="{StaticResource IconButtonStyle}" ToolTip="发送图片、视频或文件" Click="AttachFileButton_Click" IsEnabled="{Binding CanCompose}"/>
+                                <controls:TextEditor Grid.Column="1" x:Name="ComposerBox" Text="{Binding ComposerText, UpdateSourceTrigger=PropertyChanged}" Height="58" MinHeight="38" MaxHeight="92"
+                                                     Margin="7,0" Padding="10,7" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                                     HintText="输入消息；Enter 发送，Shift+Enter 换行" HintTextVerticalAlignment="Top" PreviewKeyDown="ComposerBox_PreviewKeyDown" IsEnabled="{Binding HasSelectedConversation}"/>
+                                <Button Grid.Column="2" Content="发送" Width="62" Height="38" VerticalAlignment="Bottom" controls:ButtonAssist.IsPrimary="True" Command="{Binding SendTextCommand}" IsEnabled="{Binding CanCompose}"/>
+                            </Grid>
+                        </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="1" Margin="0,7,0,0" Padding="10,7" CornerRadius="10" Background="{DynamicResource ToolControlBackgroundBrush}"
+                    BorderBrush="{DynamicResource ToolDividerBrush}" BorderThickness="1"
+                    Visibility="{Binding IsTransferring, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="160"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding TransferText}" Foreground="{DynamicResource ToolTextSecondaryBrush}" FontSize="9.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <ProgressBar Grid.Column="1" Height="5" Margin="12,0" Minimum="0" Maximum="100" Value="{Binding TransferProgress}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{Binding TransferProgress, StringFormat={}{0:0}%}" Foreground="{DynamicResource MainColor}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 好友、申请与群邀请统一管理浮层。 -->
+        <Grid Panel.ZIndex="29" Background="#680F0F20" Visibility="{Binding IsContactManagementDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Width="780" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Page}}" MaxHeight="590" Margin="20" Padding="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource ChatPaneStyle}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid>
+                        <StackPanel><TextBlock Text="好友与邀请" Style="{StaticResource HeadingStyle}" FontSize="17"/><TextBlock Text="管理好友、好友申请和群聊邀请" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel>
+                        <Button Content="×" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" Command="{Binding CloseContactManagementDialogCommand}"/>
+                    </Grid>
+                    <Grid Grid.Row="1" Margin="0,16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <Grid>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <TextBlock Text="好友" Style="{StaticResource HeadingStyle}" FontSize="12" Margin="2,0,0,7"/>
+                            <ListBox Grid.Row="1" ItemsSource="{Binding Friends}" ItemTemplate="{StaticResource FriendTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}" ContextMenuOpening="FriendList_ContextMenuOpening">
+                                <ListBox.ContextMenu><ContextMenu><MenuItem Header="删除好友" Click="DeleteFriendMenuItem_Click"/></ContextMenu></ListBox.ContextMenu>
+                            </ListBox>
+                            <TextBlock Grid.Row="2" Text="好友申请" Style="{StaticResource HeadingStyle}" FontSize="12" Margin="2,12,0,7"/>
+                            <ListBox Grid.Row="3" ItemsSource="{Binding FriendRequests}" ItemTemplate="{StaticResource FriendRequestTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                        </Grid>
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <TextBlock Text="添加好友" Style="{StaticResource HeadingStyle}" FontSize="12" Margin="2,0,0,7"/>
+                            <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <controls:TextEditor Text="{Binding UserSearchQuery, UpdateSourceTrigger=PropertyChanged}" Height="34" Padding="8,0" HintText="账号或昵称" KeyDown="UserSearchBox_KeyDown"/>
+                                <Button Grid.Column="1" Content="搜索" Style="{StaticResource InlineButtonStyle}" Height="34" Margin="5,0,0,0" Command="{Binding SearchUsersCommand}"/>
+                            </Grid>
+                            <controls:TextEditor Grid.Row="2" Text="{Binding FriendRequestMessage}" Height="34" Padding="8,0" HintText="申请留言" Margin="0,6,0,6"/>
+                            <ListBox Grid.Row="3" ItemsSource="{Binding UserSearchResults}" ItemTemplate="{StaticResource UserSearchTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                            <TextBlock Grid.Row="4" Text="群聊邀请" Style="{StaticResource HeadingStyle}" FontSize="12" Margin="2,12,0,7"/>
+                            <ListBox Grid.Row="5" ItemsSource="{Binding GroupInvitations}" ItemTemplate="{StaticResource InvitationTemplate}" ItemContainerStyle="{StaticResource ChatListItemStyle}"/>
+                        </Grid>
+                    </Grid>
+                    <Button Grid.Row="2" Content="完成" Width="78" Height="35" HorizontalAlignment="Right" Command="{Binding CloseContactManagementDialogCommand}"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 创建群聊浮层。 -->
+        <Grid Panel.ZIndex="30" Background="#680F0F20" Visibility="{Binding IsCreateGroupDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Width="620" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Page}}" MaxHeight="540" Margin="20" Padding="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource ChatPaneStyle}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid><StackPanel><TextBlock Text="创建群聊" Style="{StaticResource HeadingStyle}" FontSize="17"/><TextBlock Text="填写群资料，并可立即邀请好友" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel><Button Content="×" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" Command="{Binding CloseCreateGroupDialogCommand}"/></Grid>
+                    <Grid Grid.Row="1" Margin="0,16,0,16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="群名称" Style="{StaticResource HintStyle}"/>
+                            <controls:TextEditor Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}" Height="37" Margin="0,5,0,11" MaxLength="60" HintText="例如：周末开发者"/>
+                            <TextBlock Text="群简介" Style="{StaticResource HintStyle}"/>
+                            <controls:TextEditor Text="{Binding NewGroupDescription}" Height="96" Margin="0,5,0,11" MaxLength="300" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" HintText="介绍群聊主题" HintTextVerticalAlignment="Top" Padding="9,7"/>
+                            <CheckBox Content="公开群聊（会显示在大厅推荐）" IsChecked="{Binding NewGroupIsPublic}"/>
+                            <TextBlock Text="私密群只能通过群号或邀请加入。" Style="{StaticResource HintStyle}" Margin="0,6,0,0"/>
+                        </StackPanel>
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <TextBlock Text="邀请好友（可选）" Style="{StaticResource HintStyle}"/>
+                            <controls:TextEditor Grid.Row="1" Text="{Binding NewGroupInvitationMessage}" Height="34" Margin="0,5,0,7" HintText="邀请留言"/>
+                            <ListBox Grid.Row="2" ItemsSource="{Binding InviteCandidates}" ItemContainerStyle="{StaticResource ChatListItemStyle}">
+                                <ListBox.ItemTemplate><DataTemplate><CheckBox IsChecked="{Binding IsSelected}" HorizontalContentAlignment="Stretch"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}"/><TextBlock Grid.Column="1" Text="{Binding AccountText}" Style="{StaticResource HintStyle}"/></Grid></CheckBox></DataTemplate></ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Grid>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"><Button Content="取消" Width="78" Height="35" Margin="0,0,8,0" Command="{Binding CloseCreateGroupDialogCommand}"/><Button Content="创建群聊" Width="100" Height="35" controls:ButtonAssist.IsPrimary="True" Command="{Binding CreateGroupCommand}"/></StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 群管理浮层。 -->
+        <Grid Panel.ZIndex="31" Background="#680F0F20" Visibility="{Binding IsGroupManagementDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Width="700" MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Page}}" MaxHeight="570" Margin="20" Padding="20"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource ChatPaneStyle}">
+                <Grid>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <Grid><StackPanel><TextBlock Text="群聊管理" Style="{StaticResource HeadingStyle}" FontSize="17"/><TextBlock Text="{Binding ManagedGroup.GroupNumberText}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/></StackPanel><Button Content="×" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Right" Command="{Binding CloseGroupManagementDialogCommand}"/></Grid>
+                    <Grid Grid.Row="1" Margin="0,16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="240"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="群名称" Style="{StaticResource HintStyle}"/><controls:TextEditor Text="{Binding ManagedGroupName}" Height="37" Margin="0,5,0,11" IsEnabled="{Binding CanManageSelectedGroup}"/>
+                             <TextBlock Text="群简介" Style="{StaticResource HintStyle}"/><controls:TextEditor Text="{Binding ManagedGroupDescription}" Height="96" Margin="0,5,0,11" AcceptsReturn="True" TextWrapping="Wrap" Padding="9,7" IsEnabled="{Binding CanManageSelectedGroup}"/>
+                             <CheckBox Content="公开群聊" IsChecked="{Binding ManagedGroupIsPublic}" IsEnabled="{Binding CanManageSelectedGroup}"/>
+                             <CheckBox Content="消息免打扰" IsChecked="{Binding ManagedGroupIsMuted}" Margin="0,8,0,0" ToolTip="开启后不再显示该群的新消息 Windows 通知"/>
+                             <Button Content="保存群资料" Height="35" Margin="0,14,0,0" controls:ButtonAssist.IsPrimary="True" Command="{Binding UpdateManagedGroupCommand}" IsEnabled="{Binding CanManageSelectedGroup}"/>
+                            <Button Content="退出群聊" Height="35" Margin="0,8,0,0" Click="LeaveGroupButton_Click"/>
+                        </StackPanel>
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                            <TextBlock Text="成员" Style="{StaticResource HeadingStyle}" FontSize="12" Margin="2,0,0,7"/>
+                            <ListBox Grid.Row="1" ItemsSource="{Binding ManagedGroupMembers}" ItemContainerStyle="{StaticResource ChatListItemStyle}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <controls:PersonPicture Width="30" Height="30" DisplayName="{Binding Name}" FontSize="10"/>
+                                            <StackPanel Grid.Column="1" Margin="7,0" VerticalAlignment="Center"><TextBlock Text="{Binding Name}" Foreground="{DynamicResource ToolTextPrimaryBrush}" FontSize="10.5"/><TextBlock Style="{StaticResource HintStyle}" Margin="0,2,0,0"><Run Text="{Binding AccountText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding RoleText, Mode=OneWay}"/></TextBlock></StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="{Binding RoleActionText}" Style="{StaticResource InlineButtonStyle}" Margin="0,0,5,0" Command="{Binding DataContext.ToggleManagedGroupMemberRoleCommand, RelativeSource={RelativeSource AncestorType=Page}}" CommandParameter="{Binding}" IsEnabled="{Binding CanBeManaged}"/>
+                                                <Button Content="移除" Style="{StaticResource InlineButtonStyle}" Tag="{Binding}" Click="RemoveGroupMemberButton_Click" IsEnabled="{Binding CanBeManaged}"/>
+                                                <Button Content="转让" Style="{StaticResource InlineButtonStyle}" Margin="5,0,0,0" Tag="{Binding}" Click="TransferGroupOwnerButton_Click" IsEnabled="{Binding CanBeManaged}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Grid>
+                    <Button Grid.Row="2" Content="完成" Width="78" Height="35" HorizontalAlignment="Right" Command="{Binding CloseGroupManagementDialogCommand}"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>
