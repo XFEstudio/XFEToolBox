@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' stun: turn: turns:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+  <title>XFEToolBox 语音通话</title>
+  <link rel="stylesheet" href="call.css">
+  <script src="call.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">WEBRTC · OPUS · ENCRYPTED</div>
+        <h1>语音通话</h1>
+        <p id="statusText">等待通话配置…</p>
+      </div>
+      <div class="badges">
+        <span id="meshBadge" class="badge">小群 Mesh · 最多 8 人</span>
+        <span id="noiseBadge" class="badge muted">正在检测语音隔离</span>
+        <span id="turnBadge" class="badge warning">未配置 TURN</span>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="网络状态">
+      <div><strong id="participantCount">1</strong><span>参与者</span></div>
+      <div><strong id="roundTrip">—</strong><span>往返延迟</span></div>
+      <div><strong id="jitter">—</strong><span>抖动</span></div>
+      <div><strong id="packetLoss">—</strong><span>丢包</span></div>
+    </section>
+
+    <section class="participants-panel">
+      <div class="section-title">
+        <div>
+          <h2>通话成员</h2>
+          <p>每位成员独立调节 0%–150%，设置只保留在本机。</p>
+        </div>
+      </div>
+      <div id="participantGrid" class="participant-grid"></div>
+    </section>
+
+    <section class="control-dock">
+      <div class="device-control">
+        <label for="microphoneSelect">麦克风</label>
+        <select id="microphoneSelect" disabled>
+          <option>正在读取设备…</option>
+        </select>
+      </div>
+      <button id="noiseButton" class="control-button active" type="button" aria-pressed="true">
+        <span class="control-icon">NS</span><span>WebRTC 降噪</span>
+      </button>
+      <button id="muteButton" class="control-button" type="button" aria-pressed="false">
+        <span class="control-icon">MIC</span><span id="muteLabel">麦克风开启</span>
+      </button>
+      <div class="gain-control">
+        <div><label for="micGain">麦克风增益</label><output id="micGainValue">100%</output></div>
+        <input id="micGain" type="range" min="0" max="300" step="1" value="100">
+        <small>超过 100% 会同时放大环境噪声，限幅器将避免严重削波。</small>
+      </div>
+      <button id="leaveButton" class="leave-button" type="button">离开通话</button>
+    </section>
+  </main>
+
+  <template id="participantTemplate">
+    <article class="participant-card">
+      <div class="participant-head">
+        <div class="avatar"></div>
+        <div class="identity"><strong></strong><span>正在建立连接</span></div>
+        <span class="connection-dot" title="连接状态"></span>
+      </div>
+      <div class="volume-row">
+        <button class="peer-mute" type="button" aria-pressed="false">静音</button>
+        <input class="peer-volume" type="range" min="0" max="150" step="1" value="100" aria-label="成员音量">
+        <output>100%</output>
+      </div>
+    </article>
+  </template>
+</body>
+</html>

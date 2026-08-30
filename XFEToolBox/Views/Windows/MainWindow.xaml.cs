@@ -116,6 +116,16 @@ public partial class MainWindow : Window
             },
             new()
             {
+                Key = "chat",
+                Title = "聊天",
+                Description = "登录后可添加好友、发现或创建群聊，并发送文字与文件消息。",
+                Target = chatButton,
+                Placement = TutorialPlacement.Right,
+                SpotlightPadding = new Thickness(6),
+                SpotlightCornerRadius = 17
+            },
+            new()
+            {
                 Key = "console",
                 Title = "C# 控制台",
                 Description = "快速编写和运行 C# 代码片段，适合验证想法、调试表达式与处理临时代码。",
@@ -228,6 +238,7 @@ public partial class MainWindow : Window
     {
         ViewModel.NavigateToPageCommand.Execute(pageTag);
         mainButton.IsChecked = pageTag == "home";
+        chatButton.IsChecked = pageTag == "chat";
         toolBoxButton.IsChecked = pageTag == "tool";
         workshopButton.IsChecked = pageTag == "workshop";
         consoleButton.IsChecked = pageTag == "console";

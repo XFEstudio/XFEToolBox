@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\XFEToolBox.Server.Core\XFEToolBox.Server.Core.csproj" />
+    <ProjectReference Include="..\XFEToolBox.Server\XFEToolBox.Server.csproj" />
   </ItemGroup>
 
 </Project>

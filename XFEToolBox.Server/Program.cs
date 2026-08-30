@@ -1,10 +1,14 @@
 using XFEToolBox.Core.Downloads;
 using XFEToolBox.Core.Models.Users;
+using XFEToolBox.Server.Core.Chat;
 using XFEToolBox.Server.Core.Options;
 using XFEToolBox.Server.Core.Services;
+using XFEToolBox.Server.Core.Utilities;
 using XFEToolBox.Server.Profiles;
 using XFEToolBox.Server.Profiles.Data;
+using XFEToolBox.Server.Realtime;
 using XFEToolBox.Server.Services;
+using XFEToolBox.Server.Services.Chat;
 using XFEExtension.NetCore.ServerInteractive.Interfaces;
 using XFEExtension.NetCore.ServerInteractive.Utilities.Extensions;
 using XFEExtension.NetCore.ServerInteractive.Utilities.Server;
@@ -32,6 +36,44 @@ var softwareStorageRoot = Path.GetFullPath(Path.IsPathRooted(configuredSoftwareS
     ? configuredSoftwareStorageRoot
     : Path.Combine(AppContext.BaseDirectory, configuredSoftwareStorageRoot));
 Directory.CreateDirectory(softwareStorageRoot);
+var configuredChatDatabasePath = ServerProfile.ChatDatabasePath;
+var chatDatabasePath = Path.GetFullPath(Path.IsPathRooted(configuredChatDatabasePath)
+    ? configuredChatDatabasePath
+    : Path.Combine(AppContext.BaseDirectory, configuredChatDatabasePath));
+var configuredChatAttachmentRoot = ServerProfile.ChatAttachmentStorageRoot;
+var chatAttachmentRoot = Path.GetFullPath(Path.IsPathRooted(configuredChatAttachmentRoot)
+    ? configuredChatAttachmentRoot
+    : Path.Combine(AppContext.BaseDirectory, configuredChatAttachmentRoot));
+var chatRepository = new ChatRepository(
+    chatDatabasePath,
+    chatAttachmentRoot,
+    ServerProfile.MaxChatAttachmentBytes,
+    ServerProfile.MaxChatAttachmentChunkBytes)
+{
+    UserExists = id => UserDataProfile.UserTable.Any(user => user.Id == id && user.Enable)
+};
+await chatRepository.InitializeAsync();
+var realtimeTicketStore = new ChatRealtimeTicketStore(
+    ticketLifetime: TimeSpan.FromSeconds(Math.Clamp(ServerProfile.RealtimeTicketLifetimeSeconds, 30, 60)));
+var realtimeBroker = new ChatRealtimeBroker(chatRepository, realtimeTicketStore)
+{
+    SessionIsActive = claims =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        return !string.IsNullOrWhiteSpace(claims.SessionId) &&
+               UserDataProfile.UserTable.Any(user => user.Enable && user.Id == claims.UserId) &&
+               UserDataProfile.LoginTable.Any(login =>
+                   login.SessionId == claims.SessionId &&
+                   login.UserLoginModel.Uid == claims.UserId &&
+                   login.RevokedAtUtc is null &&
+                   login.ExpiresAtUtc > now);
+    }
+};
+AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+{
+    realtimeBroker.DisposeAsync().AsTask().GetAwaiter().GetResult();
+    chatRepository.Dispose();
+};
 var packageRepository = new FileSystemToolPackageRepository(
     new ToolPackageValidator(validationOptions),
     validationOptions,
@@ -45,6 +87,9 @@ var server = XFEServerBuilder.CreateBuilder()
         .AddParameter("MaxPackageBytes", validationOptions.MaxPackageBytes)
         .AddParameter("SoftwareStorageRoot", softwareStorageRoot)
         .AddParameter("MaxSoftwareBytes", ServerProfile.MaxSoftwareBytes)
+        .AddParameter("ChatRepository", chatRepository)
+        .AddParameter("ChatRealtimeTicketStore", realtimeTicketStore)
+        .AddParameter("ChatRealtimeBroker", realtimeBroker)
         .AddService<HealthService>()
         .AddService<SoftwareCatalogService>()
         .AddService<SoftwareAdminService>()
@@ -54,6 +99,12 @@ var server = XFEServerBuilder.CreateBuilder()
         .AddService<UserProfileService>()
         .AddService<ToolSubmissionService>()
         .AddService<AdminManagementService>()
+        .AddService<ChatFriendService>()
+        .AddService<ChatGroupService>()
+        .AddService<ChatMessageService>()
+        .AddService<ChatAttachmentService>()
+        .AddService<ChatRealtimeTicketService>()
+        .AddOriginalService<ChatRealtimeWebSocketService>()
         .UseXFEStandardServerCore<ToolBoxUserFaceInfo>(options =>
         {
             options.GetUserFunction = static () => UserDataProfile.UserTable;
@@ -66,6 +117,7 @@ var server = XFEServerBuilder.CreateBuilder()
             options.AddEncryptedUserLoginModelFunction = UserDataProfile.LoginTable.Add;
             options.RemoveEncryptedUserLoginModelFunction = UserDataProfile.LoginTable.Remove;
             options.GetLoginKeepDays = static () => ServerProfile.LoginKeepDays;
+            options.UpdateUserFunction = static _ => UserDataProfile.SaveProfile();
             options.LoginResultConvertFunction = static user =>
                 ToolBoxUserFaceInfo.FromUser((IUserInfo)user);
         })
@@ -74,7 +126,11 @@ var server = XFEServerBuilder.CreateBuilder()
             options.AcceptGet = true;
             options.AcceptPost = true;
             options.AcceptNonStandardJson = true;
-            options.GetIPFunction = static args => args.RequestHeaders["X-Forwarded-For"] ?? args.ClientIP;
+            // 源站必须只允许可信 EdgeOne 节点回源，防止客户端绕过代理伪造请求头。
+            options.GetIPFunction = static args => ForwardedClientIpResolver.Resolve(
+                args.ClientIP,
+                args.RequestHeaders["EO-Connecting-IP"],
+                args.RequestHeaders["X-Forwarded-For"]);
             options.BindIP(ServerProfile.HttpAddress);
             options.MainEntryPoint = "api";
             options.ServerCoreName = "XFEToolBoxServer";
@@ -85,6 +141,8 @@ Console.WriteLine("XFEToolBox Server");
 Console.WriteLine($"  地址：{ServerProfile.HttpAddress.TrimEnd('/')}/api");
 Console.WriteLine($"  数据：{storageRoot}");
 Console.WriteLine($"  软件：{softwareStorageRoot}");
+Console.WriteLine($"  聊天：{chatDatabasePath}");
+Console.WriteLine($"  附件：{chatAttachmentRoot}");
 Console.WriteLine($"  用户：{UserDataProfile.UserTable.Count}");
 await server.StartAsync();
 await server.RunAsync();

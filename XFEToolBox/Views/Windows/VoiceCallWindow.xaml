@@ -1,0 +1,50 @@
+<Window x:Class="XFEToolBox.Client.Views.Windows.VoiceCallWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="语音通话" Width="1040" Height="720" MinWidth="760" MinHeight="520"
+        WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize"
+        Background="#11131A" Foreground="#F4F4F8">
+    <Border BorderBrush="#2A2E3B" BorderThickness="1" CornerRadius="12" Background="#11131A">
+        <Grid ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="#181B24" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid Margin="16,0,8,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="9" Height="9" Fill="#6D7CFF" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="WindowTitleText" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RealtimeStatusText" Text="正在连接" Foreground="#9299AD" FontSize="11"
+                                   Margin="12,1,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Width="42" Height="32" Margin="0,0,4,0" Content="—" FontSize="16"
+                                Foreground="#C9CDDA" Background="Transparent" BorderThickness="0"
+                                Click="MinimizeButton_Click"/>
+                        <Button Width="42" Height="32" Content="×" FontSize="19"
+                                Foreground="#F0A3AB" Background="Transparent" BorderThickness="0"
+                                Click="CloseButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1">
+                <wv2:WebView2 x:Name="CallWebView" DefaultBackgroundColor="#11131A"/>
+                <Border x:Name="LoadingOverlay" Background="#11131A">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="正在准备安全语音通话…" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock x:Name="LoadingDetailText" Text="初始化 WebRTC 与音频设备" Foreground="#9299AD"
+                                   FontSize="12" Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
