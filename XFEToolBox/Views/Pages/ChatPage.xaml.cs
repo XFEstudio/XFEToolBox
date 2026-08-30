@@ -31,10 +31,18 @@ public partial class ChatPage : Page
         ChatRealtimeClient.Shared.EnvelopeReceived += ChatRealtimeClient_EnvelopeReceived;
         ViewModel.MessagesChanged += ViewModel_MessagesChanged;
         ViewModel.CallRequested += ViewModel_CallRequested;
+        ViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(ChatPageViewModel.IsSinglePaneMode)
+                or nameof(ChatPageViewModel.ShowListPane)
+                or nameof(ChatPageViewModel.ShowDetailPane))
+                UpdateAdaptiveLayout(ActualWidth);
+        };
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
+        ViewModel.RefreshLayoutPreference();
         UpdateAdaptiveLayout(ActualWidth);
         if (!hasLoaded)
         {
@@ -52,16 +60,22 @@ public partial class ChatPage : Page
 
     private void UpdateAdaptiveLayout(double width)
     {
-        var compact = width < 760;
-        SectionColumn.Width = compact ? new GridLength(0) : new GridLength(132);
-        SectionPane.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
-        CompactTabs.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
-        CompactTabsRow.Height = compact ? GridLength.Auto : new GridLength(0);
+        SectionColumn.Width = new GridLength(0);
+        SectionPane.Visibility = Visibility.Collapsed;
+        CompactTabs.Visibility = Visibility.Collapsed;
+        CompactTabsRow.Height = new GridLength(0);
 
-        var listWidth = compact
-            ? Math.Clamp(width * 0.38, 205, 270)
-            : Math.Clamp(width * 0.30, 250, 300);
-        ListColumn.Width = new GridLength(listWidth);
+        if (ViewModel.IsSinglePaneMode)
+        {
+            ListColumn.Width = ViewModel.ShowListPane ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            DetailGapColumn.Width = new GridLength(0);
+            DetailColumn.Width = ViewModel.ShowDetailPane ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            return;
+        }
+
+        ListColumn.Width = new GridLength(Math.Clamp(width * 0.31, 260, 330));
+        DetailGapColumn.Width = new GridLength(8);
+        DetailColumn.Width = new GridLength(1, GridUnitType.Star);
     }
 
     private async void ClientSession_SessionChanged(object? sender, EventArgs e)
@@ -110,11 +124,11 @@ public partial class ChatPage : Page
 
     private async void ConversationList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is not ListBox { SelectedItem: ChatConversationItem item } ||
-            ReferenceEquals(item, ViewModel.SelectedConversation))
+        if (sender is not ListBox { SelectedItem: ChatNavigationItem item } ||
+            ReferenceEquals(item, ViewModel.SelectedNavigationItem))
             return;
 
-        await ViewModel.OpenConversationCommand.ExecuteAsync(item);
+        await ViewModel.OpenNavigationItemCommand.ExecuteAsync(item);
     }
 
     private async void GroupSearchBox_KeyDown(object sender, KeyEventArgs e)

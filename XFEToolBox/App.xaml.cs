@@ -17,6 +17,7 @@ public partial class App : Application
     private bool chatRuntimeInitialized;
     private bool chatRuntimeEventsDetached;
     private Task? chatRuntimeShutdownTask;
+    private ChatDesktopNotificationCoordinator? chatNotificationCoordinator;
     private readonly SemaphoreSlim chatSessionGate = new(1, 1);
 
     public App() => InitializeComponent();
@@ -57,6 +58,7 @@ public partial class App : Application
             () => ShowMainWindow("home"),
             () => ShowCommandPalette(),
             RequestExit);
+        chatNotificationCoordinator = new ChatDesktopNotificationCoordinator();
         singleInstanceService.StartListening(message => Dispatcher.BeginInvoke(() =>
         {
             if (message.Equals("show-palette", StringComparison.OrdinalIgnoreCase)) ShowCommandPalette();
@@ -85,6 +87,9 @@ public partial class App : Application
         commandPaletteWindow ??= new CommandPaletteWindow();
         commandPaletteWindow.ShowPalette(initialQuery);
     }
+
+    public void ShowDesktopNotification(string title, string message, DesktopNotificationLevel level = DesktopNotificationLevel.Information) =>
+        trayIconService?.ShowNotification(title, message, level);
 
     public bool ConfigureGlobalHotkey(string gestureText)
     {
@@ -149,6 +154,7 @@ public partial class App : Application
             ChatRealtimeClient.Shared.RequestStop();
         }
         globalHotkeyService?.Dispose();
+        chatNotificationCoordinator?.Dispose();
         trayIconService?.Dispose();
         singleInstanceService?.Dispose();
         base.OnExit(e);

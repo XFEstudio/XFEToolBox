@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\Icon\XFEToolBoxIcon.ico</ApplicationIcon>
-    <Version>1.1.5</Version>
+    <Version>1.2.0</Version>
     <AssemblyTitle>XFEToolBox</AssemblyTitle>
     <AssemblyName>XFEToolBox</AssemblyName>
   </PropertyGroup>

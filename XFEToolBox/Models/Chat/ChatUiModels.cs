@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using XFEToolBox.Client.Utilities.Chat;
 using XFEToolBox.Core.Chat;
 
 namespace XFEToolBox.Client.Models.Chat;
@@ -26,6 +27,67 @@ public sealed class ChatConversationItem(ChatConversationInfo conversation)
     public string TimeText => Conversation.LastMessage?.CreatedAtUtc.ToLocalTime().ToString("MM-dd HH:mm") ?? string.Empty;
     public string UnreadText => Conversation.UnreadCount > 99 ? "99+" : Conversation.UnreadCount.ToString();
     public bool HasUnread => Conversation.UnreadCount > 0;
+}
+
+public sealed class ChatNavigationItem
+{
+    public ChatNavigationItem(ChatConversationInfo? conversation, ChatFriendInfo friend)
+    {
+        Conversation = conversation;
+        Friend = friend;
+        Key = $"friend:{friend.User.Id}";
+        Title = friend.User.NickName;
+        Initials = Title;
+    }
+
+    public ChatNavigationItem(ChatConversationInfo? conversation, ChatGroupSummary group)
+    {
+        Conversation = conversation;
+        Group = group;
+        Key = $"group:{group.Id}";
+        Title = group.Name;
+        Initials = Title;
+    }
+
+    public ChatNavigationItem(ChatConversationInfo conversation)
+    {
+        Conversation = conversation;
+        Friend = conversation.Kind == ChatConversationKind.Direct && conversation.Friend is not null
+            ? new ChatFriendInfo
+            {
+                User = conversation.Friend,
+                ConversationId = conversation.Id,
+                FriendsSinceUtc = conversation.CreatedAtUtc
+            }
+            : null;
+        Group = conversation.Kind == ChatConversationKind.Group ? conversation.Group : null;
+        Key = conversation.Kind == ChatConversationKind.Group
+            ? $"group:{conversation.Group?.Id ?? conversation.Id}"
+            : $"friend:{conversation.Friend?.Id ?? conversation.Id}";
+        Title = conversation.Kind == ChatConversationKind.Group
+            ? conversation.Group?.Name ?? "群聊"
+            : conversation.Friend?.NickName ?? "好友";
+        Initials = Title;
+    }
+
+    public string Key { get; }
+    public ChatConversationInfo? Conversation { get; }
+    public ChatFriendInfo? Friend { get; }
+    public ChatGroupSummary? Group { get; }
+    public string Title { get; }
+    public string Initials { get; }
+    public bool IsGroup => Group is not null || Conversation?.Kind == ChatConversationKind.Group;
+    public bool IsFriend => !IsGroup;
+    public string Subtitle => Conversation?.LastMessage is null
+        ? "暂无消息"
+        : ChatMessageItem.DescribeMessage(Conversation.LastMessage);
+    public DateTimeOffset? LastMessageAtUtc => Conversation?.LastMessage?.CreatedAtUtc;
+    public string TimeText => LastMessageAtUtc?.ToLocalTime().ToString("MM-dd HH:mm") ?? string.Empty;
+    public long UnreadCount => Conversation?.UnreadCount ?? 0;
+    public string UnreadText => UnreadCount > 99 ? "99+" : UnreadCount.ToString();
+    public bool HasUnread => UnreadCount > 0;
+    public bool IsMuted => IsGroup && ChatNotificationPreferences.IsGroupMuted(Group?.Id ?? Conversation?.Group?.Id);
+    public string MutedText => IsMuted ? "免打扰" : string.Empty;
 }
 
 public sealed class ChatGroupItem(ChatGroupSummary group)

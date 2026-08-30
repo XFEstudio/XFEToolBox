@@ -38,6 +38,18 @@ internal sealed class TrayIconService : IDisposable
         "可使用全局快捷键打开命令面板，或从托盘菜单退出。",
         Forms.ToolTipIcon.Info);
 
+    public void ShowNotification(string title, string message, DesktopNotificationLevel level) =>
+        notifyIcon.ShowBalloonTip(
+            5000,
+            title,
+            message,
+            level switch
+            {
+                DesktopNotificationLevel.Warning => Forms.ToolTipIcon.Warning,
+                DesktopNotificationLevel.Error => Forms.ToolTipIcon.Error,
+                _ => Forms.ToolTipIcon.Info
+            });
+
     public void Dispose()
     {
         notifyIcon.Visible = false;

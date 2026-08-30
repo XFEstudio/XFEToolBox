@@ -81,6 +81,12 @@
                                                            CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
                                                            Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.CloseToTray"/>
                                 </controls:SettingsCard>
+                                <controls:SettingsCard Header="聊天单栏模式" Description="进入聊天时先显示会话列表，选择后再显示聊天内容；默认关闭">
+                                    <controls:SwitchButton Margin="0"
+                                                           Command="{Binding SwitchedCommand}"
+                                                           CommandParameter="{Binding RelativeSource={x:Static RelativeSource.Self}}"
+                                                           Tag="XFEToolBox.Client.Profiles.CrossVersionProfiles.SystemProfile.ChatSinglePaneMode"/>
+                                </controls:SettingsCard>
                                 <controls:SettingsCard Header="命令面板快捷键" Description="{Binding GlobalHotkeyStatus}">
                                     <StackPanel Orientation="Horizontal">
                                         <controls:SwitchButton Margin="0,0,12,0"

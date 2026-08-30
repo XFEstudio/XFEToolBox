@@ -1,10 +1,11 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using XFEToolBox.Client.Models.Chat;
+using XFEToolBox.Client.Profiles.CrossVersionProfiles;
+using XFEToolBox.Client.Utilities;
 using XFEToolBox.Client.Utilities.Chat;
 using XFEToolBox.Client.Utilities.Server;
 using XFEToolBox.Core.Chat;
@@ -26,6 +27,7 @@ public partial class ChatPageViewModel : ObservableObject
     private CancellationTokenSource sessionCancellation = new();
 
     public ObservableCollection<ChatConversationItem> Conversations { get; } = [];
+    public ObservableCollection<ChatNavigationItem> NavigationItems { get; } = [];
     public ObservableCollection<ChatGroupItem> RecommendedGroups { get; } = [];
     public ObservableCollection<ChatGroupItem> MyGroups { get; } = [];
     public ObservableCollection<ChatFriendItem> Friends { get; } = [];
@@ -83,11 +85,37 @@ public partial class ChatPageViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ConversationSubtitle))]
     [NotifyPropertyChangedFor(nameof(IsSelectedConversationGroup))]
     [NotifyPropertyChangedFor(nameof(CanCompose))]
+    [NotifyPropertyChangedFor(nameof(HasOpenDetail))]
+    [NotifyPropertyChangedFor(nameof(ShowListPane))]
+    [NotifyPropertyChangedFor(nameof(ShowDetailPane))]
+    [NotifyPropertyChangedFor(nameof(ShowBackButton))]
     private ChatConversationItem? selectedConversation;
+
+    [ObservableProperty]
+    private ChatNavigationItem? selectedNavigationItem;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMessageAreaOpen))]
+    [NotifyPropertyChangedFor(nameof(HasOpenDetail))]
+    [NotifyPropertyChangedFor(nameof(ShowListPane))]
+    [NotifyPropertyChangedFor(nameof(ShowDetailPane))]
+    [NotifyPropertyChangedFor(nameof(ShowBackButton))]
+    private bool isLobbyOpen;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowListPane))]
+    [NotifyPropertyChangedFor(nameof(ShowDetailPane))]
+    [NotifyPropertyChangedFor(nameof(ShowBackButton))]
+    private bool isSinglePaneMode = SystemProfile.ChatSinglePaneMode;
 
     public bool HasSelectedConversation => SelectedConversation is not null;
     public bool HasNoSelectedConversation => SelectedConversation is null;
     public bool IsSelectedConversationGroup => SelectedConversation?.Conversation.Kind == ChatConversationKind.Group;
+    public bool IsMessageAreaOpen => !IsLobbyOpen;
+    public bool HasOpenDetail => IsLobbyOpen || HasSelectedConversation;
+    public bool ShowListPane => !IsSinglePaneMode || !HasOpenDetail;
+    public bool ShowDetailPane => !IsSinglePaneMode || HasOpenDetail;
+    public bool ShowBackButton => IsSinglePaneMode && HasOpenDetail;
     public string ConversationTitle => SelectedConversation?.Title ?? "选择一个会话";
     public string ConversationSubtitle => SelectedConversation is null
         ? "从左侧选择好友、群聊或最近会话"
@@ -134,6 +162,9 @@ public partial class ChatPageViewModel : ObservableObject
     private bool isCreateGroupDialogOpen;
 
     [ObservableProperty]
+    private bool isContactManagementDialogOpen;
+
+    [ObservableProperty]
     private string newGroupName = string.Empty;
 
     [ObservableProperty]
@@ -162,8 +193,20 @@ public partial class ChatPageViewModel : ObservableObject
     [ObservableProperty]
     private bool managedGroupIsPublic;
 
+    [ObservableProperty]
+    private bool managedGroupIsMuted;
+
     public bool CanManageSelectedGroup => ManagedGroup?.CanManage == true;
     public bool IsManagedGroupOwner => ManagedGroup?.IsOwner == true;
+
+    partial void OnManagedGroupIsMutedChanged(bool value)
+    {
+        if (ManagedGroup is null) return;
+        ChatNotificationPreferences.SetGroupMuted(ManagedGroup.Group.Id, value);
+        RebuildNavigationItems();
+    }
+
+    public void RefreshLayoutPreference() => IsSinglePaneMode = SystemProfile.ChatSinglePaneMode;
 
     public async Task InitializeAsync()
     {
@@ -255,6 +298,56 @@ public partial class ChatPageViewModel : ObservableObject
     private void SelectSection(ChatSection section) => SelectedSection = section;
 
     [RelayCommand]
+    private async Task OpenLobbyAsync()
+    {
+        IsLobbyOpen = true;
+        SelectedNavigationItem = null;
+        SelectedConversation = null;
+        Messages.Clear();
+        await RefreshRecommendedGroupsAsync();
+    }
+
+    [RelayCommand]
+    private void CloseDetail()
+    {
+        IsLobbyOpen = false;
+        SelectedConversation = null;
+        SelectedNavigationItem = null;
+        Messages.Clear();
+        nextBeforeSequence = null;
+        HasEarlierMessages = false;
+    }
+
+    [RelayCommand]
+    private void OpenContactManagementDialog()
+    {
+        IsCreateGroupDialogOpen = false;
+        IsContactManagementDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseContactManagementDialog() => IsContactManagementDialogOpen = false;
+
+    [RelayCommand]
+    private async Task OpenNavigationItemAsync(ChatNavigationItem? item)
+    {
+        if (item is null) return;
+        SelectedNavigationItem = item;
+        if (item.Conversation is not null)
+        {
+            await OpenConversationAsync(new ChatConversationItem(item.Conversation));
+            return;
+        }
+        if (item.Friend is not null)
+        {
+            await OpenFriendConversationAsync(new ChatFriendItem(item.Friend));
+            return;
+        }
+        if (item.Group is not null)
+            await OpenGroupConversationCoreAsync(item.Group);
+    }
+
+    [RelayCommand]
     private Task RefreshAllAsync() => RefreshAllCoreAsync(allowWhileBusy: false);
 
     private async Task RefreshAllCoreAsync(bool allowWhileBusy)
@@ -286,6 +379,7 @@ public partial class ChatPageViewModel : ObservableObject
                 var refreshed = Conversations.FirstOrDefault(item => item.Id == SelectedConversation.Id);
                 if (refreshed is not null) SelectedConversation = refreshed;
             }
+            RebuildNavigationItems();
             ShowStatus("聊天已同步", "好友、群聊与最近会话已刷新。", InfoBarSeverity.Success, autoClose: true);
         }
         catch (Exception exception)
@@ -363,6 +457,9 @@ public partial class ChatPageViewModel : ObservableObject
     {
         if (item is null) return;
         SelectedConversation = item;
+        IsLobbyOpen = false;
+        SelectedNavigationItem = NavigationItems.FirstOrDefault(entry =>
+            string.Equals(entry.Conversation?.Id, item.Id, StringComparison.Ordinal));
         await LoadMessagesAsync(reset: true, allowWhileBusy: true);
     }
 
@@ -375,6 +472,10 @@ public partial class ChatPageViewModel : ObservableObject
             var conversation = await apiClient.OpenDirectConversationAsync(item.Friend.User.Id);
             UpsertConversation(conversation);
             SelectedConversation = new ChatConversationItem(conversation);
+            IsLobbyOpen = false;
+            RebuildNavigationItems();
+            SelectedNavigationItem = NavigationItems.FirstOrDefault(entry =>
+                string.Equals(entry.Conversation?.Id, conversation.Id, StringComparison.Ordinal));
             SelectedSection = ChatSection.Conversations;
             await LoadMessagesAsync(reset: true, allowWhileBusy: true);
         });
@@ -393,6 +494,10 @@ public partial class ChatPageViewModel : ObservableObject
             CreatedAtUtc = group.CreatedAtUtc,
             UpdatedAtUtc = group.UpdatedAtUtc
         });
+        IsLobbyOpen = false;
+        RebuildNavigationItems();
+        SelectedNavigationItem = NavigationItems.FirstOrDefault(entry =>
+            string.Equals(entry.Conversation?.Id, SelectedConversation.Id, StringComparison.Ordinal));
         SelectedSection = ChatSection.Conversations;
         await LoadMessagesAsync(reset: true, allowWhileBusy: true);
     }
@@ -607,6 +712,7 @@ public partial class ChatPageViewModel : ObservableObject
     [RelayCommand]
     private void OpenCreateGroupDialog()
     {
+        IsContactManagementDialogOpen = false;
         NewGroupName = string.Empty;
         NewGroupDescription = string.Empty;
         NewGroupIsPublic = true;
@@ -659,6 +765,7 @@ public partial class ChatPageViewModel : ObservableObject
         ManagedGroupName = group.Name;
         ManagedGroupDescription = group.Description;
         ManagedGroupIsPublic = group.Visibility == ChatGroupVisibility.Public;
+        ManagedGroupIsMuted = ChatNotificationPreferences.IsGroupMuted(group.Id);
         IsGroupManagementDialogOpen = true;
         await RunBusyAsync("群成员加载失败", LoadManagedGroupMembersAsync);
     }
@@ -693,6 +800,7 @@ public partial class ChatPageViewModel : ObservableObject
         {
             var id = ManagedGroup.Group.Id;
             await apiClient.LeaveGroupAsync(id);
+            ChatNotificationPreferences.SetGroupMuted(id, false);
             IsGroupManagementDialogOpen = false;
             ManagedGroup = null;
             ManagedGroupMembers.Clear();
@@ -810,6 +918,7 @@ public partial class ChatPageViewModel : ObservableObject
                 HasEarlierMessages = false;
             }
         }
+        RebuildNavigationItems();
     }
 
     private async Task RefreshFriendDataAsync()
@@ -819,6 +928,7 @@ public partial class ChatPageViewModel : ObservableObject
         Replace(Friends, friends.Select(item => new ChatFriendItem(item)));
         Replace(FriendRequests, requests.Select(item => new ChatFriendRequestItem(item)));
         RebuildInviteCandidates(friends);
+        RebuildNavigationItems();
     }
 
     private async Task RefreshGroupsAsync()
@@ -835,6 +945,7 @@ public partial class ChatPageViewModel : ObservableObject
             var refreshed = groups.FirstOrDefault(item => item.Id == LookupGroupResult.Group.Id);
             if (refreshed is not null) LookupGroupResult = new ChatGroupItem(refreshed);
         }
+        RebuildNavigationItems();
     }
 
     private async Task LoadManagedGroupMembersAsync()
@@ -862,6 +973,48 @@ public partial class ChatPageViewModel : ObservableObject
         var existing = Conversations.FirstOrDefault(item => item.Id == conversation.Id);
         if (existing is not null) Conversations.Remove(existing);
         Conversations.Insert(0, new ChatConversationItem(conversation));
+        RebuildNavigationItems();
+    }
+
+    private void RebuildNavigationItems()
+    {
+        var selectedKey = SelectedNavigationItem?.Key;
+        var conversationByFriend = Conversations
+            .Where(item => item.Conversation.Kind == ChatConversationKind.Direct && item.Conversation.Friend is not null)
+            .GroupBy(item => item.Conversation.Friend!.Id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Conversation, StringComparer.Ordinal);
+        var conversationByGroup = Conversations
+            .Where(item => item.Conversation.Kind == ChatConversationKind.Group && item.Conversation.Group is not null)
+            .GroupBy(item => item.Conversation.Group!.Id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Conversation, StringComparer.Ordinal);
+
+        var values = new List<ChatNavigationItem>();
+        var usedConversationIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var friend in Friends)
+        {
+            conversationByFriend.TryGetValue(friend.Friend.User.Id, out var conversation);
+            values.Add(new ChatNavigationItem(conversation, friend.Friend));
+            if (conversation is not null) usedConversationIds.Add(conversation.Id);
+        }
+        foreach (var group in MyGroups)
+        {
+            conversationByGroup.TryGetValue(group.Group.Id, out var conversation);
+            values.Add(new ChatNavigationItem(conversation, group.Group));
+            if (conversation is not null) usedConversationIds.Add(conversation.Id);
+        }
+        values.AddRange(Conversations
+            .Where(item => !usedConversationIds.Contains(item.Id))
+            .Select(item => new ChatNavigationItem(item.Conversation)));
+
+        Replace(NavigationItems, values
+            .OrderByDescending(item => item.LastMessageAtUtc.HasValue)
+            .ThenByDescending(item => item.LastMessageAtUtc)
+            .ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase));
+
+        SelectedNavigationItem = selectedKey is null
+            ? NavigationItems.FirstOrDefault(item =>
+                string.Equals(item.Conversation?.Id, SelectedConversation?.Id, StringComparison.Ordinal))
+            : NavigationItems.FirstOrDefault(item => string.Equals(item.Key, selectedKey, StringComparison.Ordinal));
     }
 
     private void AddOrReplaceMessage(ChatMessageInfo message)
@@ -897,6 +1050,7 @@ public partial class ChatPageViewModel : ObservableObject
     {
         messageLoadGeneration++;
         Conversations.Clear();
+        NavigationItems.Clear();
         RecommendedGroups.Clear();
         MyGroups.Clear();
         Friends.Clear();
@@ -907,9 +1061,12 @@ public partial class ChatPageViewModel : ObservableObject
         InviteCandidates.Clear();
         ManagedGroupMembers.Clear();
         SelectedConversation = null;
+        SelectedNavigationItem = null;
+        IsLobbyOpen = false;
         LookupGroupResult = null;
         ManagedGroup = null;
         IsCreateGroupDialogOpen = false;
+        IsContactManagementDialogOpen = false;
         IsGroupManagementDialogOpen = false;
         IsTransferring = false;
         TransferProgress = 0;
@@ -921,19 +1078,19 @@ public partial class ChatPageViewModel : ObservableObject
     private void ShowException(string title, Exception exception) =>
         ShowStatus(title, exception.Message, InfoBarSeverity.Error);
 
-    private async void ShowStatus(
+    private static void ShowStatus(
         string title,
         string message,
         InfoBarSeverity severity,
         bool autoClose = false)
     {
-        StatusTitle = title;
-        StatusMessage = message;
-        StatusSeverity = severity;
-        IsStatusOpen = true;
-        if (!autoClose) return;
-        await Task.Delay(2200);
-        if (StatusTitle == title && StatusMessage == message) IsStatusOpen = false;
+        if (autoClose) return;
+        DesktopNotificationService.Show(title, message, severity switch
+        {
+            InfoBarSeverity.Warning => DesktopNotificationLevel.Warning,
+            InfoBarSeverity.Error => DesktopNotificationLevel.Error,
+            _ => DesktopNotificationLevel.Information
+        });
     }
 
     private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> values)
