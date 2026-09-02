@@ -7,8 +7,9 @@ using XFEToolBox.Server.Core.Chat;
 namespace XFEToolBox.Server.Realtime;
 
 /// <summary>
-/// Authenticated WebSocket broker for durable chat event notifications and call
-/// signalling. Audio never traverses this broker; WebRTC carries media directly.
+/// Authenticated WebSocket broker for durable chat events and calls. WebRTC carries
+/// media directly when possible; validated low-bitrate PCM is relayed automatically
+/// when a peer-to-peer media path cannot be established.
 /// </summary>
 public sealed class ChatRealtimeBroker : IAsyncDisposable
 {
@@ -19,6 +20,8 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
     public const int MaximumCallInviteRecipients = 64;
     public const int MaximumTextFrameBytes = 64 * 1024;
     public const int MaximumFramesPerTenSeconds = 160;
+    public const int MaximumRelayAudioFrameBytes = 2048;
+    public const int MaximumRelayAudioFramesPerTenSeconds = 600;
     public static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(20);
     public static readonly TimeSpan StaleConnectionTimeout = TimeSpan.FromSeconds(75);
 
@@ -120,7 +123,7 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
             serverTimeUtc = TimeProvider.GetUtcNow(),
             heartbeatIntervalSeconds = (int)HeartbeatInterval.TotalSeconds,
             maximumCallParticipants = MaximumCallParticipants,
-            mediaTransport = "webrtc"
+            mediaTransport = "webrtc+wss-audio-fallback"
         }));
         return true;
     }
@@ -134,13 +137,18 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
         }
 
         connection.Touch();
-        if (!endOfMessage || Encoding.UTF8.GetByteCount(message) > MaximumTextFrameBytes)
+        var relayAudio = IsRelayAudioMessage(message);
+        var maximumFrameBytes = relayAudio ? MaximumRelayAudioFrameBytes : MaximumTextFrameBytes;
+        if (!endOfMessage || Encoding.UTF8.GetByteCount(message) > maximumFrameBytes)
         {
             _ = CloseAndUnregisterAsync(connection, WebSocketCloseStatus.MessageTooBig, "frame too large or fragmented");
             return;
         }
 
-        if (!connection.TryConsumeFrameQuota(MaximumFramesPerTenSeconds))
+        var withinRateLimit = relayAudio
+            ? connection.TryConsumeRelayAudioFrameQuota(MaximumRelayAudioFramesPerTenSeconds)
+            : connection.TryConsumeFrameQuota(MaximumFramesPerTenSeconds);
+        if (!withinRateLimit)
         {
             _ = CloseAndUnregisterAsync(connection, WebSocketCloseStatus.PolicyViolation, "frame rate exceeded");
             return;
@@ -309,6 +317,9 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
             case "webrtc.answer":
             case "webrtc.ice":
                 await HandleWebRtcSignalAsync(connection, envelope, cancellationToken);
+                break;
+            case "call.audio":
+                await HandleCallAudioAsync(connection, envelope, cancellationToken);
                 break;
             default:
                 await SendErrorAsync(
@@ -587,6 +598,60 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
         }, connection.Claims.UserId, envelope.ConversationId);
         await SendEnvelopeAsync(targetConnection, forwarded, cancellationToken);
         await SendAckAsync(connection, envelope, duplicate: false, cancellationToken, callId);
+    }
+
+    private async Task HandleCallAudioAsync(
+        ChatRealtimeConnection connection,
+        ChatRealtimeEnvelope envelope,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetCall(envelope, out var callId, out var room) ||
+            !ChatRelayAudioFrame.TryParse(envelope.Payload, out var frame))
+        {
+            await SendErrorAsync(connection, "call.audio_invalid", "中继语音帧无效。", envelope.EventId, cancellationToken);
+            return;
+        }
+
+        string[] targetConnectionIds;
+        lock (room.SyncRoot)
+        {
+            if (!room.Participants.TryGetValue(connection.Claims.UserId, out var sender) ||
+                !string.Equals(sender.ConnectionId, connection.ConnectionId, StringComparison.Ordinal))
+            {
+                targetConnectionIds = [];
+            }
+            else
+            {
+                targetConnectionIds = room.Participants.Values
+                    .Where(participant => !string.Equals(participant.UserId, connection.Claims.UserId, StringComparison.Ordinal))
+                    .Select(participant => participant.ConnectionId)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+                room.Touch();
+            }
+        }
+
+        if (targetConnectionIds.Length == 0)
+        {
+            await SendErrorAsync(connection, "call.audio_not_allowed", "只能在已加入的通话中发送中继语音。", envelope.EventId, cancellationToken);
+            return;
+        }
+
+        var forwarded = ChatRealtimeProtocol.Create("call.audio", new
+        {
+            callId,
+            fromUserId = connection.Claims.UserId,
+            fromDisplayName = GetDisplayName(connection),
+            sequence = frame.Sequence,
+            sampleRate = frame.SampleRate,
+            pcmBase64 = frame.PcmBase64
+        }, connection.Claims.UserId, envelope.ConversationId);
+        var targets = targetConnectionIds
+            .Select(connectionId => _connectionsById.TryGetValue(connectionId, out var target) ? target : null)
+            .Where(static target => target is not null)
+            .Cast<ChatRealtimeConnection>()
+            .ToArray();
+        await SendToConnectionsAsync(targets, forwarded, cancellationToken);
     }
 
     private bool TryGetCall(ChatRealtimeEnvelope envelope, out string callId, out ChatCallRoom room)
@@ -884,6 +949,9 @@ public sealed class ChatRealtimeBroker : IAsyncDisposable
     private static bool IsSafeIdentifier(string? value) =>
         !string.IsNullOrWhiteSpace(value) && value.Length <= 64 &&
         value.All(character => char.IsLetterOrDigit(character) || character is '-' or '_');
+
+    private static bool IsRelayAudioMessage(string message) =>
+        message.Contains("\"type\":\"call.audio\"", StringComparison.Ordinal);
 
     private static void TryAbort(WebSocket socket)
     {

@@ -8,8 +8,9 @@ using XFEToolBox.Client.Views.Windows;
 namespace XFEToolBox.Client.Utilities.Chat;
 
 /// <summary>
-/// Coordinates call state over the authenticated realtime client. WebRTC media and
-/// per-peer audio processing remain isolated inside <see cref="VoiceCallWindow"/>.
+/// Coordinates call state over the authenticated realtime client. WebRTC is the
+/// primary media path; the same authenticated connection carries low-latency PCM
+/// frames automatically when a peer-to-peer path cannot be established.
 /// </summary>
 public sealed class VoiceCallService : IAsyncDisposable
 {
@@ -24,6 +25,7 @@ public sealed class VoiceCallService : IAsyncDisposable
     private readonly ConcurrentDictionary<string, IReadOnlyList<VoiceCallParticipant>> _participantSnapshots = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, ConcurrentQueue<PendingVoiceCallSignal>> _pendingSignals = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _operationLock = new(1, 1);
+    private readonly SemaphoreSlim _relaySendGate = new(1, 1);
     private VoiceCallWindow? _callWindow;
     private ActiveVoiceCall? _activeCall;
     private int _disposed;
@@ -237,8 +239,15 @@ public sealed class VoiceCallService : IAsyncDisposable
             throw new InvalidOperationException("实时通信服务连接超时，请检查网络后重试。");
     }
 
-    private void RealtimeClient_EnvelopeReceived(object? sender, ChatRealtimeEnvelopeEventArgs e) =>
+    private void RealtimeClient_EnvelopeReceived(object? sender, ChatRealtimeEnvelopeEventArgs e)
+    {
+        if (e.Envelope.Type == "call.audio")
+        {
+            ForwardRelayAudioToWindow(e.Envelope);
+            return;
+        }
         _ = HandleRealtimeEnvelopeSafeAsync(e.Envelope);
+    }
 
     private async Task HandleRealtimeEnvelopeSafeAsync(ChatClientRealtimeEnvelope envelope)
     {
@@ -380,6 +389,24 @@ public sealed class VoiceCallService : IAsyncDisposable
         queue.Enqueue(new PendingVoiceCallSignal(envelope.Type, fromUserId, signal.Clone()));
     }
 
+    private void ForwardRelayAudioToWindow(ChatClientRealtimeEnvelope envelope)
+    {
+        if (!TryGetString(envelope.Payload, "callId", out var callId) ||
+            !TryGetString(envelope.Payload, "fromUserId", out var fromUserId) ||
+            !envelope.Payload.TryGetProperty("sequence", out var sequenceProperty) ||
+            !sequenceProperty.TryGetInt64(out var sequence) ||
+            sequence < 0 ||
+            !envelope.Payload.TryGetProperty("sampleRate", out var sampleRateProperty) ||
+            !sampleRateProperty.TryGetInt32(out var sampleRate) ||
+            sampleRate != 16_000 ||
+            !TryGetString(envelope.Payload, "pcmBase64", out var pcmBase64) ||
+            pcmBase64.Length > 1024 ||
+            !IsActiveCall(callId) ||
+            _callWindow is not { } window)
+            return;
+        _ = window.ApplyRelayAudioAsync(fromUserId, sequence, sampleRate, pcmBase64);
+    }
+
     private void HandleServerError(JsonElement payload)
     {
         var code = GetString(payload, "code") ?? "realtime.error";
@@ -451,6 +478,7 @@ public sealed class VoiceCallService : IAsyncDisposable
                 title,
                 _options);
             _callWindow.SignalGenerated += CallWindow_SignalGenerated;
+            _callWindow.RelayAudioGenerated += CallWindow_RelayAudioGenerated;
             _callWindow.LeaveRequested += CallWindow_LeaveRequested;
             _callWindow.Closed += CallWindow_Closed;
             _callWindow.Show();
@@ -483,6 +511,44 @@ public sealed class VoiceCallService : IAsyncDisposable
         }
     }
 
+    private void CallWindow_RelayAudioGenerated(object? sender, VoiceCallRelayAudioEventArgs e)
+    {
+        if (Volatile.Read(ref _disposed) != 0 || !_relaySendGate.Wait(0))
+            return;
+        _ = SendWindowRelayAudioSafeAsync(e);
+    }
+
+    private async Task SendWindowRelayAudioSafeAsync(VoiceCallRelayAudioEventArgs frame)
+    {
+        try
+        {
+            var active = _activeCall;
+            if (active is null || !string.Equals(active.CallId, frame.CallId, StringComparison.Ordinal))
+                return;
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await _realtimeClient.SendAsync(
+                "call.audio",
+                new
+                {
+                    callId = frame.CallId,
+                    sequence = frame.Sequence,
+                    sampleRate = frame.SampleRate,
+                    pcmBase64 = frame.PcmBase64
+                },
+                active.ConversationId,
+                timeout.Token);
+        }
+        catch (Exception exception) when (
+            exception is OperationCanceledException or ObjectDisposedException or InvalidOperationException)
+        {
+            // A late or congested 20 ms frame is intentionally dropped.
+        }
+        finally
+        {
+            _relaySendGate.Release();
+        }
+    }
+
     private void CallWindow_LeaveRequested(object? sender, EventArgs e) => _ = LeaveSafeAsync();
 
     private async Task LeaveSafeAsync()
@@ -496,6 +562,7 @@ public sealed class VoiceCallService : IAsyncDisposable
         if (sender is VoiceCallWindow window)
         {
             window.SignalGenerated -= CallWindow_SignalGenerated;
+            window.RelayAudioGenerated -= CallWindow_RelayAudioGenerated;
             window.LeaveRequested -= CallWindow_LeaveRequested;
             window.Closed -= CallWindow_Closed;
         }

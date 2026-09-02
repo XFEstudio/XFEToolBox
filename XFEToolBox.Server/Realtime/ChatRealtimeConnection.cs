@@ -22,6 +22,8 @@ internal sealed class ChatRealtimeConnection : IAsyncDisposable
     private long _lastSeenTimestamp;
     private long _rateWindow;
     private int _framesInWindow;
+    private long _relayAudioRateWindow;
+    private int _relayAudioFramesInWindow;
     private int _pendingSends;
     private int _closing;
 
@@ -55,6 +57,16 @@ internal sealed class ChatRealtimeConnection : IAsyncDisposable
         if (observed != window && Interlocked.CompareExchange(ref _rateWindow, window, observed) == observed)
             Interlocked.Exchange(ref _framesInWindow, 0);
         return Interlocked.Increment(ref _framesInWindow) <= maximumFramesPerTenSeconds;
+    }
+
+    public bool TryConsumeRelayAudioFrameQuota(int maximumFramesPerTenSeconds)
+    {
+        var window = TimeProvider.GetUtcNow().ToUnixTimeSeconds() / 10;
+        var observed = Interlocked.Read(ref _relayAudioRateWindow);
+        if (observed != window &&
+            Interlocked.CompareExchange(ref _relayAudioRateWindow, window, observed) == observed)
+            Interlocked.Exchange(ref _relayAudioFramesInWindow, 0);
+        return Interlocked.Increment(ref _relayAudioFramesInWindow) <= maximumFramesPerTenSeconds;
     }
 
     public bool TryQueue(string message) =>
