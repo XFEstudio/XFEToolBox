@@ -35,3 +35,13 @@
 4. 恢复默认配置发布最终 Installer；默认会把新的 `Source.zip` 内嵌到单文件安装器中。
 
 安装时若目标目录中的 `XFEToolBox.exe` 仍在运行，Installer 会先尝试正常关闭，超时后仅终止路径完全匹配的目标进程；不会按进程名结束其他目录中的同名程序。升级包中若包含正在运行的 Installer 本身，该文件会被跳过，其余应用文件继续安装。
+
+在线升级会等待下载任务结束并关闭所有安装包文件流后，再进入安装页面；下载进度达到 100% 本身不会触发安装。暂停后恢复也会等待上一轮下载释放文件，避免多个下载任务同时写入安装包。
+
+安装包读取、解压、文件属性修改、备份、替换及回滚遇到 Windows 临时共享冲突、锁冲突或拒绝访问时，会自动等待并重试，每个操作最多等待 10 秒。持续占用仍会报告具体失败文件并尝试回滚；无效压缩包、磁盘空间不足等错误不会按文件占用重复尝试。升级成功后，临时安装包清理失败不会把已经完成的升级误报为安装失败。
+
+安装器回归测试（包含真实文件锁以及下载完成、暂停恢复和页面卸载的时序测试）：
+
+```powershell
+dotnet run --project XFEToolBox.Client.Wpf.Test/XFEToolBox.Client.Wpf.Test.csproj -c Release -p:EmbedInstallationPackage=false -- --tests --filter Installer --no-parallel --report none
+```

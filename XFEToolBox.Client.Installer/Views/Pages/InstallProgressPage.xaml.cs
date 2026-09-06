@@ -94,11 +94,11 @@ public partial class InstallProgressPage : Page
         if (!File.Exists(packagePath))
             throw new FileNotFoundException("未找到已下载的升级包，请返回 XFEToolBox 重新检查更新。", packagePath);
 
-        using (var packageStream = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            InstallationService.InstallPackage(packageStream, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName);
+        InstallationService.InstallPackageFile(packagePath, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName);
 
-        File.Delete(packagePath);
-        return "XFEToolBox 已升级完成，安装包验证通过并已清理临时文件。";
+        return InstallerFileOperations.TryDeleteFile(packagePath)
+            ? "XFEToolBox 已升级完成，安装包验证通过并已清理临时文件。"
+            : "XFEToolBox 已升级完成，临时安装包将在下次更新时清理。";
     }
 
     private void ShowInstalling()

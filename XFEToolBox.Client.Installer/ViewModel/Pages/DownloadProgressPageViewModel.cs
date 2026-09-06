@@ -4,6 +4,7 @@ using System.IO;
 using XFEExtension.NetCore.FileExtension;
 using XFEExtension.NetCore.WebExtension;
 using XFEToolBox.Client.Installer.Profiles;
+using XFEToolBox.Client.Installer.Utilities;
 using XFEToolBox.Client.Installer.Views.Pages;
 using XFEToolBox.Client.Installer.Views.Windows;
 
@@ -43,6 +44,7 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
     private string errorMessage = string.Empty;
 
     private XFEDownloader? downloader;
+    private TaskCompletionSource? resumeRequested;
     private int transitionStarted;
     private bool isDisposed;
 
@@ -77,7 +79,11 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
             Directory.CreateDirectory(SystemProfile.InstallPath);
             var packagePath = Path.Combine(SystemProfile.InstallPath, "InstallPackage.zip");
             if (File.Exists(packagePath))
-                File.Delete(packagePath);
+                await Task.Run(() => InstallerFileOperations.ExecuteWithRetry(
+                    () => File.Delete(packagePath), packagePath, "清理旧安装包"));
+
+            if (isDisposed)
+                return;
 
             ReplaceDownloader(new XFEDownloader
             {
@@ -88,14 +94,46 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
             IsBusy = false;
             PauseSwitchEnable = true;
             RefreshProgressVisual();
-            await downloader!.Download(false);
+            var continueFromLastDownload = false;
+            while (true)
+            {
+                // Downloaded 事件在文件流释放之前触发；必须等待整个下载任务退出。
+                await downloader!.Download(continueFromLastDownload);
+                if (isDisposed)
+                    return;
+                if (downloader.Downloaded || !downloader.IsPaused)
+                    break;
+
+                // 暂停会结束当前下载任务，恢复前先等它释放文件，避免两个任务同时写入。
+                await resumeRequested!.Task;
+                if (isDisposed)
+                    return;
+                downloader.IsPaused = false;
+                IsPause = false;
+                PauseText = "暂停";
+                PauseSwitchEnable = true;
+                RefreshProgressVisual();
+                continueFromLastDownload = true;
+            }
+
+            if (Interlocked.Exchange(ref transitionStarted, 1) != 0)
+                return;
+            PauseSwitchEnable = false;
+            IsDownloading = false;
+            ReplaceDownloader(null);
+            if (MainWindow.Current is not null)
+                MainWindow.Current.contentFrame.Content = new InstallProgressPage();
         }
-        catch (Exception exception) when (!isDisposed)
+        catch (Exception exception)
         {
-            SetDownloadError(exception);
+            if (!isDisposed)
+                SetDownloadError(exception);
         }
         finally
         {
+            // Dispose 内部会释放 Task，不能在任务仍运行时从进度事件或页面卸载中调用。
+            ReplaceDownloader(null);
+            resumeRequested = null;
             if (!isDisposed)
             {
                 IsDownloading = false;
@@ -109,7 +147,7 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
     {
         ViewPage.Dispatcher.BeginInvoke(() =>
         {
-            if (isDisposed)
+            if (isDisposed || !ReferenceEquals(sender, downloader) || Volatile.Read(ref transitionStarted) != 0)
                 return;
 
             DownloadText = $"{e.DownloadedBufferSize.FileSize()}/{(e.TotalBufferSize is not null ? e.TotalBufferSize.Value.FileSize() : "未知大小")}";
@@ -117,15 +155,6 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
             if (e.TotalBufferSize is not null && e.TotalBufferSize.Value > 0)
                 MaxValue = e.TotalBufferSize.Value;
             RefreshProgressVisual();
-
-            if (!e.Downloaded || Interlocked.Exchange(ref transitionStarted, 1) != 0)
-                return;
-
-            PauseSwitchEnable = false;
-            IsDownloading = false;
-            ReplaceDownloader(null);
-            if (MainWindow.Current is not null)
-                MainWindow.Current.contentFrame.Content = new InstallProgressPage();
         });
     }
 
@@ -135,14 +164,14 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
         if (downloader is null || !PauseSwitchEnable)
             return;
 
-        if (downloader.IsPaused)
+        if (IsPause)
         {
-            downloader.Continue();
-            IsPause = false;
-            PauseText = "暂停";
+            PauseSwitchEnable = false;
+            resumeRequested?.TrySetResult();
         }
         else
         {
+            resumeRequested = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             downloader.Pause();
             IsPause = true;
             PauseText = "继续";
@@ -161,7 +190,6 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
             ErrorMessage = $"下载失败：{exception.Message}";
             DownloadText = "未能获取更新包";
             RefreshProgressVisual();
-            ReplaceDownloader(null);
         }
 
         if (ViewPage.Dispatcher.CheckAccess())
@@ -199,7 +227,15 @@ public partial class DownloadProgressPageViewModel(DownloadProgressPage viewPage
         if (isDisposed)
             return;
         isDisposed = true;
-        ReplaceDownloader(null);
+        resumeRequested?.TrySetResult();
+        if (downloader is not null)
+        {
+            downloader.BufferDownloaded -= Downloader_BufferDownloaded;
+            if (IsDownloading)
+                downloader.Pause();
+            else
+                ReplaceDownloader(null);
+        }
         GC.SuppressFinalize(this);
     }
 }
