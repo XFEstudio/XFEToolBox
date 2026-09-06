@@ -48,7 +48,7 @@ public static class BilibiliHelper
         Func<XFEJsonNode, XFEJsonNode?> selectItems,
         CancellationToken cancellationToken)
     {
-        var responseContent = await HttpClient.GetStringAsync(requestUri, cancellationToken);
+        var responseContent = await HttpClient.GetStringAsync(requestUri, cancellationToken).ConfigureAwait(false);
         XFEJsonNode root = responseContent;
 
         if (root["code"]?.GetInt32() != 0)

@@ -15,7 +15,7 @@ public partial class LauncherItemViewModel : ObservableObject
         IconLoadingTask = LoadIconAsync();
     }
 
-    public LauncherItem Item { get; }
+    public LauncherItem Item { get; private set; }
     internal Task IconLoadingTask { get; }
     public string Title => Item.Title;
     public string Subtitle => Item.Subtitle;
@@ -24,6 +24,25 @@ public partial class LauncherItemViewModel : ObservableObject
     public bool IsPinned => PinnedItemService.IsPinned(Item.Kind, Item.TargetId);
     public string PinText => IsPinned ? "取消固定" : "固定";
     public string PinGlyph => IsPinned ? "★" : "☆";
+
+    internal bool TryUpdate(LauncherItem item)
+    {
+        if (!string.Equals(Item.Key, item.Key, StringComparison.OrdinalIgnoreCase)
+            || Item.Title != item.Title || Item.Subtitle != item.Subtitle
+            || Item.Detail != item.Detail || Item.IconReference != item.IconReference)
+            return false;
+
+        var pinChanged = Item.IsPinned != item.IsPinned;
+        // Keep the decoded icon and bindings, but use the current launch action.
+        Item = item;
+        if (pinChanged)
+        {
+            OnPropertyChanged(nameof(IsPinned));
+            OnPropertyChanged(nameof(PinText));
+            OnPropertyChanged(nameof(PinGlyph));
+        }
+        return true;
+    }
 
     [ObservableProperty] private ImageSource iconSource;
     [ObservableProperty] private bool isEnabled = true;

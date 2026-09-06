@@ -11,6 +11,11 @@ namespace XFEToolBox.Client.Utilities;
 public static class LauncherService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly object CatalogCacheLock = new();
+    private static string? cachedToolCatalogJson;
+    private static string? cachedSoftwareCatalogJson;
+    private static ToolPackageSummary[] cachedTools = [];
+    private static SoftwareCatalogItem[] cachedSoftware = [];
 
     public static async Task<IReadOnlyList<LauncherItem>> SearchAsync(string? query, int maximumCount = 20)
     {
@@ -45,7 +50,7 @@ public static class LauncherService
 
     public static async Task<IReadOnlyList<LauncherItem>> GetQuickAccessAsync()
     {
-        var allItems = await GetAllItemsAsync();
+        var allItems = await GetAllItemsAsync().ConfigureAwait(false);
         var index = allItems
             .GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
@@ -67,7 +72,8 @@ public static class LauncherService
         return result.Take(8).ToArray();
     }
 
-    public static async Task<IReadOnlyList<LauncherItem>> GetRecentlyUpdatedToolsAsync(int maximumCount = 4)
+    public static Task<IReadOnlyList<LauncherItem>> GetRecentlyUpdatedToolsAsync(int maximumCount = 4) =>
+        Task.Run<IReadOnlyList<LauncherItem>>(() =>
     {
         var tools = ReadToolCatalog()
             .OrderByDescending(tool => tool.UpdatedAtUtc)
@@ -75,9 +81,13 @@ public static class LauncherService
             .ToArray();
         var recent = GetRecentIndex();
         return tools.Select(tool => CreateToolItem(tool, recent)).ToArray();
-    }
+    });
 
-    public static async Task<IReadOnlyList<LauncherItem>> GetAllItemsAsync()
+    // JSON snapshots contain embedded icons, and project history may reference slow
+    // disks. Keep both parsing and filesystem checks off the page's dispatcher.
+    public static Task<IReadOnlyList<LauncherItem>> GetAllItemsAsync() => Task.Run(BuildAllItemsAsync);
+
+    private static async Task<IReadOnlyList<LauncherItem>> BuildAllItemsAsync()
     {
         var recent = GetRecentIndex();
         var items = new List<LauncherItem>();
@@ -232,24 +242,38 @@ public static class LauncherService
 
     private static ToolPackageSummary[] ReadToolCatalog()
     {
-        try
+        var json = AppCacheProfile.ToolCatalogJson;
+        lock (CatalogCacheLock)
         {
-            return string.IsNullOrWhiteSpace(AppCacheProfile.ToolCatalogJson)
-                ? []
-                : JsonSerializer.Deserialize<ToolPackageSummary[]>(AppCacheProfile.ToolCatalogJson, JsonOptions) ?? [];
+            if (ReferenceEquals(json, cachedToolCatalogJson)) return cachedTools;
+            try
+            {
+                cachedTools = string.IsNullOrWhiteSpace(json)
+                    ? []
+                    : JsonSerializer.Deserialize<ToolPackageSummary[]>(json, JsonOptions) ?? [];
+            }
+            catch (JsonException) { cachedTools = []; }
+            cachedToolCatalogJson = json;
+            return cachedTools;
         }
-        catch (JsonException) { return []; }
     }
 
     private static SoftwareCatalogItem[] ReadSoftwareCatalog()
     {
-        try
+        var json = AppCacheProfile.SoftwareCatalogJson;
+        lock (CatalogCacheLock)
         {
-            return string.IsNullOrWhiteSpace(AppCacheProfile.SoftwareCatalogJson)
-                ? []
-                : (JsonSerializer.Deserialize<SoftwareCatalogResponse>(AppCacheProfile.SoftwareCatalogJson, JsonOptions)?.Items ?? []);
+            if (ReferenceEquals(json, cachedSoftwareCatalogJson)) return cachedSoftware;
+            try
+            {
+                cachedSoftware = string.IsNullOrWhiteSpace(json)
+                    ? []
+                    : JsonSerializer.Deserialize<SoftwareCatalogResponse>(json, JsonOptions)?.Items ?? [];
+            }
+            catch (JsonException) { cachedSoftware = []; }
+            cachedSoftwareCatalogJson = json;
+            return cachedSoftware;
         }
-        catch (JsonException) { return []; }
     }
 
     private static IReadOnlyDictionary<string, RecentUsageEntry> GetRecentIndex()
