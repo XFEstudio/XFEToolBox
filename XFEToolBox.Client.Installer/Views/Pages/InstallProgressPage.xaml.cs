@@ -67,12 +67,15 @@ public partial class InstallProgressPage : Page
 
     private static string InstallPackage()
     {
+        var installerSourcePath = Environment.ProcessPath
+                                  ?? throw new InvalidOperationException("无法确定当前安装器路径，不能添加在线升级器。");
         if (string.Equals(SystemProfile.StartMode, "Upgrade", StringComparison.OrdinalIgnoreCase))
-            return InstallUpgradePackage();
+            return InstallUpgradePackage(installerSourcePath);
 
         using var packageStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(PackageResourceName)
                                   ?? throw new InvalidDataException("安装程序中缺少内置安装包 Source.zip，请重新下载安装器。");
-        InstallationService.InstallPackage(packageStream, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName);
+        InstallationService.InstallPackage(
+            packageStream, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName, installerSourcePath);
 
         var shortcutPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
@@ -88,13 +91,14 @@ public partial class InstallProgressPage : Page
             : "XFEToolBox 已安装完成；桌面快捷方式创建失败，但不影响正常使用。";
     }
 
-    private static string InstallUpgradePackage()
+    private static string InstallUpgradePackage(string installerSourcePath)
     {
         var packagePath = Path.Combine(SystemProfile.InstallPath, "InstallPackage.zip");
         if (!File.Exists(packagePath))
             throw new FileNotFoundException("未找到已下载的升级包，请返回 XFEToolBox 重新检查更新。", packagePath);
 
-        InstallationService.InstallPackageFile(packagePath, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName);
+        InstallationService.InstallPackageFile(
+            packagePath, SystemProfile.InstallPath, SystemProfile.ApplicationExecutableName, installerSourcePath);
 
         return InstallerFileOperations.TryDeleteFile(packagePath)
             ? "XFEToolBox 已升级完成，安装包验证通过并已清理临时文件。"

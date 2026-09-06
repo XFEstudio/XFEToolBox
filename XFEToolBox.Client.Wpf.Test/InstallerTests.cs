@@ -31,6 +31,105 @@ public static class InstallerTests
     }
 
     [Test]
+    public static void InstallerAddsItselfWhenThePackageContainsOnlyTheApplication()
+    {
+        var testRoot = CreateTemporaryDirectory();
+        try
+        {
+            var targetRoot = Path.Combine(testRoot, "installed");
+            var installerSourcePath = Path.Combine(testRoot, "XFEToolBox Setup.exe");
+            // 使用真实 EXE 内容，同时覆盖下载后的安装器被重命名的情况。
+            File.Copy(Environment.ProcessPath!, installerSourcePath);
+            using var package = CreatePackage(("XFEToolBox.exe", "application"));
+
+            InstallationService.InstallPackage(package, targetRoot, "XFEToolBox.exe", installerSourcePath);
+
+            var installedInstallerPath = Path.Combine(targetRoot, "Installer.exe");
+            Ensure(File.ReadAllBytes(installedInstallerPath).SequenceEqual(File.ReadAllBytes(installerSourcePath)),
+                "未将安装器完整复制为安装目录中的 Installer.exe。");
+            Ensure(!File.Exists(Path.Combine(targetRoot, "XFEToolBox Setup.exe")),
+                "安装器使用了下载文件名，导致客户端无法找到 Installer.exe。");
+            Ensure(File.ReadAllText(Path.Combine(targetRoot, "XFEToolBox.exe")) == "application",
+                "自动添加升级器后没有安装应用程序。");
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(testRoot);
+        }
+    }
+
+    [Test]
+    public static void InstallerPreservesItsLockedExecutableDuringAnInPlaceUpgrade()
+    {
+        var targetRoot = CreateTemporaryDirectory();
+        try
+        {
+            var installerPath = Path.Combine(targetRoot, "Installer.exe");
+            File.WriteAllText(installerPath, "running-installer");
+            foreach (var includesInstaller in new[] { false, true })
+            {
+                using var package = includesInstaller
+                    ? CreatePackage(("XFEToolBox.exe", "updated-app"), ("Installer.exe", "packaged-installer"))
+                    : CreatePackage(("XFEToolBox.exe", "updated-app"));
+                using (File.Open(installerPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    InstallationService.InstallPackage(package, targetRoot, "XFEToolBox.exe", installerPath.ToUpperInvariant());
+
+                Ensure(File.ReadAllText(installerPath) == "running-installer", "原地升级覆盖了正在运行的安装器。");
+                Ensure(File.ReadAllText(Path.Combine(targetRoot, "XFEToolBox.exe")) == "updated-app",
+                    "安装器自身被占用时未能继续更新应用文件。");
+            }
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(targetRoot);
+        }
+    }
+
+    [Test]
+    public static void InstallerKeepsAnInstallerExplicitlyIncludedInThePackage()
+    {
+        var testRoot = CreateTemporaryDirectory();
+        try
+        {
+            var installerSourcePath = Path.Combine(testRoot, "Setup.exe");
+            var targetRoot = Path.Combine(testRoot, "installed");
+            File.WriteAllText(installerSourcePath, "running-installer");
+            using var package = CreatePackage(("XFEToolBox.exe", "application"), ("Installer.exe", "packaged-installer"));
+
+            InstallationService.InstallPackage(package, targetRoot, "XFEToolBox.exe", installerSourcePath);
+
+            Ensure(File.ReadAllText(Path.Combine(targetRoot, "Installer.exe")) == "packaged-installer",
+                "安装包中显式提供的升级器被当前安装器副本替换了。");
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(testRoot);
+        }
+    }
+
+    [Test]
+    public static void InstallerLeavesExistingFilesUntouchedIfItsSourceIsMissing()
+    {
+        var targetRoot = CreateTemporaryDirectory();
+        try
+        {
+            var executablePath = Path.Combine(targetRoot, "XFEToolBox.exe");
+            File.WriteAllText(executablePath, "old-application");
+            using var package = CreatePackage(("XFEToolBox.exe", "new-application"));
+
+            EnsureThrows<FileNotFoundException>(() => InstallationService.InstallPackage(
+                package, targetRoot, "XFEToolBox.exe", Path.Combine(targetRoot, "missing-setup.exe")));
+
+            Ensure(File.ReadAllText(executablePath) == "old-application", "安装器副本准备失败后仍覆盖了旧应用。");
+            Ensure(!File.Exists(Path.Combine(targetRoot, "Installer.exe")), "安装器副本准备失败后留下了无效升级器。");
+        }
+        finally
+        {
+            DeleteTemporaryDirectory(targetRoot);
+        }
+    }
+
+    [Test]
     public static void InstallerRejectsNestedAndTraversingPackages()
     {
         var targetRoot = CreateTemporaryDirectory();
@@ -62,14 +161,18 @@ public static class InstallerTests
         try
         {
             var packagePath = Path.Combine(targetRoot, "InstallPackage.zip");
+            var installerSourcePath = Path.Combine(targetRoot, "Setup.exe");
+            File.WriteAllText(installerSourcePath, "downloaded-installer");
             using var package = CreatePackage(("XFEToolBox.exe", "application"));
             File.WriteAllBytes(packagePath, package.ToArray());
 
             WithTemporaryFileLock(packagePath, FileShare.ReadWrite, 500, () =>
-                InstallationService.InstallPackageFile(packagePath, targetRoot, "XFEToolBox.exe"));
+                InstallationService.InstallPackageFile(packagePath, targetRoot, "XFEToolBox.exe", installerSourcePath));
 
             Ensure(File.ReadAllText(Path.Combine(targetRoot, "XFEToolBox.exe")) == "application",
                 "下载器释放安装包后没有自动完成安装。");
+            Ensure(File.ReadAllText(Path.Combine(targetRoot, "Installer.exe")) == "downloaded-installer",
+                "从文件安装升级包时未能自动添加升级器。");
             using var releasedPackage = File.Open(packagePath, FileMode.Open, FileAccess.Read, FileShare.None);
         }
         finally
@@ -128,20 +231,26 @@ public static class InstallerTests
         }
     }
 
-    [Test]
-    public static void InstallerRestoresExistingFilesWhenAnOverwriteFails()
+    [TestCase(false)]
+    [TestCase(true)]
+    public static void InstallerRestoresExistingFilesWhenAnOverwriteFails(bool hasExistingInstaller)
     {
         var targetRoot = CreateTemporaryDirectory();
         try
         {
             var executablePath = Path.Combine(targetRoot, "XFEToolBox.exe");
             var settingsPath = Path.Combine(targetRoot, "settings.json");
+            var installerPath = Path.Combine(targetRoot, "Installer.exe");
+            var installerSourcePath = Path.Combine(targetRoot, "Setup.exe");
             var addedPath = Path.Combine(targetRoot, "added.dat");
             var blockedPath = Path.Combine(targetRoot, "locked", "blocked.dat");
             Directory.CreateDirectory(Path.GetDirectoryName(blockedPath)!);
             File.WriteAllText(executablePath, "old-application");
             File.WriteAllText(settingsPath, "old-settings");
             File.WriteAllText(blockedPath, "locked");
+            File.WriteAllText(installerSourcePath, "new-installer");
+            if (hasExistingInstaller)
+                File.WriteAllText(installerPath, "old-installer");
 
             using var package = CreatePackage(
                 ("XFEToolBox.exe", "new-application"),
@@ -150,13 +259,14 @@ public static class InstallerTests
                 ("locked/blocked.dat", "new-blocked"));
             using (File.Open(blockedPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                var installTask = Task.Run(() => InstallationService.InstallPackage(package, targetRoot, "XFEToolBox.exe"));
+                var installTask = Task.Run(() => InstallationService.InstallPackage(package, targetRoot, "XFEToolBox.exe", installerSourcePath));
                 var sawAppliedFiles = SpinWait.SpinUntil(() =>
                 {
                     try
                     {
                         return File.Exists(addedPath) && File.ReadAllText(executablePath) == "new-application"
-                                                     && File.ReadAllText(settingsPath) == "new-settings";
+                                                     && File.ReadAllText(settingsPath) == "new-settings"
+                                                     && File.ReadAllText(installerPath) == "new-installer";
                     }
                     catch (IOException) { return false; }
                 }, TimeSpan.FromSeconds(5));
@@ -169,6 +279,8 @@ public static class InstallerTests
             Ensure(File.ReadAllText(settingsPath) == "old-settings",
                 "覆盖失败后没有恢复旧配置。");
             Ensure(!File.Exists(addedPath), "覆盖失败后没有移除本次新增的文件。");
+            Ensure(hasExistingInstaller ? File.ReadAllText(installerPath) == "old-installer" : !File.Exists(installerPath),
+                "覆盖失败后未恢复旧升级器或移除本次新增的升级器。");
         }
         finally
         {

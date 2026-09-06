@@ -9,16 +9,21 @@ namespace XFEToolBox.Client.Installer.Utilities;
 /// </summary>
 public static class InstallationService
 {
-    public static void InstallPackageFile(string packagePath, string installPath, string executableName)
+    public const string InstallerExecutableName = "Installer.exe";
+
+    public static void InstallPackageFile(
+        string packagePath, string installPath, string executableName, string? installerSourcePath = null)
     {
         using var packageStream = InstallerFileOperations.ExecuteWithRetry(
             () => new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.Read),
             packagePath,
             "读取安装包");
-        InstallPackage(packageStream, installPath, executableName);
+        InstallPackage(packageStream, installPath, executableName, installerSourcePath);
     }
 
-    public static void InstallPackage(Stream packageStream, string installPath, string executableName)
+    /// <param name="installerSourcePath">当前单文件安装器的路径；安装包未包含 Installer.exe 时自动添加其副本。</param>
+    public static void InstallPackage(
+        Stream packageStream, string installPath, string executableName, string? installerSourcePath = null)
     {
         ArgumentNullException.ThrowIfNull(packageStream);
         if (!packageStream.CanRead)
@@ -31,6 +36,7 @@ public static class InstallationService
         var targetRoot = Path.GetFullPath(installPath);
         if (Path.GetPathRoot(targetRoot)?.Equals(targetRoot, StringComparison.OrdinalIgnoreCase) == true)
             throw new InvalidOperationException("不能直接安装到磁盘根目录，请选择一个应用文件夹。");
+        var installerSource = installerSourcePath is null ? null : Path.GetFullPath(installerSourcePath);
 
         var stagingRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox.Installer", Guid.NewGuid().ToString("N"));
         try
@@ -42,8 +48,9 @@ public static class InstallationService
             if (!File.Exists(stagedExecutable))
                 throw new InvalidDataException($"安装包根目录中缺少 {executableName}。请确认压缩包没有额外的二级目录。");
 
+            StageInstaller(stagingRoot, targetRoot, installerSource);
             StopRunningTargetApplication(Path.Combine(targetRoot, executableName));
-            ApplyStagedFiles(stagingRoot, targetRoot);
+            ApplyStagedFiles(stagingRoot, targetRoot, installerSource);
 
             var installedExecutable = Path.Combine(targetRoot, executableName);
             if (!File.Exists(installedExecutable))
@@ -53,6 +60,27 @@ public static class InstallationService
         {
             TryDeleteDirectory(stagingRoot);
         }
+    }
+
+    private static void StageInstaller(string stagingRoot, string targetRoot, string? installerSourcePath)
+    {
+        if (installerSourcePath is null)
+            return;
+
+        var stagedInstaller = Path.Combine(stagingRoot, InstallerExecutableName);
+        var targetInstaller = Path.Combine(targetRoot, InstallerExecutableName);
+        // 兼容已经携带升级器的旧安装包；在安装目录内升级时直接保留正在运行的自身。
+        if (File.Exists(stagedInstaller) || targetInstaller.Equals(installerSourcePath, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (!File.Exists(installerSourcePath))
+            throw new FileNotFoundException("找不到当前安装器，无法在安装目录中添加在线升级器。", installerSourcePath);
+
+        // 和应用文件一起暂存、备份、替换及回滚，避免升级器复制失败后留下半安装状态。
+        InstallerFileOperations.ExecuteWithRetry(
+            () => File.Copy(installerSourcePath, stagedInstaller, overwrite: true),
+            stagedInstaller,
+            "准备安装器副本");
     }
 
     public static string GetDetailedErrorMessage(Exception exception)
@@ -128,7 +156,7 @@ public static class InstallationService
         }
     }
 
-    private static void ApplyStagedFiles(string stagingRoot, string targetRoot)
+    private static void ApplyStagedFiles(string stagingRoot, string targetRoot, string? installerSourcePath)
     {
         var backupRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox.Installer.Backup", Guid.NewGuid().ToString("N"));
         var appliedFiles = new List<AppliedFile>();
@@ -147,7 +175,8 @@ public static class InstallationService
             {
                 var relativePath = Path.GetRelativePath(stagingRoot, sourceFile);
                 var targetFile = Path.Combine(targetRoot, relativePath);
-                if (Path.GetFullPath(targetFile).Equals(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
+                if (Path.GetFullPath(targetFile).Equals(Environment.ProcessPath, StringComparison.OrdinalIgnoreCase)
+                    || targetFile.Equals(installerSourcePath, StringComparison.OrdinalIgnoreCase))
                 {
                     // 直接跳过，不必删除可能正被扫描器占用的暂存安装器。
                     Debug.WriteLine($"[Installer] 已跳过正在运行的安装器文件：{relativePath}");
