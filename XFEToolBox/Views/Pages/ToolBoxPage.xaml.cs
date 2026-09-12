@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using XFEToolBox.Client.Core.Tools;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Models;
 using XFEToolBox.Client.Utilities;
@@ -490,13 +491,26 @@ public partial class ToolBoxPage : Page
             StatusText.Text = runAsAdministrator
                 ? $"正在准备 {card.Name}，随后将向 Windows 请求管理员权限…"
                 : $"正在编译并打开 {card.Name}…";
+            var preparationProgress = new Progress<ToolPreparationProgress>(item =>
+            {
+                if (card.IsEnabled || cancellationToken.IsCancellationRequested)
+                    return;
+                card.IsDownloading = true;
+                card.IsDownloadIndeterminate = item.Percentage is null;
+                card.DownloadProgress = item.Percentage ?? 0;
+                card.DownloadProgressText = item.Message;
+                card.CacheState = item.Percentage is { } percentage ? $"准备 {percentage:0}%" : "正在准备…";
+                StatusText.Text = $"{card.Name} · {item.Message}";
+                activity.Report(item.Percentage, StatusText.Text);
+            });
             var runResult = await ToolProjectRunService.BuildPackageAndRunAsync(
                 cachePath,
                 card.Id,
                 package.Version,
                 package.Sha256,
                 runAsAdministrator,
-                cancellationToken);
+                cancellationToken,
+                preparationProgress);
             if (!runResult.Success)
                 throw new InvalidOperationException(runResult.Message);
 

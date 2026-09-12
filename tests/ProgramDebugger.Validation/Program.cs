@@ -306,7 +306,7 @@ internal static class Program
         var host = typeof(XFEToolBox.Client.Models.LauncherItem).Assembly;
         var manifest = JsonSerializer.Deserialize<ToolPackageManifest>(File.ReadAllText(Path.Combine(Workspace, "manifest.json")), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
         var service = host.GetType("XFEToolBox.Client.Utilities.ToolProjectRunService", true)!;
-        var build = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [Workspace, manifest, CancellationToken.None])!;
+        var build = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [Workspace, manifest, CancellationToken.None, null])!;
         await build.WaitAsync(TimeSpan.FromMinutes(3));
         var result = build.GetType().GetProperty("Result")!.GetValue(build)!;
         Check((bool)result.GetType().GetProperty("Success")!.GetValue(result)!, "production runtime host BuildAsync: " + result.GetType().GetProperty("Message")!.GetValue(result));
@@ -335,7 +335,7 @@ internal static class Program
             equal &= File.Exists(original) && File.ReadAllBytes(original).SequenceEqual(File.ReadAllBytes(file));
         }
         Check(equal, "production package validation and all extracted files match delivered source");
-        var build = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [extracted, manifest, CancellationToken.None])!;
+        var build = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [extracted, manifest, CancellationToken.None, null])!;
         await build.WaitAsync(TimeSpan.FromMinutes(3));
         var result = build.GetType().GetProperty("Result")!.GetValue(build)!;
         Check((bool)result.GetType().GetProperty("Success")!.GetValue(result)!, "extracted delivery package compiles with actual runtime host");

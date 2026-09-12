@@ -171,7 +171,7 @@ internal static class Program
         Check(manifest.Name == "文本替换工具" && manifest.Id == "xfestudio.bulk-text-replacer" && manifest.Version == "1.2.0", "renamed manifest keeps existing tool ID and increments version");
         async Task BuildAsync(string root)
         {
-            var task = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [root, manifest, CancellationToken.None])!;
+            var task = (Task)service.GetMethod("BuildAsync", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, [root, manifest, CancellationToken.None, null])!;
             await task.WaitAsync(TimeSpan.FromMinutes(3));
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             Check((bool)result.GetType().GetProperty("Success")!.GetValue(result)!, "production host compilation: " + result.GetType().GetProperty("Message")!.GetValue(result));

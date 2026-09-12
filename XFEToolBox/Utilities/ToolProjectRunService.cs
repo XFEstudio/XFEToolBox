@@ -6,6 +6,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using XFEToolBox.Client.Core.Tools;
 using XFEToolBox.Core.Model;
 using XFEToolBox.Core.Tools;
 using XFEToolBox.WpfCore.Controls;
@@ -23,7 +24,8 @@ internal static class ToolProjectRunService
     public static async Task<ToolRunResult> BuildAsync(
         string workspaceRoot,
         ToolPackageManifest manifest,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<ToolPreparationProgress>? progress = null)
     {
         return await BuildAndRunCoreAsync(
             workspaceRoot,
@@ -32,13 +34,15 @@ internal static class ToolProjectRunService
             temporaryWorkspaceRoot: null,
             launchAfterBuild: false,
             runAsAdministrator: false,
-            cancellationToken);
+            cancellationToken,
+            progress);
     }
 
     public static async Task<ToolRunResult> BuildAndRunAsync(
         string workspaceRoot,
         ToolPackageManifest manifest,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<ToolPreparationProgress>? progress = null)
     {
         return await BuildAndRunCoreAsync(
             workspaceRoot,
@@ -47,7 +51,8 @@ internal static class ToolProjectRunService
             temporaryWorkspaceRoot: null,
             launchAfterBuild: true,
             runAsAdministrator: false,
-            cancellationToken);
+            cancellationToken,
+            progress);
     }
 
     public static async Task<ToolRunResult> BuildPackageAndRunAsync(
@@ -56,7 +61,8 @@ internal static class ToolProjectRunService
         string expectedVersion,
         string expectedSha256,
         bool runAsAdministrator = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        IProgress<ToolPreparationProgress>? progress = null)
     {
         var packageWorkspaceRoot = Path.Combine(
             Path.GetTempPath(),
@@ -81,7 +87,8 @@ internal static class ToolProjectRunService
                 packageWorkspaceRoot,
                 launchAfterBuild: true,
                 runAsAdministrator,
-                cancellationToken);
+                cancellationToken,
+                progress);
         }
         catch (OperationCanceledException)
         {
@@ -102,14 +109,23 @@ internal static class ToolProjectRunService
         string? temporaryWorkspaceRoot,
         bool launchAfterBuild,
         bool runAsAdministrator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IProgress<ToolPreparationProgress>? progress)
     {
-        var runtimeRoot = Path.Combine(Path.GetTempPath(), "XFEToolBox", "CodeStudioRuns", Guid.NewGuid().ToString("N"));
+        var toolchainManager = ToolchainManager.Default;
+        var runtimeRoot = toolchainManager.CreateRunDirectory();
         var outputRoot = Path.Combine(runtimeRoot, "output");
         Directory.CreateDirectory(runtimeRoot);
 
         try
         {
+            var toolchain = await toolchainManager.EnsureInstalledAsync(progress, cancellationToken);
+            progress?.Report(new("正在编译工具，首次编译需要获取依赖…"));
+            await File.WriteAllTextAsync(Path.Combine(runtimeRoot, "global.json"),
+                JsonSerializer.Serialize(new
+                {
+                    sdk = new { version = toolchain.SdkVersion, rollForward = "disable", allowPrerelease = false }
+                }), cancellationToken);
             var assemblyName = $"XFEToolRuntime_{Guid.NewGuid():N}";
             var hostAssemblyName = typeof(ToolProjectRunService).Assembly.GetName().Name
                                    ?? throw new InvalidOperationException("无法确定宿主程序集名称。");
@@ -128,7 +144,7 @@ internal static class ToolProjectRunService
             var toolIconPath = ResolveToolIconPath(preparedWorkspaceRoot, manifest.Icon);
             await File.WriteAllTextAsync(
                 projectPath,
-                CreateProjectFile(preparedWorkspaceRoot, assemblyName, hostAssemblyName, manifest.NuGetPackages),
+                CreateProjectFile(preparedWorkspaceRoot, assemblyName, hostAssemblyName, manifest.NuGetPackages, toolchain, outputRoot),
                 new UTF8Encoding(false),
                 cancellationToken);
             await File.WriteAllTextAsync(
@@ -137,7 +153,7 @@ internal static class ToolProjectRunService
                 new UTF8Encoding(false),
                 cancellationToken);
 
-            var buildInfo = new ProcessStartInfo("dotnet")
+            var buildInfo = new ProcessStartInfo(toolchain.DotNetPath)
             {
                 WorkingDirectory = runtimeRoot,
                 UseShellExecute = false,
@@ -145,19 +161,35 @@ internal static class ToolProjectRunService
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
-            buildInfo.ArgumentList.Add("build");
+            // AppHostDotNetSearch is embedded by publish, not by build.
+            buildInfo.ArgumentList.Add("publish");
             buildInfo.ArgumentList.Add(projectPath);
             buildInfo.ArgumentList.Add("--nologo");
+            buildInfo.ArgumentList.Add("--configuration");
+            buildInfo.ArgumentList.Add("Release");
+            buildInfo.ArgumentList.Add("--disable-build-servers");
             buildInfo.ArgumentList.Add("--output");
             buildInfo.ArgumentList.Add(outputRoot);
             buildInfo.ArgumentList.Add("--property:UseSharedCompilation=false");
             buildInfo.ArgumentList.Add("--property:RestoreIgnoreFailedSources=true");
+            toolchainManager.ConfigureBuildEnvironment(buildInfo, toolchain);
 
             using var buildProcess = Process.Start(buildInfo)
-                                     ?? throw new InvalidOperationException("无法启动 .NET SDK。请确认已安装 .NET 10 SDK。");
-            var standardOutputTask = buildProcess.StandardOutput.ReadToEndAsync(cancellationToken);
-            var standardErrorTask = buildProcess.StandardError.ReadToEndAsync(cancellationToken);
-            await buildProcess.WaitForExitAsync(cancellationToken);
+                                     ?? throw new InvalidOperationException("无法启动工具编译组件，请重试。");
+            var standardOutputTask = buildProcess.StandardOutput.ReadToEndAsync();
+            var standardErrorTask = buildProcess.StandardError.ReadToEndAsync();
+            try
+            {
+                await buildProcess.WaitForExitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                try { buildProcess.Kill(entireProcessTree: true); }
+                catch (InvalidOperationException) when (buildProcess.HasExited) { }
+                await buildProcess.WaitForExitAsync();
+                await Task.WhenAll(standardOutputTask, standardErrorTask);
+                throw;
+            }
             var buildOutput = (await standardOutputTask) + Environment.NewLine + (await standardErrorTask);
             if (buildProcess.ExitCode != 0)
             {
@@ -187,6 +219,7 @@ internal static class ToolProjectRunService
                 runtimeExecutable,
                 workspaceRoot,
                 requiresElevatedProcess);
+            progress?.Report(new("正在打开工具…"));
             var runtimeProcess = Process.Start(runInfo)
                                  ?? throw new InvalidOperationException("工具运行进程启动失败。");
             var runtimeStandardOutputTask = runInfo.RedirectStandardOutput
@@ -260,7 +293,9 @@ internal static class ToolProjectRunService
         string workspaceRoot,
         string assemblyName,
         string hostAssemblyName,
-        IReadOnlyCollection<ToolNuGetPackageReference>? nugetPackages)
+        IReadOnlyCollection<ToolNuGetPackageReference>? nugetPackages,
+        ToolchainInstallation? toolchain = null,
+        string? outputRoot = null)
     {
         var root = EscapeXml(Path.GetFullPath(workspaceRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         var coreAssembly = EscapeXml(typeof(ToolPackageManifest).Assembly.Location);
@@ -292,6 +327,19 @@ internal static class ToolProjectRunService
             packageReferences
                 .OrderBy(package => package.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(package => $"    <PackageReference Include=\"{EscapeXml(package.Key)}\" Version=\"{EscapeXml(package.Value)}\" />"));
+        var runtimeProperties = string.Empty;
+        if (toolchain is not null)
+        {
+            var relativeDotNet = Path.GetRelativePath(outputRoot ?? throw new ArgumentNullException(nameof(outputRoot)), toolchain.Root);
+            if (Path.IsPathRooted(relativeDotNet))
+                throw new InvalidOperationException("工具运行目录与运行组件必须位于同一磁盘。");
+            // Embedded in the native launcher: also works when UAC replaces the process environment.
+            runtimeProperties = $"""
+                     <RuntimeIdentifier>{EscapeXml(toolchain.RuntimeIdentifier)}</RuntimeIdentifier>
+                     <AppHostDotNetSearch>AppRelative</AppHostDotNetSearch>
+                     <AppHostRelativeDotNet>{EscapeXml(relativeDotNet)}</AppHostRelativeDotNet>
+                """;
+        }
         return $$"""
                  <Project Sdk="Microsoft.NET.Sdk">
                    <PropertyGroup>
@@ -300,6 +348,7 @@ internal static class ToolProjectRunService
                       <UseWPF>true</UseWPF>
                       <UseAppHost>true</UseAppHost>
                       <SelfContained>false</SelfContained>
+                 {{runtimeProperties}}
                      <Nullable>enable</Nullable>
                      <ImplicitUsings>enable</ImplicitUsings>
                      <AssemblyName>{{assemblyName}}</AssemblyName>

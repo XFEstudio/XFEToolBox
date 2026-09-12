@@ -26,7 +26,7 @@
 
 ## 推荐发布流程
 
-1. 发布 XFEToolBox 客户端，仅将软件文件压缩为 `Source.zip`，打包时排除旧的 `Installer.exe` 和临时 `InstallPackage.zip`。
+1. 以自包含方式发布 XFEToolBox 客户端（如 `dotnet publish XFEToolBox/XFEToolBox.Client.csproj -c Release -r win-x64 --self-contained true`），仅将软件文件压缩为 `Source.zip`，打包时排除旧的 `Installer.exe` 和临时 `InstallPackage.zip`。工具编译所需的私有组件会在首次使用时自动下载，不要把用户目录中的 `Toolchains` 缓存放入安装包。
 2. 将 `Source.zip` 放入 `XFEToolBox.Client.Installer/Resources/Resource`，然后发布安装器：
 
    ```powershell

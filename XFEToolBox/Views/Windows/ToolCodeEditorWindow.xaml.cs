@@ -22,6 +22,7 @@ using Ganss.Xss;
 using Markdig;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
+using XFEToolBox.Client.Core.Tools;
 using XFEToolBox.Client.Model;
 using XFEToolBox.Client.Utilities;
 using XFEToolBox.WpfCore.Windowing;
@@ -1149,7 +1150,8 @@ public partial class ToolCodeEditorWindow : Window
             SetHostStatus("正在保存并编译工具…");
             activity.Report(null, "正在保存并编译工具…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest, activity.CancellationToken);
+            var progress = CreateToolPreparationProgress(activity);
+            var result = await ToolProjectRunService.BuildAndRunAsync(_workspaceRoot, manifest, activity.CancellationToken, progress);
             if (!result.Success)
             {
                 SetHostStatus("工具编译失败");
@@ -1179,6 +1181,15 @@ public partial class ToolCodeEditorWindow : Window
         }
     }
 
+    private IProgress<ToolPreparationProgress> CreateToolPreparationProgress(ActivityHandle activity) =>
+        new Progress<ToolPreparationProgress>(item =>
+        {
+            if (RunButton.IsEnabled || activity.CancellationToken.IsCancellationRequested)
+                return;
+            SetHostStatus(item.Message);
+            activity.Report(item.Percentage, item.Message);
+        });
+
     private async void BuildProjectButton_Click(object sender, RoutedEventArgs e)
     {
         if (!_editorReady)
@@ -1195,7 +1206,8 @@ public partial class ToolCodeEditorWindow : Window
             SetHostStatus("正在保存并生成工具工程…");
             activity.Report(null, "正在保存并生成工具工程…");
             var manifest = await SaveAndReadManifestAsync();
-            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest, activity.CancellationToken);
+            var progress = CreateToolPreparationProgress(activity);
+            var result = await ToolProjectRunService.BuildAsync(_workspaceRoot, manifest, activity.CancellationToken, progress);
             if (!result.Success)
             {
                 SetHostStatus("工具生成失败");
