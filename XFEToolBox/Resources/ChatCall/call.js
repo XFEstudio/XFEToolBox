@@ -8,6 +8,10 @@ const state = {
   sourceNode: null,
   micGainNode: null,
   limiterNode: null,
+  relayNode: null,
+  relaySinkNode: null,
+  relaySequence: 0,
+  relayCaptureActive: false,
   peers: new Map(),
   participantNames: new Map(),
   micMuted: false,
@@ -78,6 +82,9 @@ async function handleHostMessage(message) {
     case 'webrtc.signal':
       await handleRemoteSignal(message.signalType, message.fromUserId, message.signal || {});
       break;
+    case 'call.relay-audio':
+      await handleRelayAudio(message.fromUserId, message.sequence, message.sampleRate, message.pcmBase64);
+      break;
     case 'realtime.state':
       if (message.state !== 'Connected') reportStatus('信令连接暂时中断，正在恢复…');
       break;
@@ -94,12 +101,10 @@ async function initialize(config) {
   state.noiseSuppression = config.startWithNoiseSuppression !== false;
   ui.noiseButton.classList.toggle('active', state.noiseSuppression);
   ui.noiseButton.setAttribute('aria-pressed', String(state.noiseSuppression));
-  ui.meshBadge.textContent = `小群 Mesh · 最多 ${config.maximumParticipants} 人`;
+  ui.meshBadge.textContent = `小群通话 · 最多 ${config.maximumParticipants} 人`;
 
-  const urls = (config.iceServers || []).flatMap(item => Array.isArray(item.urls) ? item.urls : [item.urls]);
-  const hasTurn = urls.some(url => typeof url === 'string' && /^(turn|turns):/i.test(url));
-  ui.turnBadge.textContent = hasTurn ? 'TURN 中继已配置' : '未配置 TURN · 复杂 NAT 可能失败';
-  ui.turnBadge.classList.toggle('warning', !hasTurn);
+  ui.turnBadge.textContent = 'WebRTC 优先 · 自动中继待命';
+  ui.turnBadge.classList.remove('warning');
 
   const supported = navigator.mediaDevices.getSupportedConstraints();
   ui.noiseBadge.textContent = supported.voiceIsolation
@@ -139,6 +144,7 @@ async function acquireMicrophone() {
   const oldRawStream = state.rawStream;
   const oldProcessedStream = state.processedStream;
   if (state.sourceNode) state.sourceNode.disconnect();
+  if (state.limiterNode) state.limiterNode.disconnect();
 
   const source = state.audioContext.createMediaStreamSource(nextRawStream);
   const highPass = state.audioContext.createBiquadFilter();
@@ -158,6 +164,8 @@ async function acquireMicrophone() {
   limiter.release.value = .08;
   const destination = state.audioContext.createMediaStreamDestination();
   source.connect(highPass).connect(lowPass).connect(gain).connect(limiter).connect(destination);
+  await ensureRelayCapture();
+  limiter.connect(state.relayNode);
 
   state.rawStream = nextRawStream;
   state.processedStream = destination.stream;
@@ -173,6 +181,39 @@ async function acquireMicrophone() {
   }
   oldRawStream?.getTracks().forEach(track => track.stop());
   oldProcessedStream?.getTracks().forEach(track => track.stop());
+}
+
+async function ensureRelayCapture() {
+  if (state.relayNode) return;
+  await state.audioContext.audioWorklet.addModule('relay-worklet.js');
+  const relayNode = new AudioWorkletNode(state.audioContext, 'relay-pcm-processor');
+  const relaySinkNode = state.audioContext.createGain();
+  relaySinkNode.gain.value = 0;
+  relayNode.connect(relaySinkNode).connect(state.audioContext.destination);
+  relayNode.port.onmessage = event => {
+    if (!state.relayCaptureActive || state.disposed || !(event.data instanceof ArrayBuffer)) return;
+    const bytes = new Uint8Array(event.data);
+    if (bytes.byteLength !== 640) return;
+    post({
+      type: 'relay-audio',
+      callId: state.config.callId,
+      sequence: state.relaySequence++,
+      sampleRate: 16000,
+      pcmBase64: bytesToBase64(bytes)
+    });
+  };
+  state.relayNode = relayNode;
+  state.relaySinkNode = relaySinkNode;
+  relayNode.port.postMessage({ active: false });
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    const chunk = bytes.subarray(index, Math.min(index + 0x8000, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }
 
 async function refreshMicrophoneList() {
@@ -200,7 +241,7 @@ function applyMicrophoneGain() {
 
 function renderSelfCard() {
   const card = createParticipantCard(state.config.selfUserId, state.config.selfDisplayName, true);
-  card.querySelector('.identity span').textContent = '本机 · WebRTC 音频处理';
+  card.querySelector('.identity span').textContent = '本机 · 降噪与自动中继就绪';
   card.querySelector('.connection-dot').classList.add('connected');
   ui.grid.prepend(card);
   updateParticipantCount();
@@ -241,7 +282,7 @@ async function reconcileParticipants(participants) {
 
 async function ensurePeer(userId, displayName, initiate) {
   if (state.peers.has(userId)) return state.peers.get(userId);
-  if (state.peers.size >= state.config.maximumParticipants - 1) throw new Error(`小群 Mesh 最多支持 ${state.config.maximumParticipants} 人。`);
+  if (state.peers.size >= state.config.maximumParticipants - 1) throw new Error(`小群通话最多支持 ${state.config.maximumParticipants} 人。`);
 
   const card = createParticipantCard(userId, displayName, false);
   const pc = new RTCPeerConnection({
@@ -250,7 +291,25 @@ async function ensurePeer(userId, displayName, initiate) {
     rtcpMuxPolicy: 'require',
     iceCandidatePoolSize: 2
   });
-  const peer = { userId, displayName, pc, card, gainNode: null, sourceNode: null, pendingIce: [], muted: false, volume: 1 };
+  const peer = {
+    userId,
+    displayName,
+    pc,
+    card,
+    gainNode: null,
+    sourceNode: null,
+    pendingIce: [],
+    muted: false,
+    volume: 1,
+    relayActive: false,
+    relayFallbackTimer: null,
+    relaySources: new Set(),
+    relayNextPlayTime: 0,
+    lastRelaySequence: -1,
+    directMediaReady: false,
+    directPacketsReceived: 0,
+    directPacketProgressAt: 0
+  };
   state.peers.set(userId, peer);
 
   const localTrack = state.processedStream.getAudioTracks()[0];
@@ -263,7 +322,9 @@ async function ensurePeer(userId, displayName, initiate) {
   pc.onconnectionstatechange = () => updatePeerConnectionState(peer);
   pc.oniceconnectionstatechange = () => updatePeerConnectionState(peer);
   bindPeerControls(peer);
+  armRelayFallback(peer, 3500);
   updateParticipantCount();
+  updateTransportBadge();
 
   if (initiate) {
     await pc.setLocalDescription(await pc.createOffer({ offerToReceiveAudio: true }));
@@ -287,12 +348,18 @@ function preferOpus(pc, sender) {
 function attachRemoteAudio(peer, stream) {
   if (peer.sourceNode) peer.sourceNode.disconnect();
   const source = state.audioContext.createMediaStreamSource(stream);
+  source.connect(ensurePeerGain(peer));
+  peer.sourceNode = source;
+  peer.card.querySelector('.identity span').textContent = '语音轨道已接收';
+}
+
+function ensurePeerGain(peer) {
+  if (peer.gainNode) return peer.gainNode;
   const gain = state.audioContext.createGain();
   gain.gain.value = peer.muted ? 0 : peer.volume;
-  source.connect(gain).connect(state.audioContext.destination);
-  peer.sourceNode = source;
+  gain.connect(state.audioContext.destination);
   peer.gainNode = gain;
-  peer.card.querySelector('.identity span').textContent = '语音轨道已接收';
+  return gain;
 }
 
 function bindPeerControls(peer) {
@@ -343,21 +410,134 @@ function sendSignal(signalType, targetUserId, detail) {
   post({ type: 'signal', callId: state.config.callId, signalType, targetUserId, payload });
 }
 
+async function handleRelayAudio(fromUserId, sequence, sampleRate, pcmBase64) {
+  if (state.disposed || !fromUserId || fromUserId === state.config.selfUserId || sampleRate !== 16000 ||
+      !Number.isSafeInteger(sequence) || sequence < 0 || typeof pcmBase64 !== 'string') return;
+  const displayName = state.participantNames.get(fromUserId) || fromUserId;
+  const peer = await ensurePeer(fromUserId, displayName, false);
+  if (peer.directMediaReady || sequence <= peer.lastRelaySequence) return;
+
+  let bytes;
+  try {
+    const binary = atob(pcmBase64);
+    if (binary.length !== 640) return;
+    bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+  } catch {
+    return;
+  }
+
+  peer.lastRelaySequence = sequence;
+  enablePeerRelay(peer);
+  const buffer = state.audioContext.createBuffer(1, 320, sampleRate);
+  const samples = buffer.getChannelData(0);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let index = 0; index < samples.length; index++)
+    samples[index] = view.getInt16(index * 2, true) / 32768;
+
+  const source = state.audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ensurePeerGain(peer));
+  const now = state.audioContext.currentTime;
+  if (peer.relayNextPlayTime < now || peer.relayNextPlayTime > now + .35)
+    peer.relayNextPlayTime = now + .06;
+  source.start(peer.relayNextPlayTime);
+  peer.relayNextPlayTime += buffer.duration;
+  peer.relaySources.add(source);
+  source.onended = () => peer.relaySources.delete(source);
+  const dot = peer.card.querySelector('.connection-dot');
+  dot.classList.add('connected');
+  dot.classList.remove('failed');
+  peer.card.querySelector('.identity span').textContent = '已连接 · WSS 自动中继';
+}
+
+function armRelayFallback(peer, delay) {
+  if (peer.relayFallbackTimer != null || peer.relayActive || peer.directMediaReady) return;
+  peer.relayFallbackTimer = setTimeout(() => {
+    peer.relayFallbackTimer = null;
+    if (!peer.directMediaReady) enablePeerRelay(peer);
+  }, delay);
+}
+
+function enablePeerRelay(peer) {
+  if (peer.directMediaReady) return;
+  if (!peer.relayActive) {
+    peer.relayActive = true;
+    peer.card.querySelector('.identity span').textContent = '正在启用自动中继';
+  }
+  setRelayCaptureState();
+  updateTransportBadge();
+}
+
+function disablePeerRelay(peer) {
+  if (peer.relayFallbackTimer != null) {
+    clearTimeout(peer.relayFallbackTimer);
+    peer.relayFallbackTimer = null;
+  }
+  peer.relayActive = false;
+  peer.relayNextPlayTime = 0;
+  for (const source of peer.relaySources) {
+    try { source.stop(); } catch { }
+  }
+  peer.relaySources.clear();
+  setRelayCaptureState();
+  updateTransportBadge();
+}
+
+function setRelayCaptureState() {
+  const active = [...state.peers.values()].some(peer => peer.relayActive);
+  if (state.relayCaptureActive === active) return;
+  state.relayCaptureActive = active;
+  state.relayNode?.port.postMessage({ active });
+}
+
+function updateTransportBadge() {
+  const peers = [...state.peers.values()];
+  const relaying = peers.some(peer => peer.relayActive);
+  const direct = peers.length > 0 && peers.every(peer => peer.directMediaReady);
+  ui.turnBadge.textContent = relaying
+    ? 'WSS 自动中继'
+    : direct
+      ? 'WebRTC 直连'
+      : 'WebRTC 优先 · 自动中继待命';
+  ui.turnBadge.classList.toggle('relay', relaying);
+  ui.turnBadge.classList.remove('warning');
+}
+
 function updatePeerConnectionState(peer) {
   const connectionState = peer.pc.connectionState;
   const dot = peer.card.querySelector('.connection-dot');
   dot.classList.toggle('connected', connectionState === 'connected');
   dot.classList.toggle('failed', connectionState === 'failed' || connectionState === 'closed');
-  peer.card.querySelector('.identity span').textContent = ({
-    new: '等待协商', connecting: '正在建立低延迟链路', connected: '已连接 · Opus',
-    disconnected: '连接暂时中断', failed: '连接失败', closed: '已离开'
-  })[connectionState] || connectionState;
+  if (connectionState === 'connected') {
+    if (peer.directMediaReady) {
+      disablePeerRelay(peer);
+      peer.card.querySelector('.identity span').textContent = '已连接 · WebRTC/Opus';
+    } else {
+      armRelayFallback(peer, 2500);
+      if (!peer.relayActive) peer.card.querySelector('.identity span').textContent = '已连接 · 正在验证音频';
+    }
+  } else if (connectionState === 'failed') {
+    enablePeerRelay(peer);
+  } else if (connectionState === 'disconnected') {
+    armRelayFallback(peer, 800);
+  } else if (connectionState === 'new' || connectionState === 'connecting') {
+    armRelayFallback(peer, 3500);
+  }
+  if (!peer.relayActive && connectionState !== 'connected') {
+    peer.card.querySelector('.identity span').textContent = ({
+      new: '等待协商', connecting: '正在建立低延迟链路', connected: '已连接 · WebRTC/Opus',
+      disconnected: '连接暂时中断', failed: '正在切换自动中继', closed: '已离开'
+    })[connectionState] || connectionState;
+  }
+  updateTransportBadge();
 }
 
 function removePeer(userId) {
   const peer = state.peers.get(userId);
   if (!peer) return;
+  disablePeerRelay(peer);
   peer.sourceNode?.disconnect();
+  peer.gainNode?.disconnect();
   peer.pc.ontrack = null;
   peer.pc.onicecandidate = null;
   peer.pc.close();
@@ -365,6 +545,7 @@ function removePeer(userId) {
   state.peers.delete(userId);
   state.participantNames.delete(userId);
   updateParticipantCount();
+  updateTransportBadge();
 }
 
 async function updateNetworkMetrics() {
@@ -375,15 +556,31 @@ async function updateNetworkMetrics() {
   let received = 0;
   for (const peer of state.peers.values()) {
     const stats = await peer.pc.getStats();
+    let packetsReceived = 0;
     stats.forEach(report => {
       if (report.type === 'candidate-pair' && report.state === 'succeeded' && Number.isFinite(report.currentRoundTripTime))
         maxRtt = Math.max(maxRtt || 0, report.currentRoundTripTime);
       if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+        packetsReceived += Math.max(0, report.packetsReceived || 0);
         if (Number.isFinite(report.jitter)) maxJitter = Math.max(maxJitter || 0, report.jitter);
         lost += Math.max(0, report.packetsLost || 0);
         received += Math.max(0, report.packetsReceived || 0);
       }
     });
+    if (packetsReceived > peer.directPacketsReceived) {
+      peer.directPacketsReceived = packetsReceived;
+      peer.directPacketProgressAt = performance.now();
+      if (!peer.directMediaReady) {
+        peer.directMediaReady = true;
+        disablePeerRelay(peer);
+        peer.card.querySelector('.identity span').textContent = '已连接 · WebRTC/Opus';
+      }
+    } else if (peer.directMediaReady && performance.now() - peer.directPacketProgressAt > 5000) {
+      peer.directMediaReady = false;
+      enablePeerRelay(peer);
+    } else if (!peer.directMediaReady) {
+      armRelayFallback(peer, 1200);
+    }
   }
   ui.roundTrip.textContent = maxRtt == null ? '—' : `${Math.round(maxRtt * 1000)} ms`;
   ui.jitter.textContent = maxJitter == null ? '—' : `${Math.round(maxJitter * 1000)} ms`;
@@ -449,6 +646,8 @@ async function disposeCall() {
   state.sourceNode?.disconnect();
   state.micGainNode?.disconnect();
   state.limiterNode?.disconnect();
+  state.relayNode?.disconnect();
+  state.relaySinkNode?.disconnect();
   state.rawStream?.getTracks().forEach(track => track.stop());
   state.processedStream?.getTracks().forEach(track => track.stop());
   state.rawStream = null;
@@ -456,6 +655,8 @@ async function disposeCall() {
   state.sourceNode = null;
   state.micGainNode = null;
   state.limiterNode = null;
+  state.relayNode = null;
+  state.relaySinkNode = null;
   const context = state.audioContext;
   state.audioContext = null;
   if (context && context.state !== 'closed') {

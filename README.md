@@ -17,7 +17,8 @@ XFEToolBox 是一个基于 .NET 10 与 WPF 的 Windows 桌面工具箱。项目�
 ## 环境要求
 
 - Windows 10 1809（Build 17763）或更高版本，用于运行 WPF 客户端。
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。
+- 使用自包含发布版无需安装 .NET；首次打开或编译工具时，应用会自动从 Microsoft 下载编译与运行组件到用户私有目录，之后复用缓存。首次准备组件及获取新的 NuGet 依赖需要联网。
+- 从源码开发或构建本仓库需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。
 - Microsoft Edge WebView2 Runtime，用于 Code Studio 编辑器和 Markdown 预览。
 - 可选：支持 .NET 10 与 WPF 的 Visual Studio。
 

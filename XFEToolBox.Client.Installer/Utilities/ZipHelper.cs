@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.IO.Compression;
 
 namespace XFEToolBox.Client.Installer.Utilities
@@ -7,7 +7,8 @@ namespace XFEToolBox.Client.Installer.Utilities
     {
         public static void ExtraZipFile(string zipPath, string targetPath)
         {
-            using var zipArchive = ZipFile.OpenRead(zipPath);
+            using var zipArchive = InstallerFileOperations.ExecuteWithRetry(
+                () => ZipFile.OpenRead(zipPath), zipPath, "读取安装包");
             ExtraZip(zipArchive, targetPath);
         }
 
@@ -43,7 +44,8 @@ namespace XFEToolBox.Client.Installer.Utilities
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-                entry.ExtractToFile(filePath, true);
+                InstallerFileOperations.ExecuteWithRetry(
+                    () => entry.ExtractToFile(filePath, true), filePath, "解压");
             }
         }
     }

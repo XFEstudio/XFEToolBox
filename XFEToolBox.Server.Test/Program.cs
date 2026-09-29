@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Net.WebSockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using XFEToolBox.Core.Chat;
 using XFEToolBox.Core.Tools;
@@ -31,6 +33,8 @@ var tests = new (string Name, Action Run)[]
     ("聊天附件分块传输校验完整性和访问权限", ChatAttachmentTransferIsAuthorizedAndVerified),
     ("实时票据绑定用途且只能消费一次", ChatRealtimeTicketIsAudienceBoundAndSingleUse),
     ("实时票据限制每用户和全局待使用数量", ChatRealtimeTicketLimitsAreEnforced),
+    ("自动语音中继只接受固定低延迟 PCM 帧", ChatRelayAudioFramesAreStrictlyValidated),
+    ("自动语音中继可在已鉴权通话的两端转发", ChatRelayAudioIsForwardedBetweenCallParticipants),
     ("EdgeOne 回源请求可解析真实客户端 IP", ForwardedClientIpIsResolved)
 };
 
@@ -487,6 +491,130 @@ static void ChatRealtimeTicketLimitsAreEnforced()
     Assert(store.OutstandingTicketCount == 3, "消费票据后没有释放全局配额。");
 }
 
+static void ChatRelayAudioFramesAreStrictlyValidated()
+{
+    var pcm = new byte[ChatRelayAudioFrame.RequiredPcmByteCount];
+    RandomNumberGenerator.Fill(pcm);
+    var validPayload = JsonSerializer.SerializeToElement(new
+    {
+        sequence = 42,
+        sampleRate = ChatRelayAudioFrame.RequiredSampleRate,
+        pcmBase64 = Convert.ToBase64String(pcm)
+    });
+    Assert(ChatRelayAudioFrame.TryParse(validPayload, out var frame), "有效的 20 ms PCM 帧被拒绝。");
+    Assert(frame.Sequence == 42 && frame.SampleRate == 16_000, "中继语音帧字段解析错误。");
+
+    var wrongRate = JsonSerializer.SerializeToElement(new
+    {
+        sequence = 43,
+        sampleRate = 48_000,
+        pcmBase64 = Convert.ToBase64String(pcm)
+    });
+    Assert(!ChatRelayAudioFrame.TryParse(wrongRate, out _), "中继接受了错误采样率。");
+
+    var wrongSize = JsonSerializer.SerializeToElement(new
+    {
+        sequence = 44,
+        sampleRate = 16_000,
+        pcmBase64 = Convert.ToBase64String(new byte[638])
+    });
+    Assert(!ChatRelayAudioFrame.TryParse(wrongSize, out _), "中继接受了错误帧长度。");
+}
+
+static void ChatRelayAudioIsForwardedBetweenCallParticipants() => WithChatRepository((repository, attachmentRoot) =>
+{
+    var friendRequest = repository.CreateFriendRequestAsync("alice", "bob", null).GetAwaiter().GetResult();
+    var accepted = repository.RespondToFriendRequestAsync(friendRequest.Id, "bob", accept: true).GetAwaiter().GetResult();
+    Assert(accepted.Status == ChatFriendRequestStatus.Accepted, "测试好友关系建立失败。");
+    var ticketStore = new ChatRealtimeTicketStore();
+    var broker = new ChatRealtimeBroker(repository, ticketStore);
+    var alice = new TestWebSocket();
+    var bob = new TestWebSocket();
+    try
+    {
+        RegisterTestSocket(broker, ticketStore, alice, "alice", "Alice");
+        RegisterTestSocket(broker, ticketStore, bob, "bob", "Bob");
+        const string callId = "relay-audio-test-call";
+        SendTestFrame(broker, alice, "call.invite", new
+        {
+            callId,
+            targetType = "user",
+            targetId = "bob",
+            media = "audio"
+        });
+        Assert(bob.WaitForMessage("call.invite", TimeSpan.FromSeconds(3)), "被叫端没有收到通话邀请。");
+
+        SendTestFrame(broker, bob, "call.accept", new { callId });
+        Assert(alice.WaitForMessage("call.accept", TimeSpan.FromSeconds(3)), "主叫端没有看到被叫端加入。");
+        var pcmBase64 = Convert.ToBase64String(new byte[ChatRelayAudioFrame.RequiredPcmByteCount]);
+        SendTestFrame(broker, alice, "call.audio", new
+        {
+            callId,
+            sequence = 7,
+            sampleRate = ChatRelayAudioFrame.RequiredSampleRate,
+            pcmBase64
+        });
+
+        Assert(bob.WaitForMessage("call.audio", TimeSpan.FromSeconds(3)), "中继语音没有到达另一端。");
+        var relayed = bob.Messages.Last(message => GetEnvelopeType(message) == "call.audio");
+        using var document = JsonDocument.Parse(relayed);
+        var payload = document.RootElement.GetProperty("payload");
+        Assert(payload.GetProperty("fromUserId").GetString() == "alice", "中继语音发送者被伪造或丢失。");
+        Assert(payload.GetProperty("sequence").GetInt64() == 7, "中继语音序号没有保留。");
+        Assert(!alice.Messages.Any(message => GetEnvelopeType(message) == "call.audio"), "服务器把中继语音回送给了发送者。");
+
+        for (var sequence = 8; sequence < 108; sequence++)
+            SendTestFrame(broker, alice, "call.audio", new
+            {
+                callId,
+                sequence,
+                sampleRate = ChatRelayAudioFrame.RequiredSampleRate,
+                pcmBase64
+            });
+        Assert(bob.WaitForMessageCount("call.audio", 101, TimeSpan.FromSeconds(3)),
+            "连续中继语音帧发生丢失或被普通事件限流误拦截。");
+    }
+    finally
+    {
+        broker.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        alice.Dispose();
+        bob.Dispose();
+        GC.KeepAlive(attachmentRoot);
+    }
+});
+
+static void RegisterTestSocket(
+    ChatRealtimeBroker broker,
+    ChatRealtimeTicketStore ticketStore,
+    TestWebSocket socket,
+    string userId,
+    string displayName)
+{
+    var issued = ticketStore.Issue(userId, userId, displayName, "server-test");
+    var uri = new Uri("wss://test.invalid/chat/realtime" +
+                      $"?ticket={Uri.EscapeDataString(issued.Ticket)}" +
+                      $"&audience={Uri.EscapeDataString(issued.Audience)}" +
+                      $"&channel={Uri.EscapeDataString(issued.Channel)}");
+    Assert(broker.TryRegister(socket, uri, out var error), $"测试实时连接注册失败：{error}");
+}
+
+static void SendTestFrame(ChatRealtimeBroker broker, TestWebSocket socket, string type, object payload)
+{
+    var envelope = new ChatRealtimeEnvelope
+    {
+        Type = type,
+        Payload = JsonSerializer.SerializeToElement(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+    };
+    var json = JsonSerializer.Serialize(envelope, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    broker.ReceiveFrame(socket, json, endOfMessage: true);
+}
+
+static string? GetEnvelopeType(string json)
+{
+    using var document = JsonDocument.Parse(json);
+    return document.RootElement.TryGetProperty("type", out var type) ? type.GetString() : null;
+}
+
 static void ForwardedClientIpIsResolved()
 {
     Assert(
@@ -616,4 +744,85 @@ static void AddBytes(ZipArchive archive, string path, byte[] content)
 static void Assert(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+sealed class TestWebSocket : WebSocket
+{
+    private readonly System.Collections.Concurrent.ConcurrentQueue<string> _messages = new();
+    private readonly AutoResetEvent _messageReceived = new(false);
+    private WebSocketState _state = WebSocketState.Open;
+    private WebSocketCloseStatus? _closeStatus;
+    private string? _closeStatusDescription;
+
+    public IReadOnlyList<string> Messages => _messages.ToArray();
+
+    public override WebSocketCloseStatus? CloseStatus => _closeStatus;
+
+    public override string? CloseStatusDescription => _closeStatusDescription;
+
+    public override WebSocketState State => _state;
+
+    public override string? SubProtocol => null;
+
+    public bool WaitForMessage(string type, TimeSpan timeout)
+        => WaitForMessageCount(type, 1, timeout);
+
+    public bool WaitForMessageCount(string type, int expectedCount, TimeSpan timeout)
+    {
+        var deadline = Stopwatch.GetTimestamp() + (long)(timeout.TotalSeconds * Stopwatch.Frequency);
+        while (Stopwatch.GetTimestamp() < deadline)
+        {
+            if (_messages.Count(message => MessageHasType(message, type)) >= expectedCount) return true;
+            _messageReceived.WaitOne(TimeSpan.FromMilliseconds(20));
+        }
+        return _messages.Count(message => MessageHasType(message, type)) >= expectedCount;
+    }
+
+    private static bool MessageHasType(string json, string expectedType)
+    {
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.TryGetProperty("type", out var type) &&
+               string.Equals(type.GetString(), expectedType, StringComparison.Ordinal);
+    }
+
+    public override void Abort() => _state = WebSocketState.Aborted;
+
+    public override Task CloseAsync(
+        WebSocketCloseStatus closeStatus,
+        string? statusDescription,
+        CancellationToken cancellationToken)
+    {
+        _closeStatus = closeStatus;
+        _closeStatusDescription = statusDescription;
+        _state = WebSocketState.Closed;
+        return Task.CompletedTask;
+    }
+
+    public override Task CloseOutputAsync(
+        WebSocketCloseStatus closeStatus,
+        string? statusDescription,
+        CancellationToken cancellationToken) =>
+        CloseAsync(closeStatus, statusDescription, cancellationToken);
+
+    public override void Dispose()
+    {
+        _state = WebSocketState.Closed;
+        _messageReceived.Dispose();
+    }
+
+    public override Task<WebSocketReceiveResult> ReceiveAsync(
+        ArraySegment<byte> buffer,
+        CancellationToken cancellationToken) =>
+        throw new NotSupportedException();
+
+    public override Task SendAsync(
+        ArraySegment<byte> buffer,
+        WebSocketMessageType messageType,
+        bool endOfMessage,
+        CancellationToken cancellationToken)
+    {
+        _messages.Enqueue(Encoding.UTF8.GetString(buffer));
+        _messageReceived.Set();
+        return Task.CompletedTask;
+    }
 }

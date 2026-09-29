@@ -23,6 +23,7 @@ h1 { margin: 8px 0 4px; font-size: 30px; letter-spacing: -.04em; }
 .badge { padding: 7px 10px; border: 1px solid #3d4260; border-radius: 999px; background: rgba(42,46,63,.66); color: #cfd3ff; font-size: 10px; }
 .badge.muted { color: #a9afbf; }
 .badge.warning { border-color: #665133; color: #e8bd75; background: rgba(75,55,29,.5); }
+.badge.relay { border-color: #3c7167; color: #8ee8cf; background: rgba(26,83,70,.45); }
 
 .metrics { display: grid; grid-template-columns: repeat(4,minmax(120px,1fr)); gap: 10px; margin: 22px 0; }
 .metrics div { border: 1px solid #292d3a; border-radius: 13px; padding: 15px 17px; background: rgba(24,27,36,.76); }

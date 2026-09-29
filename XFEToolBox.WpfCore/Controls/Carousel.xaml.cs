@@ -19,6 +19,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
     private readonly DispatcherTimer timer;
     private readonly HashSet<CarouselImageItem> subscribedItems = [];
     private int currentIndex = -1;
+    private int transitionVersion;
     private CarouselImageItem? currentItem;
 
     #region Dependency properties
@@ -209,9 +210,17 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
         RestartTimer();
     }
 
-    private void Carousel_Unloaded(object sender, RoutedEventArgs e) => timer.Stop();
+    private void Carousel_Unloaded(object sender, RoutedEventArgs e)
+    {
+        timer.Stop();
+        ShowImmediately(CurrentImageSource);
+    }
 
-    private void Carousel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => RestartTimer();
+    private void Carousel_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (!IsVisible) ShowImmediately(CurrentImageSource);
+        RestartTimer();
+    }
 
     private void ImageViewport_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -323,8 +332,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
             CurrentImageSource = null;
             CurrentTitle = string.Empty;
             CurrentBadge = string.Empty;
-            ImageFront.Source = null;
-            ImageBack.Source = null;
+            ShowImmediately(null);
             NotifyStateChanged();
             return;
         }
@@ -351,6 +359,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
     private void ShowImmediately(ImageSource? image)
     {
+        ++transitionVersion;
         ImageFront.BeginAnimation(OpacityProperty, null);
         ImageBack.BeginAnimation(OpacityProperty, null);
         ImageFront.Source = image;
@@ -361,9 +370,16 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
     private void BeginCrossFade(ImageSource? image)
     {
+        if (!IsLoaded || !IsVisible)
+        {
+            ShowImmediately(image);
+            return;
+        }
+
         ImageFront.BeginAnimation(OpacityProperty, null);
         ImageBack.BeginAnimation(OpacityProperty, null);
 
+        var version = ++transitionVersion;
         ImageBack.Source = ImageFront.Source;
         ImageBack.Opacity = ImageBack.Source is null ? 0 : 1;
         ImageFront.Source = image;
@@ -376,8 +392,7 @@ public partial class Carousel : UserControl, INotifyPropertyChanged
 
         fadeOut.Completed += (_, _) =>
         {
-            ImageBack.Source = null;
-            ImageBack.Opacity = 0;
+            if (version == transitionVersion) ShowImmediately(image);
         };
 
         ImageBack.BeginAnimation(OpacityProperty, fadeOut, HandoffBehavior.SnapshotAndReplace);

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <OutputType>Exe</OutputType><TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+  <UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
+  <EnableDefaultCompileItems>false</EnableDefaultCompileItems><EnableDefaultPageItems>false</EnableDefaultPageItems>
+  <StartupObject>ProgramDebugger.Validation.Program</StartupObject>
+  <ToolWorkspace Condition="'$(ToolWorkspace)' == ''">$(LOCALAPPDATA)\XFEToolBox\CrossVersion\EditorWorkspaces\ProgramDebugger</ToolWorkspace>
+ </PropertyGroup>
+ <ItemGroup>
+  <Compile Include="Program.cs"/><Compile Include="$(ToolWorkspace)\Code\**\*.cs" Link="Tool\%(RecursiveDir)%(Filename)%(Extension)"/>
+  <Page Include="$(ToolWorkspace)\Code\**\*.xaml" Link="Tool\%(RecursiveDir)%(Filename)%(Extension)"/>
+  <ProjectReference Include="..\..\XFEToolBox\XFEToolBox.Client.csproj"/>
+  <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2"/>
+ </ItemGroup>
+</Project>
