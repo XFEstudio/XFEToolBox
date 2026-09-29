@@ -1,11 +1,13 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls">
+                    xmlns:controls="clr-namespace:XFEToolBox.WpfCore.Controls"
+                    xmlns:behaviors="clr-namespace:XFEToolBox.WpfCore.Behaviors">
 
     <BooleanToVisibilityConverter x:Key="TimePickerBooleanToVisibilityConverter"/>
 
     <!-- 统一进度控件。 -->
     <Style x:Key="UnifiedProgressBarStyle" TargetType="ProgressBar">
+        <Setter Property="behaviors:AnimationLifecycle.IsEnabled" Value="True"/>
         <Setter Property="Height" Value="8"/>
         <Setter Property="MinWidth" Value="80"/>
         <Setter Property="Foreground" Value="{DynamicResource MainColor}"/>
@@ -27,10 +29,14 @@
                         </Grid>
                     </controls:RoundedClipBorder>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsIndeterminate" Value="True">
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsIndeterminate" Value="True"/>
+                                <Condition Property="behaviors:AnimationLifecycle.IsActive" Value="True"/>
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="PART_Indicator" Property="Visibility" Value="Collapsed"/>
                             <Setter TargetName="IndeterminateBar" Property="Visibility" Value="Visible"/>
-                            <Trigger.EnterActions>
+                            <MultiTrigger.EnterActions>
                                 <BeginStoryboard x:Name="IndeterminateStoryboard">
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="IndeterminateTransform"
@@ -38,11 +44,11 @@
                                                          Duration="0:0:1.35" RepeatBehavior="Forever"/>
                                     </Storyboard>
                                 </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <StopStoryboard BeginStoryboardName="IndeterminateStoryboard"/>
-                            </Trigger.ExitActions>
-                        </Trigger>
+                            </MultiTrigger.EnterActions>
+                            <MultiTrigger.ExitActions>
+                                <RemoveStoryboard BeginStoryboardName="IndeterminateStoryboard"/>
+                            </MultiTrigger.ExitActions>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.48"/>
                         </Trigger>

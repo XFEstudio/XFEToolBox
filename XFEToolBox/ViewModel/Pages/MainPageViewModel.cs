@@ -32,7 +32,11 @@ public partial class MainPageViewModel : ObservableObject
     private readonly DispatcherTimer adminRefreshTimer;
     private bool isAdminOverviewLoading;
     private bool hasAdminOverviewSnapshot;
-    private bool hasRecentUsageSnapshot;
+    private bool isPageLoaded;
+    private bool dashboardRefreshRequested;
+    private Task? dashboardRefreshTask;
+    private int dashboardRefreshQueued;
+    private int activityRefreshQueued;
 
     public MainPage MainPage { get; }
 
@@ -44,7 +48,7 @@ public partial class MainPageViewModel : ObservableObject
         ClientSession.SessionChanged += ClientSession_SessionChanged;
         RecentUsageService.Changed += RecentUsageService_Changed;
         PinnedItemService.Changed += DashboardData_Changed;
-        ActivityCenterService.Changed += DashboardData_Changed;
+        ActivityCenterService.Changed += ActivityCenterService_Changed;
         if (Application.Current is App app)
             app.GlobalHotkeyStatusChanged += (_, _) => MainPage.Dispatcher.InvokeAsync(
                 () => OnPropertyChanged(nameof(LauncherHotkeyHint)));
@@ -85,39 +89,66 @@ public partial class MainPageViewModel : ObservableObject
         ? SystemProfile.LauncherHotkey.Replace("+", " + ", StringComparison.Ordinal)
         : "快捷键已禁用";
 
-    private async void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
+    private void MainPage_Loaded(object sender, System.Windows.RoutedEventArgs e)
     {
-        if (!hasRecentUsageSnapshot)
-            RefreshRecentUsage();
-        await RefreshDashboardAsync();
+        isPageLoaded = true;
+        QueueDashboardRefresh();
+        QueueActivityRefresh();
         if (!MainPage.mainCarousel.HasItems)
             _ = MainPage.Dispatcher.InvokeAsync(
-                async () => await ReloadAsync(),
+                async () => { if (isPageLoaded) await ReloadAsync(); },
                 DispatcherPriority.ContextIdle);
-        await LoadAdminOverviewAsync();
-        if (ClientSession.IsAdministrator) adminRefreshTimer.Start();
+        _ = MainPage.Dispatcher.InvokeAsync(async () =>
+        {
+            if (!isPageLoaded) return;
+            await LoadAdminOverviewAsync();
+            if (isPageLoaded && ClientSession.IsAdministrator) adminRefreshTimer.Start();
+        }, DispatcherPriority.Background);
     }
 
-    private void MainPage_Unloaded(object sender, RoutedEventArgs e) => adminRefreshTimer.Stop();
+    private void MainPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        isPageLoaded = false;
+        adminRefreshTimer.Stop();
+    }
 
     private async void AdminRefreshTimer_Tick(object? sender, EventArgs e) => await LoadAdminOverviewAsync();
 
     private void ClientSession_SessionChanged(object? sender, EventArgs e) => MainPage.Dispatcher.InvokeAsync(async () =>
     {
+        if (!isPageLoaded) return;
         await LoadAdminOverviewAsync();
-        if (ClientSession.IsAdministrator && MainPage.IsVisible) adminRefreshTimer.Start();
+        if (ClientSession.IsAdministrator && isPageLoaded) adminRefreshTimer.Start();
         else adminRefreshTimer.Stop();
-    });
+    }, DispatcherPriority.Background);
 
-    private void RecentUsageService_Changed(object? sender, EventArgs e) =>
-        MainPage.Dispatcher.InvokeAsync(async () =>
+    private void RecentUsageService_Changed(object? sender, EventArgs e) => QueueDashboardRefresh();
+
+    private void DashboardData_Changed(object? sender, EventArgs e) => QueueDashboardRefresh();
+
+    private void ActivityCenterService_Changed(object? sender, EventArgs e) => QueueActivityRefresh();
+
+    private void QueueDashboardRefresh()
+    {
+        if (!Volatile.Read(ref isPageLoaded)) return;
+        if (Interlocked.Exchange(ref dashboardRefreshQueued, 1) != 0) return;
+        _ = MainPage.Dispatcher.InvokeAsync(() =>
         {
-            RefreshRecentUsage();
-            await RefreshDashboardAsync();
-        });
+            Interlocked.Exchange(ref dashboardRefreshQueued, 0);
+            if (isPageLoaded) _ = RefreshDashboardAsync();
+        }, DispatcherPriority.Background);
+    }
 
-    private void DashboardData_Changed(object? sender, EventArgs e) =>
-        MainPage.Dispatcher.InvokeAsync(RefreshDashboardAsync);
+    private void QueueActivityRefresh()
+    {
+        if (!Volatile.Read(ref isPageLoaded)) return;
+        if (Interlocked.Exchange(ref activityRefreshQueued, 1) != 0) return;
+        _ = MainPage.Dispatcher.InvokeAsync(() =>
+        {
+            Interlocked.Exchange(ref activityRefreshQueued, 0);
+            if (isPageLoaded) RefreshActivities();
+        }, DispatcherPriority.Background);
+    }
 
     public async Task OpenRecentItemAsync(RecentUsageCardViewModel card)
     {
@@ -162,9 +193,9 @@ public partial class MainPageViewModel : ObservableObject
 
     public bool TogglePinned(LauncherItemViewModel item) => item.TogglePinned();
 
-    private void RefreshRecentUsage()
+    private void RefreshRecentUsage(IReadOnlyList<RecentUsageEntry> savedEntries)
     {
-        var entries = RecentUsageService.GetRecent()
+        var entries = savedEntries
             .Where(entry => entry.Kind is RecentUsageKind.Tool or RecentUsageKind.Software or RecentUsageKind.Project)
             .Take(MaximumVisibleRecentItems)
             .ToArray();
@@ -189,37 +220,72 @@ public partial class MainPageViewModel : ObservableObject
         while (RecentItems.Count > recent.Length)
             RecentItems.RemoveAt(RecentItems.Count - 1);
 
-        hasRecentUsageSnapshot = true;
         RecentItemsVisibility = recent.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentEmptyVisibility = recent.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         RecentUsageCountText = $"{recent.Length} 项";
     }
 
-    private async Task RefreshDashboardAsync()
+    private Task RefreshDashboardAsync()
     {
-        var quickAccess = (await LauncherService.GetQuickAccessAsync())
-            .Select(item => new LauncherItemViewModel(item))
-            .ToArray();
-        var latestTools = (await LauncherService.GetRecentlyUpdatedToolsAsync())
-            .Select(item => new LauncherItemViewModel(item))
-            .ToArray();
-        var activities = ActivityCenterService.GetSnapshot(4);
+        dashboardRefreshRequested = true;
+        if (dashboardRefreshTask is { IsCompleted: false }) return dashboardRefreshTask;
+        return dashboardRefreshTask = RefreshDashboardCoreAsync();
+    }
 
-        ReplaceItems(QuickAccessItems, quickAccess);
-        ReplaceItems(RecentlyUpdatedTools, latestTools);
-        ReplaceItems(ActivityItems, activities);
-        QuickAccessVisibility = QuickAccessItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        LatestToolsVisibility = RecentlyUpdatedTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    private async Task RefreshDashboardCoreAsync()
+    {
+        while (dashboardRefreshRequested && isPageLoaded)
+        {
+            dashboardRefreshRequested = false;
+            try
+            {
+                var recentTask = Task.Run(() => RecentUsageService.GetRecent());
+                var quickTask = LauncherService.GetQuickAccessAsync();
+                var latestTask = LauncherService.GetRecentlyUpdatedToolsAsync();
+                await Task.WhenAll(recentTask, quickTask, latestTask);
+                if (!isPageLoaded) return;
+                if (dashboardRefreshRequested) continue;
+
+                RefreshRecentUsage(await recentTask);
+                UpdateLauncherItems(QuickAccessItems, await quickTask);
+                UpdateLauncherItems(RecentlyUpdatedTools, await latestTask);
+                QuickAccessVisibility = QuickAccessItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                LatestToolsVisibility = RecentlyUpdatedTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception exception)
+            {
+                Debug.WriteLine($"主页本地内容刷新失败：{exception}");
+            }
+        }
+    }
+
+    private void RefreshActivities()
+    {
+        SynchronizeItems(ActivityItems, ActivityCenterService.GetSnapshot(4));
         ActivitySectionVisibility = ActivityItems.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ActivityCountText = ActivityCenterService.ActiveCount > 0
             ? $"{ActivityCenterService.ActiveCount} 项进行中"
             : ActivityItems.Count > 0 ? "最近活动" : "暂无活动";
     }
 
-    private static void ReplaceItems<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
+    internal static void UpdateLauncherItems(ObservableCollection<LauncherItemViewModel> target, IReadOnlyList<LauncherItem> source)
     {
-        target.Clear();
-        foreach (var item in source) target.Add(item);
+        var existing = target.ToDictionary(card => card.Item.Key, StringComparer.OrdinalIgnoreCase);
+        var cards = source.Select(item => existing.TryGetValue(item.Key, out var card) && card.TryUpdate(item)
+            ? card : new LauncherItemViewModel(item)).ToArray();
+        SynchronizeItems(target, cards);
+    }
+
+    internal static void SynchronizeItems<T>(ObservableCollection<T> target, IReadOnlyList<T> source)
+    {
+        for (var index = 0; index < source.Count; index++)
+        {
+            if (index < target.Count && EqualityComparer<T>.Default.Equals(target[index], source[index])) continue;
+            var previousIndex = target.IndexOf(source[index]);
+            if (previousIndex >= 0) target.Move(previousIndex, index);
+            else target.Insert(index, source[index]);
+        }
+        while (target.Count > source.Count) target.RemoveAt(target.Count - 1);
     }
 
     private static string CreateRecentUsageKey(RecentUsageEntry entry) =>
@@ -321,7 +387,7 @@ public partial class MainPageViewModel : ObservableObject
 
             foreach (var downloadedCover in downloadedCovers.OfType<DownloadedCover>())
             {
-                var image = CreateBitmapImage(downloadedCover.ImageBytes);
+                var image = await Task.Run(() => CreateBitmapImage(downloadedCover.ImageBytes));
                 var video = downloadedCover.Candidate.Video;
                 var videoUrl = $"https://www.bilibili.com/video/{video.Bvid}";
                 carouselItems.Add(new CarouselImageItem

@@ -1,0 +1,80 @@
+using System.IO;
+using System.Text.Json;
+using System.Windows.Threading;
+using XFEToolBox.Tools.VideoStudio;
+
+namespace VideoStudio.Validation;
+internal static partial class Program
+{
+    private static MainPageViewModel NewVm() => new() { FfmpegPath = ffmpeg, FfprobePath = ffprobe };
+    private static async Task ModelTests(string[] paths)
+    {
+        using var vm = NewVm();
+        int ticks = 0; var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(15) }; timer.Tick += (_, _) => ticks++; timer.Start();
+        await vm.LoadSourceAsync(paths[0]); timer.Stop();
+        Check(vm.Clips.Count == 2 && vm.Clips.Count(c => c.Kind == MediaKind.Audio) == 1, "video import creates independent video and original-audio clips");
+        Check(vm.Assets.Count == 1 && vm.Thumbnails.Count == 8 && vm.Waveform is not null && ticks > 2, "responsive FFprobe import with thumbnails and waveform");
+        Check(Near(vm.TimelineDuration, 4) && vm.Settings.Width == 640 && vm.FramesPerSecond == 30, "first video configures sequence dimensions and frame rate");
+        await vm.ImportAssetsAsync(paths.Skip(1));
+        Check(vm.Assets.Count == 4 && vm.Clips.Count == 2 && vm.Assets.Select(a => a.Kind).SequenceEqual(new[] { MediaKind.Video, MediaKind.Video, MediaKind.Audio, MediaKind.Image }), "multiple video/audio/image import keeps existing timeline intact");
+        Check(vm.Assets[2].Waveform is not null && vm.Assets[3].Thumbnail is not null, "external audio waveform and image thumbnail generated");
+        await vm.ImportAssetsAsync([paths[0], Path.Combine(Root, "absent.mp4")]);
+        Check(vm.Assets.Count == 4 && vm.Clips.Count == 2 && vm.Status.Contains("absent"), "duplicate and failed import preserve edits");
+        var video = vm.Clips.First(c => c.Kind == MediaKind.Video); var audio = vm.Clips.First(c => c.Kind == MediaKind.Audio);
+        vm.SelectedClip = video; vm.SeekSequence(2); vm.SplitClipCommand.Execute(null);
+        Check(vm.Clips.Count == 3 && audio.EndSeconds == 4 && vm.Clips.Count(c => c.Kind == MediaKind.Video) == 2, "split selected video does not split audio");
+        vm.SelectedClip = audio; vm.SeekSequence(1); vm.SplitClipCommand.Execute(null);
+        Check(vm.Clips.Count == 4 && vm.Clips.Count(c => c.Kind == MediaKind.Audio) == 2 && vm.Clips.Count(c => c.Kind == MediaKind.Video) == 2, "audio has its own split point");
+        vm.UndoCommand.Execute(null); vm.UndoCommand.Execute(null);
+        Check(vm.Clips.Count == 2 && vm.Clips.All(c => c.EndSeconds == 4), "undo independently restores both track edits");
+        vm.RedoCommand.Execute(null); Check(vm.Clips.Count == 3, "redo restores only the video split"); vm.UndoCommand.Execute(null);
+        vm.AddVideoTrackCommand.Execute(null); var v2 = vm.SelectedTrack!; vm.InsertAsset(vm.Assets[1], 1);
+        Check(vm.SelectedClip?.TrackId == v2.Id && vm.SelectedClip.TimelineStart == 1 && vm.Clips.Count == 3, "second video inserts on V2 at requested time");
+        vm.AddAudioTrackCommand.Execute(null); var a2 = vm.SelectedTrack!; vm.InsertAsset(vm.Assets[2], 0);
+        Check(vm.SelectedClip?.TrackId == a2.Id && vm.Clips.Count == 4, "external audio inserts independently on A2");
+        vm.SelectedTrack = v2; vm.InsertAsset(vm.Assets[3], 4);
+        var image = vm.SelectedClip!; vm.TrimOutText = "7"; vm.EditScale = "60"; vm.EditOpacity = "80"; vm.EditX = "-40"; vm.ApplyClipPropertiesCommand.Execute(null); image = vm.SelectedClip!;
+        Check(image.Kind == MediaKind.Image && image.DurationSeconds == 7 && image.Scale == 60 && image.Opacity == 80 && image.PositionX == -40, "image duration, size, opacity and position are individually editable");
+        var external = vm.Clips.Single(c => c.AssetId == vm.Assets[2].Id); vm.SelectedClip = external;
+        vm.VolumeText = "150"; vm.EditFadeIn = "0.5"; vm.EditFadeOut = "1"; vm.ApplyClipPropertiesCommand.Execute(null); external = vm.SelectedClip!;
+        Check(external.AudioVolume == 150 && external.FadeIn == .5 && external.FadeOut == 1 && vm.Clips.First(c => c.AssetId == vm.Assets[0].Id && c.Kind == MediaKind.Audio).AudioVolume == 100, "per-clip gain and fades do not alter another audio clip");
+        vm.VolumeText = "NaN"; vm.ApplyClipPropertiesCommand.Execute(null); Check(vm.SelectedClip == external && external.AudioVolume == 150, "invalid property edits are atomic");
+        vm.SelectedClip = image; vm.SelectedTrack = v2; vm.ToggleTrackLockCommand.Execute(null); int count = vm.Clips.Count;
+        Check(!vm.BeginTrim(image, ClipEdge.End), "locked track rejects trim"); vm.RemoveClipCommand.Execute(null); vm.MoveClip(image, 0, vm.Tracks.First(t => t.Kind == MediaKind.Video));
+        Check(vm.Clips.Count == count && image.TimelineStart == 4, "locked track rejects move and delete"); vm.ToggleTrackLockCommand.Execute(null);
+        vm.SelectedClip = image; vm.MoveClip(image, 2, a2); Check(image.TrackId == v2.Id && image.TimelineStart == 4, "video/image cannot move onto audio track");
+        vm.MoveClip(image, 3, vm.Tracks.First(t => t.Kind == MediaKind.Video)); Check(image.TimelineStart == 3 && image.TrackId != v2.Id, "drag move can change compatible track and time"); vm.UndoCommand.Execute(null);
+        video = vm.Clips.First(c => c.AssetId == vm.Assets[0].Id && c.Kind == MediaKind.Video); audio = vm.Clips.First(c => c.AssetId == vm.Assets[0].Id && c.Kind == MediaKind.Audio); vm.SelectedClip = video;
+        Check(vm.BeginTrim(video, ClipEdge.Start), "head trim begins"); for (int i = 0; i < 20; i++) vm.UpdateTrim(1.137); vm.EndTrim(true);
+        Check(Near(video.StartSeconds, 34d / 30) && Near(video.TimelineStart, 34d / 30) && video.TimelineEnd == 4 && audio.StartSeconds == 0, "head handle trims on frame boundary without moving audio or tail");
+        vm.UndoCommand.Execute(null); video = vm.Clips.First(c => c.Id == video.Id); Check(video.StartSeconds == 0 && video.TimelineStart == 0, "many pointer updates form one undo step");
+        vm.BeginTrim(video, ClipEdge.End); vm.UpdateTrim(-100); Check(Near(video.DurationSeconds, 1d / 30), "tail cannot cross head or create zero-length clip"); vm.EndTrim(false); Check(video.EndSeconds == 4, "Escape restores entire trim gesture");
+        vm.SeekSequence(2); int audioBefore = vm.Clips.Count(c => c.Kind == MediaKind.Audio); vm.SplitVideoCommand.Execute(null);
+        Check(vm.Clips.Count(c => c.Kind == MediaKind.Audio) == audioBefore && vm.Clips.Count(c => c.Kind == MediaKind.Video) == 4, "split-video command splits all unlocked visual tracks only");
+        int visualBefore = vm.Clips.Count(c => c.Kind != MediaKind.Audio); vm.SplitAudioCommand.Execute(null);
+        Check(vm.Clips.Count(c => c.Kind != MediaKind.Audio) == visualBefore && vm.Clips.Count(c => c.Kind == MediaKind.Audio) == audioBefore * 2, "split-audio command leaves all visual clips untouched");
+        vm.SeekSequence(0); vm.NextFrameCommand.Execute(null); Check(Near(vm.SequencePosition, 1d / 30), "frame stepping uses sequence frame rate");
+        vm.CanvasWidthText = "640.5"; vm.ApplySequenceSettingsCommand.Execute(null); Check(vm.Settings.Width == 640, "fractional canvas dimensions rejected");
+        vm.AudioMuted = true; vm.AddSubtitleCommand.Execute(null); vm.Subtitles[0].Text = "多轨工程字幕";
+        string project = Path.Combine(Root, "工程.xfevideo.json"); await vm.SaveProjectToAsync(project);
+        Check(!vm.HasUnsavedChanges && File.Exists(project), "save-project command persists edit model");
+        using var restored = NewVm(); Check(await restored.LoadProjectAsync(project), "load-project resolves all original media");
+        Check(restored.Clips.Count == vm.Clips.Count && restored.Tracks.Count == 4 && restored.Assets.Count == 4 && restored.AudioMuted, "project restores independent tracks, assets and global mute");
+        Check(restored.Subtitles.Single().Text == "多轨工程字幕", "project also restores source-time subtitle edits");
+        restored.Subtitles[0].Text = "changed"; Check(restored.HasUnsavedChanges, "editing subtitle text marks project as unsaved");
+        Check(JsonSerializer.Serialize(restored.Clips, Json) == JsonSerializer.Serialize(vm.Clips, Json), "all clip IDs, source ranges and per-clip properties round-trip");
+        string invalid = Path.Combine(Root, "broken-project.json"); await File.WriteAllTextAsync(invalid, "{}");
+        Check(!await restored.LoadProjectAsync(invalid) && restored.Clips.Count == vm.Clips.Count, "malformed project does not destroy current edits");
+        await Reject(() => vm.SaveProjectToAsync(paths[0]), "project cannot overwrite source media");
+        vm.IsBusy = true; count = vm.Clips.Count; vm.RemoveClipCommand.Execute(null); Check(vm.Clips.Count == count && !vm.CanEdit, "busy render prevents editing"); vm.IsBusy = false;
+        using var previewVm = NewVm(); await previewVm.LoadSourceAsync(paths[0]);
+        string? proxy = await previewVm.EnsurePreviewAsync(); Check(proxy is not null && File.Exists(proxy), "playback generates actual composite proxy");
+        var stamp = File.GetLastWriteTimeUtc(proxy!); Check(await previewVm.EnsurePreviewAsync() == proxy && File.GetLastWriteTimeUtc(proxy!) == stamp, "unchanged playback reuses cached proxy without re-encoding");
+        previewVm.SelectedClip = previewVm.Clips.First(c => c.Kind == MediaKind.Audio); previewVm.ToggleClipAudioCommand.Execute(null);
+        string? second = await previewVm.EnsurePreviewAsync(); Check(second != proxy && second is not null && await Rms(second, .2, .5) < .00005, "edit invalidates playback cache and preview reflects audio mute");
+        string coverAudio = Path.Combine(Root, "带封面音乐.mp3");
+        await Ffmpeg(["-i",paths[2],"-i",paths[3],"-map","0:a:0","-map","1:v:0","-c:a","libmp3lame","-c:v","png","-disposition:v:0","attached_pic",coverAudio]);
+        using var audioVm = NewVm(); await audioVm.LoadSourceAsync(coverAudio);
+        Check(audioVm.Assets.Single().Kind == MediaKind.Audio && audioVm.Clips.All(c => c.Kind == MediaKind.Audio), "MP3 album artwork is not incorrectly treated as a video track");
+    }
+}

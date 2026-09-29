@@ -43,6 +43,8 @@ public partial class VoiceCallWindow : Window
 
     public event EventHandler<VoiceCallSignalEventArgs>? SignalGenerated;
 
+    public event EventHandler<VoiceCallRelayAudioEventArgs>? RelayAudioGenerated;
+
     public event EventHandler? LeaveRequested;
 
     public Task UpdateParticipantsAsync(IReadOnlyList<VoiceCallParticipant> participants) =>
@@ -71,6 +73,21 @@ public partial class VoiceCallWindow : Window
             signal
         });
 
+    public Task ApplyRelayAudioAsync(
+        string fromUserId,
+        long sequence,
+        int sampleRate,
+        string pcmBase64) =>
+        PostHostMessageAsync(new
+        {
+            type = "call.relay-audio",
+            callId = _callId,
+            fromUserId,
+            sequence,
+            sampleRate,
+            pcmBase64
+        });
+
     public async Task SetRealtimeStateAsync(string state, string? error)
     {
         await Dispatcher.InvokeAsync(() =>
@@ -96,7 +113,12 @@ public partial class VoiceCallWindow : Window
         {
             var userDataFolder = Path.Combine(AppPath.AppLocalData, "WebView2", "VoiceCall");
             Directory.CreateDirectory(userDataFolder);
-            var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: userDataFolder);
+            var environmentOptions = new CoreWebView2EnvironmentOptions(
+                "--autoplay-policy=no-user-gesture-required");
+            var environment = await CoreWebView2Environment.CreateAsync(
+                browserExecutableFolder: null,
+                userDataFolder: userDataFolder,
+                options: environmentOptions);
             if (Volatile.Read(ref _webViewDisposeStarted) != 0) return;
             await CallWebView.EnsureCoreWebView2Async(environment);
             if (Volatile.Read(ref _webViewDisposeStarted) != 0) return;
@@ -168,6 +190,9 @@ public partial class VoiceCallWindow : Window
                 case "signal":
                     HandleGeneratedSignal(root);
                     break;
+                case "relay-audio":
+                    HandleGeneratedRelayAudio(root);
+                    break;
                 case "leave":
                     NotifyLeaveRequested();
                     break;
@@ -238,6 +263,30 @@ public partial class VoiceCallWindow : Window
             callId,
             signalType,
             JsonSerializer.SerializeToElement(normalizedPayload, JsonOptions)));
+    }
+
+    private void HandleGeneratedRelayAudio(JsonElement root)
+    {
+        if (!TryGetString(root, "callId", out var callId) ||
+            !string.Equals(callId, _callId, StringComparison.Ordinal) ||
+            !root.TryGetProperty("sequence", out var sequenceProperty) ||
+            !sequenceProperty.TryGetInt64(out var sequence) ||
+            sequence < 0 ||
+            !root.TryGetProperty("sampleRate", out var sampleRateProperty) ||
+            !sampleRateProperty.TryGetInt32(out var sampleRate) ||
+            sampleRate != 16_000 ||
+            !TryGetString(root, "pcmBase64", out var pcmBase64) ||
+            pcmBase64.Length > 1024)
+            return;
+
+        Span<byte> decoded = stackalloc byte[640];
+        if (!Convert.TryFromBase64String(pcmBase64, decoded, out var bytesWritten) || bytesWritten != decoded.Length)
+            return;
+        RelayAudioGenerated?.Invoke(this, new VoiceCallRelayAudioEventArgs(
+            callId,
+            sequence,
+            sampleRate,
+            pcmBase64));
     }
 
     private async Task PostHostMessageAsync(object message)
@@ -368,4 +417,19 @@ public sealed class VoiceCallSignalEventArgs(
     public string SignalType { get; } = signalType;
 
     public JsonElement Payload { get; } = payload;
+}
+
+public sealed class VoiceCallRelayAudioEventArgs(
+    string callId,
+    long sequence,
+    int sampleRate,
+    string pcmBase64) : EventArgs
+{
+    public string CallId { get; } = callId;
+
+    public long Sequence { get; } = sequence;
+
+    public int SampleRate { get; } = sampleRate;
+
+    public string PcmBase64 { get; } = pcmBase64;
 }

@@ -27,7 +27,11 @@
 
 `.xfetool` 是扩展名固定的 ZIP 源码包，当前 `packageFormatVersion` 为 `1`。服务端使用 `XFEExtension.NetCore.ServerInteractive` 保存、校验和分发工具包，但不会在服务器上编译或执行其中的代码。
 
-客户端在下载后校验服务端返回的 SHA-256，再把包解压到临时目录、生成独立的 WPF 运行工程并调用 `dotnet` 编译。工具最终在单独进程和窗口中运行，但仍拥有当前桌面用户的系统权限，因此发布前必须审核源码。
+客户端在下载后校验服务端返回的 SHA-256，再把包解压到临时目录、生成独立的 WPF 运行工程并调用应用私有的 `dotnet` 编译。使用自包含发布版不需要用户安装 .NET：首次打开工具或在 Code Studio 中生成、预览时，应用会从 Microsoft 官方发布元数据选择对应进程架构的 .NET 10 SDK ZIP（包含 WPF 运行时），校验 SHA-512 后解压到 `%LOCALAPPDATA%\XFEToolBox\Toolchains\net10\<架构>`，后续直接复用完整缓存。下载支持进度显示与取消，失败后可重试，不修改系统 PATH 或系统 .NET 安装。
+
+生成的工具通过原生启动器中的相对路径使用同一份私有运行时，普通启动和管理员启动都不依赖系统安装的 .NET。工具最终在单独进程和窗口中运行，但仍拥有当前桌面用户（或经 UAC 授权的管理员）的系统权限，因此发布前必须审核源码。首次准备组件与获取尚未缓存的 NuGet 依赖需要联网；安装包无需预先携带这份 SDK 缓存。
+
+私有组件的单元测试可用 `--tests --filter ToolchainManagerTests` 运行。真实下载和 WPF 编译启动验证是显式测试：`dotnet run --project XFEToolBox.Client.Wpf.Test -c Release -p:EmbedInstallationPackage=false -- --tests --filter ToolchainIntegrationTests --explicit --no-parallel --report none`。它会屏蔽测试进程的系统 .NET 环境设置，验证 Code Studio 生成、预览和工具包打开，并检查实际加载的 CLR 与 WPF 程序集来自私有组件目录。
 
 每个工具拥有独立进程、独立 WPF `Application`、独立宿主窗口和按工具 ID 隔离的数据目录。独立进程可以隔离崩溃和静态状态，但不是安全沙箱：工具仍能访问当前 Windows 用户有权访问的文件、网络、剪贴板、注册表和进程。
 
@@ -170,7 +174,7 @@ Code Studio 可视化设计器提供的通用权限名称为：`FileSystem`、`N
 
 ### `nugetPackages`
 
-每个项目可以在 Code Studio 的 `manifest.json · 可视化配置` →“NuGet 包”中独立添加、更新或移除包。运行和生成验证时，工具箱会把这些引用写入该工具自己的临时 `.csproj`，再使用标准 `dotnet restore/build` 流程解析依赖；发布到 `.xfetool` 后，包引用仍保存在清单中。
+每个项目可以在 Code Studio 的 `manifest.json · 可视化配置` →“NuGet 包”中独立添加、更新或移除包。运行和生成验证时，工具箱会把这些引用写入该工具自己的临时 `.csproj`，再使用私有 SDK 的 `dotnet publish`（包含 restore）解析依赖，NuGet 包也缓存在应用私有目录；发布到 `.xfetool` 后，包引用仍保存在清单中。
 
 包 ID 仅允许字母、数字、点、短横线和下划线，长度不超过 100；`version` 必须固定为 `1.2.3`、`1.2.3-beta.1` 这类精确版本，不接受 `*`、`[1.0,2.0)` 等浮动版本或范围。项目显式引用 `CommunityToolkit.Mvvm` 时可以覆盖工具箱内置的默认版本。NuGet 包可能携带构建目标并在还原/编译阶段运行，因此只应添加可信来源的包。
 
