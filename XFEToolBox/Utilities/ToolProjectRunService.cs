@@ -613,6 +613,7 @@ internal static class ToolProjectRunService
                              });
                          }
                          window.Content = windowRoot;
+                         ToolWindowFrameBehavior.Attach(window, windowSurface, contentSurface);
                          AttachWindowPlacementPersistence(window, savedPlacement);
                      }
 

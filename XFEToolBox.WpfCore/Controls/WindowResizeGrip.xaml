@@ -4,6 +4,22 @@
              Width="25" Height="25" Focusable="False"
              HorizontalAlignment="Right" VerticalAlignment="Bottom"
              Cursor="SizeNWSE">
+    <UserControl.Style>
+        <Style TargetType="UserControl">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="Maximized">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Setter Property="IsHitTestVisible" Value="False"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="NoResize">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="CanMinimize">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
     <Grid>
         <Image x:Name="CornerImage" Width="25" Height="25" Stretch="Fill"
                FocusVisualStyle="{x:Null}" IsHitTestVisible="False"/>
