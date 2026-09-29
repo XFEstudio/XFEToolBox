@@ -25,6 +25,7 @@ public partial class ToolBoxPage : Page
 {
     private static readonly ImageSource DefaultToolIcon = CreateDefaultIcon();
     private static readonly JsonSerializerOptions CacheJsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly Func<string, string, Task<ToolPackageSummary[]>> requestCatalog;
     private readonly List<ToolCardViewModel> _tools = [];
     private ToolCatalogRowViewModel[] _toolRows = [];
     private int _visibleCategoryCount;
@@ -36,15 +37,21 @@ public partial class ToolBoxPage : Page
 
     public static ToolBoxPage Current { get; private set; } = new();
 
-    public ToolBoxPage()
+    public ToolBoxPage() : this(RequestCatalogAsync)
     {
         Current = this;
+    }
+
+    internal ToolBoxPage(Func<string, string, Task<ToolPackageSummary[]>> requestCatalog)
+    {
+        this.requestCatalog = requestCatalog;
         InitializeComponent();
         CategoryFilter.Items.Add("全部分类");
         CategoryFilter.SelectedIndex = 0;
     }
 
     private async void Page_Loaded(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
+    private void Page_Unloaded(object sender, RoutedEventArgs e) => ++_refreshGeneration;
     private async void RefreshButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(refreshFullCatalog: true);
     private async void SearchButton_Click(object sender, RoutedEventArgs e) => await RefreshAsync(updateCategories: false);
 
@@ -84,16 +91,8 @@ public partial class ToolBoxPage : Page
         {
             var requestQuery = refreshFullCatalog ? string.Empty : query;
             var requestCategory = refreshFullCatalog ? string.Empty : category;
-            var response = await ClientSession.Requester.Request<ToolPackageSummary[]>(
-                "catalogTools", requestQuery, requestCategory);
+            var tools = await requestCatalog(requestQuery, requestCategory);
             if (refreshGeneration != _refreshGeneration) return;
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                ShowRefreshFailure(response.Message);
-                return;
-            }
-
-            var tools = response.Result ?? [];
             if (refreshFullCatalog || string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(category))
             {
                 _cachedCatalog = tools;
@@ -127,6 +126,14 @@ public partial class ToolBoxPage : Page
         }
     }
 
+    private static async Task<ToolPackageSummary[]> RequestCatalogAsync(string query, string category)
+    {
+        var response = await ClientSession.Requester.Request<ToolPackageSummary[]>("catalogTools", query, category);
+        if (response.StatusCode != HttpStatusCode.OK)
+            throw new InvalidOperationException(response.Message);
+        return response.Result ?? [];
+    }
+
     private void EnsureCacheLoaded()
     {
         if (_cacheLoaded) return;
@@ -157,7 +164,7 @@ public partial class ToolBoxPage : Page
                     || tool.Tags?.Any(tag => Contains(tag, query)) == true))
             .ToArray();
 
-    private void ApplyTools(IReadOnlyList<ToolPackageSummary> tools)
+    internal void ApplyTools(IReadOnlyList<ToolPackageSummary> tools)
     {
         var desiredCards = tools.Select(tool =>
         {
@@ -168,9 +175,14 @@ public partial class ToolBoxPage : Page
             return CreateToolCard(tool);
         }).ToArray();
 
-        _tools.Clear();
-        _tools.AddRange(desiredCards);
-        RebuildCatalogRows();
+        // A page is reused when navigating back. Keep its containers, image bindings and scroll state
+        // when the catalog has not changed instead of rebuilding the virtualized list on every visit.
+        if (!_tools.SequenceEqual(desiredCards))
+        {
+            _tools.Clear();
+            _tools.AddRange(desiredCards);
+            RebuildCatalogRows();
+        }
         EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         ToolCountText.Text = FormatToolCount();
     }
@@ -242,8 +254,12 @@ public partial class ToolBoxPage : Page
     private static bool Contains(string? value, string query) =>
         value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
 
-    private static bool ToolSummariesEquivalent(ToolPackageSummary left, ToolPackageSummary right) =>
-        JsonSerializer.Serialize(left, CacheJsonOptions) == JsonSerializer.Serialize(right, CacheJsonOptions);
+    internal static bool ToolSummariesEquivalent(ToolPackageSummary left, ToolPackageSummary right) =>
+        ReferenceEquals(left, right) ||
+        left.Id == right.Id && left.Name == right.Name && left.Description == right.Description &&
+        left.IconDataUrl == right.IconDataUrl && left.Author == right.Author && left.Category == right.Category &&
+        left.LatestVersion == right.LatestVersion && left.RequiresAdministrator == right.RequiresAdministrator &&
+        left.UpdatedAtUtc == right.UpdatedAtUtc && (left.Tags ?? []).SequenceEqual(right.Tags ?? []);
 
     private static string[] GetCatalogCategories(IEnumerable<ToolPackageSummary> tools) =>
         tools.Select(tool => NormalizeCategory(tool.Category))
